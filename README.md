@@ -7,6 +7,8 @@ reported asynchronously in a background goroutine.
 Errors in Go don't have any information about where they were created, so stack
 traces show where the error was reported, not created.
 
+[godoc.org documentation](http://godoc.org/github.com/stvp/rollbar)
+
 Usage
 =====
 

@@ -56,16 +56,10 @@ func Message(level string, msg string) {
 	push(body)
 }
 
-func initChannel() {
-	bodyChannel = make(chan map[string]interface{}, CHANNEL_SIZE)
+// -- Misc.
 
-	go func() {
-		for body := range bodyChannel {
-			post(body)
-		}
-	}()
-}
-
+// Build the main JSON structure that will be sent to Rollbar with the
+// appropriate metadata.
 func buildBody(level, title string) map[string]interface{} {
 	timestamp := time.Now().Unix()
 	hostname, _ := os.Hostname()
@@ -119,6 +113,18 @@ func messageBody(s string) map[string]interface{} {
 			"body": s,
 		},
 	}
+}
+
+// -- POST handling
+
+func initChannel() {
+	bodyChannel = make(chan map[string]interface{}, CHANNEL_SIZE)
+
+	go func() {
+		for body := range bodyChannel {
+			post(body)
+		}
+	}()
 }
 
 func push(body map[string]interface{}) {
