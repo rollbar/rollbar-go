@@ -14,15 +14,23 @@ import (
 )
 
 const (
-	NAME         = "go-rollbar"
-	VERSION      = "0.0.1"
+	NAME    = "go-rollbar"
+	VERSION = "0.0.1"
 )
 
 var (
-	Token       = ""
+	// Rollbar access token. This must be set in order to report errors
+	// successfully.
+	Token = ""
+
+	// All errors and messages will be submitted under this environment.
 	Environment = "development"
-	Endpoint    = "https://api.rollbar.com/api/1/item/"
-	Buffer      = 100
+
+	// API endpoint for Rollbar.
+	Endpoint = "https://api.rollbar.com/api/1/item/"
+
+	// Number of requests to queue up for sending before discarding new requests.
+	Buffer = 100
 
 	bodyChannel chan map[string]interface{}
 	once        sync.Once
@@ -30,10 +38,14 @@ var (
 
 // -- Error reporting
 
+// Error sends an error to Rollbar with the given severity level. The Rollbar
+// request is asynchronous.
 func Error(level string, err error) {
 	ErrorWithStackSkip(level, err, 1)
 }
 
+// Error sends an error to Rollbar with the given severity level and a given
+// number of stack trace frames skipped. The Rollbar request is asynchronous.
 func ErrorWithStackSkip(level string, err error, skip int) {
 	once.Do(initChannel)
 
@@ -46,6 +58,8 @@ func ErrorWithStackSkip(level string, err error, skip int) {
 
 // -- Message reporting
 
+// Message sends a message to Rollbar with the given severity level. The
+// Rollbar request is asynchronous.
 func Message(level string, msg string) {
 	once.Do(initChannel)
 
@@ -107,6 +121,7 @@ func errorBody(err error, skip int) map[string]interface{} {
 	}
 }
 
+// Build a message inner-body for the given message string.
 func messageBody(s string) map[string]interface{} {
 	return map[string]interface{}{
 		"message": map[string]interface{}{
@@ -117,6 +132,8 @@ func messageBody(s string) map[string]interface{} {
 
 // -- POST handling
 
+// Starts a goroutine that handles the sending of all JSON bodies sent on the
+// bodyChannel.
 func initChannel() {
 	bodyChannel = make(chan map[string]interface{}, Buffer)
 
@@ -127,12 +144,14 @@ func initChannel() {
 	}()
 }
 
+// Queues the given JSON body for POSTing to Rollbar.
 func push(body map[string]interface{}) {
 	if len(bodyChannel) < Buffer {
 		bodyChannel <- body
 	}
 }
 
+// POSTS the given JSON body to Rollbar synchronously.
 func post(body map[string]interface{}) {
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
