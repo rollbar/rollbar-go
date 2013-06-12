@@ -16,13 +16,13 @@ import (
 const (
 	NAME         = "go-rollbar"
 	VERSION      = "0.0.1"
-	CHANNEL_SIZE = 100
 )
 
 var (
 	Token       = ""
 	Environment = "development"
 	Endpoint    = "https://api.rollbar.com/api/1/item/"
+	Buffer      = 100
 
 	bodyChannel chan map[string]interface{}
 	once        sync.Once
@@ -118,7 +118,7 @@ func messageBody(s string) map[string]interface{} {
 // -- POST handling
 
 func initChannel() {
-	bodyChannel = make(chan map[string]interface{}, CHANNEL_SIZE)
+	bodyChannel = make(chan map[string]interface{}, Buffer)
 
 	go func() {
 		for body := range bodyChannel {
@@ -128,7 +128,7 @@ func initChannel() {
 }
 
 func push(body map[string]interface{}) {
-	if len(bodyChannel) < CHANNEL_SIZE {
+	if len(bodyChannel) < Buffer {
 		bodyChannel <- body
 	}
 }
