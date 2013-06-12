@@ -28,15 +28,23 @@ var (
 	once        sync.Once
 )
 
+// -- Error reporting
+
 func Error(level string, err error) {
+	ErrorWithStackSkip(level, err, 1)
+}
+
+func ErrorWithStackSkip(level string, err error, skip int) {
 	once.Do(initChannel)
 
 	body := buildBody(level, err.Error())
 	data := body["data"].(map[string]interface{})
-	data["body"] = errorBody(err)
+	data["body"] = errorBody(err, skip)
 
 	push(body)
 }
+
+// -- Message reporting
 
 func Message(level string, msg string) {
 	once.Do(initChannel)
@@ -84,7 +92,9 @@ func buildBody(level, title string) map[string]interface{} {
 	}
 }
 
-func errorBody(err error) map[string]interface{} {
+// Build an error inner-body for the given error. If skip is provided, that
+// number of stack trace frames will be skipped.
+func errorBody(err error, skip int) map[string]interface{} {
 	errorClass := reflect.TypeOf(err).String()
 	if errorClass == "" {
 		errorClass = "panic"
@@ -94,7 +104,7 @@ func errorBody(err error) map[string]interface{} {
 
 	return map[string]interface{}{
 		"trace": map[string]interface{}{
-			"frames": stacktraceFrames(3),
+			"frames": stacktraceFrames(3 + skip),
 			"exception": map[string]interface{}{
 				"class":   errorClass,
 				"message": err.Error(),

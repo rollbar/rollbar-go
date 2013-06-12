@@ -23,6 +23,14 @@ func testErrorStack2(s string) {
 	Error("error", errors.New(s))
 }
 
+func testErrorStackWithSkip(s string) {
+	testErrorStackWithSkip2(s)
+}
+
+func testErrorStackWithSkip2(s string) {
+	ErrorWithStackSkip("error", errors.New(s), 2)
+}
+
 func TestEverything(t *testing.T) {
 	Token = os.Getenv("TOKEN")
 	Environment = "test"
@@ -31,6 +39,7 @@ func TestEverything(t *testing.T) {
 	Error("error", &CustomError{"This is a custom error"})
 
 	testErrorStack("This error should have a nice stacktrace")
+	testErrorStackWithSkip("This error should have a skipped stacktrace")
 
 	done := make(chan bool)
 	go func() {
