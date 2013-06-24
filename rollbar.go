@@ -166,6 +166,7 @@ func post(body map[string]interface{}) {
 	}
 	bodyReader := bytes.NewReader(jsonBody)
 	resp, err := http.Post(Endpoint, "application/json", bodyReader)
+	defer resp.Body.Close()
 	if err != nil {
 		stderr(fmt.Sprintf("POST failed: %s", err.Error()))
 	} else if resp.StatusCode != 200 {
