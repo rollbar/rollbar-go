@@ -35,6 +35,12 @@ Usage
       rollbar.Message("info", "Message body goes here")
     }
 
+To do
+=====
+
+* Provide a channel that sends `true` when the internal sending queue is empty
+  to allow programs to wait for all messages to send before exiting.
+
 Running Tests
 =============
 

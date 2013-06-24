@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"hash/adler32"
 	"net/http"
 	"os"
 	"reflect"
@@ -103,18 +104,11 @@ func buildBody(level, title string) map[string]interface{} {
 // Build an error inner-body for the given error. If skip is provided, that
 // number of stack trace frames will be skipped.
 func errorBody(err error, skip int) map[string]interface{} {
-	errorClass := reflect.TypeOf(err).String()
-	if errorClass == "" {
-		errorClass = "panic"
-	} else {
-		errorClass = strings.TrimPrefix(errorClass, "*")
-	}
-
 	return map[string]interface{}{
 		"trace": map[string]interface{}{
 			"frames": stacktraceFrames(3 + skip),
 			"exception": map[string]interface{}{
-				"class":   errorClass,
+				"class":   errorClass(err),
 				"message": err.Error(),
 			},
 		},
@@ -127,6 +121,18 @@ func messageBody(s string) map[string]interface{} {
 		"message": map[string]interface{}{
 			"body": s,
 		},
+	}
+}
+
+func errorClass(err error) string {
+	class := reflect.TypeOf(err).String()
+	if class == "" {
+		return "panic"
+	} else if class == "*errors.errorString" {
+		checksum := adler32.Checksum([]byte(err.Error()))
+		return fmt.Sprintf("errors.errorString{%x}", checksum)
+	} else {
+		return strings.TrimPrefix(class, "*")
 	}
 }
 
