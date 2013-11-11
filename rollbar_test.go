@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"testing"
-	"time"
 )
 
 type CustomError struct {
@@ -65,11 +64,7 @@ func TestEverything(t *testing.T) {
 	Message("error", "This is an error message")
 	Message("info", "And this is an info message")
 
-	// Wait for all messages to be sent
-	for {
-		if len(bodyChannel) == 0 {
-			break
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
+	// If you don't see the message sent on line 65 in Rollbar, that means this
+	// is broken:
+	Wait()
 }

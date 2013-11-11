@@ -37,6 +37,7 @@ var (
 	// Queue of messages to be sent.
 	bodyChannel chan map[string]interface{}
 	once        sync.Once
+	waitGroup   sync.WaitGroup
 )
 
 // -- Error reporting
@@ -73,6 +74,11 @@ func Message(level string, msg string) {
 }
 
 // -- Misc.
+
+// Wait will block until the queue of errors / messages is empty.
+func Wait() {
+	waitGroup.Wait()
+}
 
 // Build the main JSON structure that will be sent to Rollbar with the
 // appropriate metadata.
@@ -146,6 +152,7 @@ func initChannel() {
 	go func() {
 		for body := range bodyChannel {
 			post(body)
+			waitGroup.Done()
 		}
 	}()
 }
@@ -153,6 +160,7 @@ func initChannel() {
 // Queue the given JSON body to be POSTed to Rollbar.
 func push(body map[string]interface{}) {
 	if len(bodyChannel) < Buffer {
+		waitGroup.Add(1)
 		bodyChannel <- body
 	}
 }
