@@ -2,12 +2,16 @@ go-rollbar
 ----------
 
 `go-rollbar` is a Rollbar client for reporting errors to Rollbar. Errors are
-reported asynchronously in a background goroutine.
+reported asynchronously in a goroutine.
 
-Errors in Go don't have any information about where they were created, so stack
-traces show where the error was reported, not created.
+Keep in mind that Go's `error` type doesn't contain stack trace
+information. `go-rollbar` reports the stack trace of the location that the
+error was reported, not created.
 
-[godoc.org documentation](http://godoc.org/github.com/stvp/rollbar)
+Documentation
+=============
+
+[API docs on godoc.org](http://godoc.org/github.com/stvp/rollbar)
 
 Usage
 =====
@@ -29,13 +33,16 @@ Usage
       }
 
       rollbar.Message("info", "Message body goes here")
+
+      rollbar.Wait()
     }
 
-To do
-=====
+Changelog
+=========
 
-* Provide a channel that sends `true` when the internal sending queue is empty
-  to allow programs to wait for all messages to send before exiting.
+* **0.0.2** - Add `Wait()` command to wait for all errors to be sent to
+  Rollbar, simplify reported error class for `errors.errorString` errors.
+* **0.0.1** - Initial release.
 
 Running Tests
 =============
