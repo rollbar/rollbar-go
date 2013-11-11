@@ -137,7 +137,7 @@ func errorClass(err error) string {
 		return "panic"
 	} else if class == "*errors.errorString" {
 		checksum := adler32.Checksum([]byte(err.Error()))
-		return fmt.Sprintf("errors.errorString{%x}", checksum)
+		return fmt.Sprintf("{%x}", checksum)
 	} else {
 		return strings.TrimPrefix(class, "*")
 	}
