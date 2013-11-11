@@ -22,15 +22,11 @@ Usage
       rollbar.Token = "MY_TOKEN"
       rollbar.Environment = "production" // defaults to "development"
 
-      ...
-
       result, err := DoSomething()
       if err != nil {
         // level should be one of: "critical", "error", "warning", "info", "debug"
         rollbar.Error("error", err)
       }
-
-      ...
 
       rollbar.Message("info", "Message body goes here")
     }

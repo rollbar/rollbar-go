@@ -20,8 +20,8 @@ const (
 )
 
 var (
-	// Rollbar access token. This must be set in order to report errors
-	// successfully.
+	// Rollbar access token. If this is blank, no errors will be reported to
+	// Rollbar.
 	Token = ""
 
 	// All errors and messages will be submitted under this environment.
@@ -30,23 +30,24 @@ var (
 	// API endpoint for Rollbar.
 	Endpoint = "https://api.rollbar.com/api/1/item/"
 
-	// Number of requests to queue up for sending before discarding new requests.
+	// Maximum number of errors allowed in the sending queue before we start
+	// dropping new errors on the floor.
 	Buffer = 100
 
+	// Queue of messages to be sent.
 	bodyChannel chan map[string]interface{}
 	once        sync.Once
 )
 
 // -- Error reporting
 
-// Error sends an error to Rollbar with the given severity level. The Rollbar
-// request is asynchronous.
+// Error asynchronously sends an error to Rollbar with the given severity level.
 func Error(level string, err error) {
 	ErrorWithStackSkip(level, err, 1)
 }
 
-// Error sends an error to Rollbar with the given severity level and a given
-// number of stack trace frames skipped. The Rollbar request is asynchronous.
+// ErrorWithStackSkip asynchronously sends an error to Rollbar with the given
+// severity level and a given number of stack trace frames skipped.
 func ErrorWithStackSkip(level string, err error, skip int) {
 	once.Do(initChannel)
 
@@ -59,8 +60,8 @@ func ErrorWithStackSkip(level string, err error, skip int) {
 
 // -- Message reporting
 
-// Message sends a message to Rollbar with the given severity level. The
-// Rollbar request is asynchronous.
+// Message asynchronously sends a message to Rollbar with the given severity
+// level. Rollbar request is asynchronous.
 func Message(level string, msg string) {
 	once.Do(initChannel)
 
@@ -138,8 +139,7 @@ func errorClass(err error) string {
 
 // -- POST handling
 
-// Starts a goroutine that handles the sending of all JSON bodies sent on the
-// bodyChannel.
+// Start a goroutine that sends all errors and messages to Rollbar.
 func initChannel() {
 	bodyChannel = make(chan map[string]interface{}, Buffer)
 
@@ -150,25 +150,24 @@ func initChannel() {
 	}()
 }
 
-// Queues the given JSON body for POSTing to Rollbar.
+// Queue the given JSON body to be POSTed to Rollbar.
 func push(body map[string]interface{}) {
 	if len(bodyChannel) < Buffer {
 		bodyChannel <- body
 	}
 }
 
-// POSTS the given JSON body to Rollbar synchronously.
+// POST the given JSON body to Rollbar synchronously.
 func post(body map[string]interface{}) {
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
-		stderr(fmt.Sprintf("Payload couldn't be encoded: %s", err.Error()))
+		stderr(fmt.Sprintf("Rollbar payload couldn't be encoded: %s", err.Error()))
 		return
 	}
-	bodyReader := bytes.NewReader(jsonBody)
-	resp, err := http.Post(Endpoint, "application/json", bodyReader)
+	resp, err := http.Post(Endpoint, "application/json", bytes.NewReader(jsonBody))
 	defer resp.Body.Close()
 	if err != nil {
-		stderr(fmt.Sprintf("POST failed: %s", err.Error()))
+		stderr(fmt.Sprintf("Rollbar POST failed: %s", err.Error()))
 	} else if resp.StatusCode != 200 {
 		stderr(fmt.Sprintf("Rollbar response: %s", resp.Status))
 	}
