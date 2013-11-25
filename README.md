@@ -40,6 +40,9 @@ Usage
 Changelog
 =========
 
+* **0.0.3** - Remove incorrect "root" value that was being sent. That setting
+  is meant for the path to the root code directory, but we're running in a
+  compiled environment.
 * **0.0.2** - Add `Wait()` command to wait for all errors to be sent to
   Rollbar, simplify reported error class for `errors.errorString` errors.
 * **0.0.1** - Initial release.

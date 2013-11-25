@@ -85,7 +85,6 @@ func Wait() {
 func buildBody(level, title string) map[string]interface{} {
 	timestamp := time.Now().Unix()
 	hostname, _ := os.Hostname()
-	cwd, _ := os.Getwd()
 
 	return map[string]interface{}{
 		"access_token": Token,
@@ -98,7 +97,6 @@ func buildBody(level, title string) map[string]interface{} {
 			"language":    "go",
 			"server": map[string]interface{}{
 				"host": hostname,
-				"root": cwd,
 			},
 			"notifier": map[string]interface{}{
 				"name":    NAME,
