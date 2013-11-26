@@ -33,8 +33,8 @@ func testErrorStackWithSkip2(s string) {
 
 func TestErrorClass(t *testing.T) {
 	errors := map[string]error{
-		"errors.errorString{508e076d}": fmt.Errorf("Something is broken!"),
-		"rollbar.CustomError":          &CustomError{"Terrible mistakes were made."},
+		"{508e076d}":          fmt.Errorf("Something is broken!"),
+		"rollbar.CustomError": &CustomError{"Terrible mistakes were made."},
 	}
 
 	for expected, err := range errors {
