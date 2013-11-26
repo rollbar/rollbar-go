@@ -165,11 +165,17 @@ func push(body map[string]interface{}) {
 
 // POST the given JSON body to Rollbar synchronously.
 func post(body map[string]interface{}) {
+	if len(Token) == 0 {
+		stderr("Token is empty")
+		return
+	}
+
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
 		stderr(fmt.Sprintf("Rollbar payload couldn't be encoded: %s", err.Error()))
 		return
 	}
+
 	resp, err := http.Post(Endpoint, "application/json", bytes.NewReader(jsonBody))
 	defer resp.Body.Close()
 	if err != nil {
