@@ -11,6 +11,40 @@ func stderr(s string) {
 	fmt.Fprintf(os.Stderr, "Rollbar error: %s\n", s)
 }
 
+var (
+	knownFilePathPatterns []string = []string{
+		"github.com/",
+		"code.google.com/",
+		"bitbucket.org/",
+		"launchpad.net/",
+	}
+)
+
+// Remove un-needed information from the source file path. This makes them
+// shorter in Rollbar UI as well as making them the same, regardless of the
+// machine the code was compiled on. That way they can be used to calculate
+// fingerprint for intelligent grouping of messages.
+//
+// 1. for Go standard library, paths look like:
+// "/usr/local/go/src/pkg/runtime/proc.c", we leave:
+// "pkg/runtime/proc.c"
+// 2. for other code file paths look like:
+// "/home/vagrant/GoPath/src/github.com/rollbar/rollbar.go", we leave:
+// "github.com/rollbar/rollbar.go"
+func shortenFilePath(s string) string {
+	idx := strings.Index(s, "/src/pkg/")
+	if idx != -1 {
+		return s[idx+len("/src/"):]
+	}
+	for _, pattern := range knownFilePathPatterns {
+		idx = strings.Index(s, pattern)
+		if idx != -1 {
+			return s[idx:]
+		}
+	}
+	return s
+}
+
 func stacktraceFrames(skip int) []map[string]interface{} {
 	frames := []map[string]interface{}{}
 
@@ -19,7 +53,7 @@ func stacktraceFrames(skip int) []map[string]interface{} {
 		if !ok {
 			break
 		}
-
+		file = shortenFilePath(file)
 		frames = append(frames, map[string]interface{}{
 			"filename": file,
 			"lineno":   line,
