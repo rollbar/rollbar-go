@@ -54,7 +54,9 @@ func ErrorWithStackSkip(level string, err error, skip int) {
 
 	body := buildBody(level, err.Error())
 	data := body["data"].(map[string]interface{})
-	data["body"] = errorBody(err, skip)
+	errBody, fingerprint := errorBody(err, skip)
+	data["body"] = errBody
+	data["fingerprint"] = fingerprint
 
 	push(body)
 }
@@ -106,18 +108,37 @@ func buildBody(level, title string) map[string]interface{} {
 	}
 }
 
+// Create a fingerprint that uniqely identify a given message. We use the full
+// callstack, including file names. That ensure that there are no false duplicates
+// but also means that after changing the code (adding/removing lines), the
+// fingerprints will change. It's a trade-off.
+func calcFingerprint(frames []map[string]interface{}) string {
+	s := ""
+	for _, frame := range frames {
+		fileName := frame["filename"].(string)
+		method := frame["method"].(string)
+		lineNo := frame["lineno"].(int)
+		s += fmt.Sprintf("%s%d%s", fileName, lineNo, method)
+	}
+	checksum := adler32.Checksum([]byte(s))
+	return fmt.Sprintf("%x", checksum)
+}
+
 // Build an error inner-body for the given error. If skip is provided, that
 // number of stack trace frames will be skipped.
-func errorBody(err error, skip int) map[string]interface{} {
-	return map[string]interface{}{
+func errorBody(err error, skip int) (map[string]interface{}, string) {
+	frames := stacktraceFrames(3 + skip)
+	fingerprint := calcFingerprint(frames)
+	errBody := map[string]interface{}{
 		"trace": map[string]interface{}{
-			"frames": stacktraceFrames(3 + skip),
+			"frames": frames,
 			"exception": map[string]interface{}{
 				"class":   errorClass(err),
 				"message": err.Error(),
 			},
 		},
 	}
+	return errBody, fingerprint
 }
 
 // Build a message inner-body for the given message string.
