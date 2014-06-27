@@ -39,7 +39,7 @@ var (
 
 	// Maximum number of errors allowed in the sending queue before we start
 	// dropping new errors on the floor.
-	Buffer = 100
+	Buffer = 1000
 
 	// Queue of messages to be sent.
 	bodyChannel chan map[string]interface{}
