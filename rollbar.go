@@ -43,9 +43,21 @@ var (
 
 	// Queue of messages to be sent.
 	bodyChannel chan map[string]interface{}
-	once        sync.Once
 	waitGroup   sync.WaitGroup
 )
+
+// -- Setup
+
+func init() {
+	bodyChannel = make(chan map[string]interface{}, Buffer)
+
+	go func() {
+		for body := range bodyChannel {
+			post(body)
+			waitGroup.Done()
+		}
+	}()
+}
 
 // -- Error reporting
 
@@ -57,8 +69,6 @@ func Error(level string, err error) {
 // ErrorWithStackSkip asynchronously sends an error to Rollbar with the given
 // severity level and a given number of stack trace frames skipped.
 func ErrorWithStackSkip(level string, err error, skip int) {
-	once.Do(initChannel)
-
 	body := buildBody(level, err.Error())
 	data := body["data"].(map[string]interface{})
 	data["body"] = errorBody(err, skip)
@@ -71,8 +81,6 @@ func ErrorWithStackSkip(level string, err error, skip int) {
 // Message asynchronously sends a message to Rollbar with the given severity
 // level. Rollbar request is asynchronous.
 func Message(level string, msg string) {
-	once.Do(initChannel)
-
 	body := buildBody(level, msg)
 	data := body["data"].(map[string]interface{})
 	data["body"] = messageBody(msg)
@@ -149,18 +157,6 @@ func errorClass(err error) string {
 }
 
 // -- POST handling
-
-// Start a goroutine that sends all errors and messages to Rollbar.
-func initChannel() {
-	bodyChannel = make(chan map[string]interface{}, Buffer)
-
-	go func() {
-		for body := range bodyChannel {
-			post(body)
-			waitGroup.Done()
-		}
-	}()
-}
 
 // Queue the given JSON body to be POSTed to Rollbar.
 func push(body map[string]interface{}) {
