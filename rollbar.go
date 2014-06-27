@@ -17,6 +17,13 @@ import (
 const (
 	NAME    = "go-rollbar"
 	VERSION = "0.0.4"
+
+	// Severity levels
+	CRIT  = "critical"
+	ERR   = "error"
+	WARN  = "warning"
+	INFO  = "info"
+	DEBUG = "debug"
 )
 
 var (

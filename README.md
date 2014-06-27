@@ -28,8 +28,7 @@ Usage
 
       result, err := DoSomething()
       if err != nil {
-        // level should be one of: "critical", "error", "warning", "info", "debug"
-        rollbar.Error("error", err)
+        rollbar.Error(rollbar.ERR, err)
       }
 
       rollbar.Message("info", "Message body goes here")
