@@ -163,6 +163,8 @@ func push(body map[string]interface{}) {
 	if len(bodyChannel) < Buffer {
 		waitGroup.Add(1)
 		bodyChannel <- body
+	} else {
+		stderr("buffer full, dropping error on the floor")
 	}
 }
 
