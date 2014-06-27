@@ -7,8 +7,9 @@ import (
 	"strings"
 )
 
-func stderr(s string) {
-	fmt.Fprintf(os.Stderr, "Rollbar error: %s\n", s)
+func stderr(format string, args ...interface{}) {
+	format = "Rollbar error: " + format + "\n"
+	fmt.Fprintf(os.Stderr, format, args)
 }
 
 func stacktraceFrames(skip int) []map[string]interface{} {

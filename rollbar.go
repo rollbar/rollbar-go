@@ -169,13 +169,13 @@ func push(body map[string]interface{}) {
 // POST the given JSON body to Rollbar synchronously.
 func post(body map[string]interface{}) {
 	if len(Token) == 0 {
-		stderr("Token is empty")
+		stderr("empty token")
 		return
 	}
 
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
-		stderr(fmt.Sprintf("Rollbar payload couldn't be encoded: %s", err.Error()))
+		stderr("failed to encode payload: %s", err.Error())
 		return
 	}
 
@@ -183,9 +183,9 @@ func post(body map[string]interface{}) {
 	if err == nil {
 		resp.Body.Close()
 		if resp.StatusCode != 200 {
-			stderr(fmt.Sprintf("Rollbar response: %s", resp.Status))
+			stderr("received response: %s", resp.Status)
 		}
 	} else {
-		stderr(fmt.Sprintf("Rollbar POST failed: %s", err.Error()))
+		stderr("POST failed: %s", err.Error())
 	}
 }
