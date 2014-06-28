@@ -71,7 +71,9 @@ func Error(level string, err error) {
 func ErrorWithStackSkip(level string, err error, skip int) {
 	body := buildBody(level, err.Error())
 	data := body["data"].(map[string]interface{})
-	data["body"] = errorBody(err, skip)
+	errBody, fingerprint := errorBody(err, skip)
+	data["body"] = errBody
+	data["fingerprint"] = fingerprint
 
 	push(body)
 }
@@ -123,16 +125,19 @@ func buildBody(level, title string) map[string]interface{} {
 
 // Build an error inner-body for the given error. If skip is provided, that
 // number of stack trace frames will be skipped.
-func errorBody(err error, skip int) map[string]interface{} {
-	return map[string]interface{}{
+func errorBody(err error, skip int) (map[string]interface{}, string) {
+	stack := BuildStack(3 + skip)
+	fingerprint := stack.Fingerprint()
+	errBody := map[string]interface{}{
 		"trace": map[string]interface{}{
-			"frames": stacktraceFrames(3 + skip),
+			"frames": stack,
 			"exception": map[string]interface{}{
 				"class":   errorClass(err),
 				"message": err.Error(),
 			},
 		},
 	}
+	return errBody, fingerprint
 }
 
 // Build a message inner-body for the given message string.
@@ -190,4 +195,11 @@ func post(body map[string]interface{}) {
 	} else {
 		stderr("POST failed: %s", err.Error())
 	}
+}
+
+// -- stderr
+
+func stderr(format string, args ...interface{}) {
+	format = "Rollbar error: " + format + "\n"
+	fmt.Fprintf(os.Stderr, format, args...)
 }
