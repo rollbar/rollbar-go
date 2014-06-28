@@ -187,13 +187,13 @@ func post(body map[string]interface{}) {
 	}
 
 	resp, err := http.Post(Endpoint, "application/json", bytes.NewReader(jsonBody))
-	if err == nil {
-		resp.Body.Close()
-		if resp.StatusCode != 200 {
-			stderr("received response: %s", resp.Status)
-		}
-	} else {
+	if err != nil {
 		stderr("POST failed: %s", err.Error())
+	} else if resp.StatusCode != 200 {
+		stderr("received response: %s", resp.Status)
+	}
+	if resp != nil {
+		resp.Body.Close()
 	}
 }
 
