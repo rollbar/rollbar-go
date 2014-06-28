@@ -16,7 +16,7 @@ import (
 
 const (
 	NAME    = "go-rollbar"
-	VERSION = "0.0.4"
+	VERSION = "0.1.0"
 
 	// Severity levels
 	CRIT  = "critical"

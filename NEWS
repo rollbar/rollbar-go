@@ -1,3 +1,17 @@
+0.1.0 - June 27th, 2014
+=======================
+
+Important: this release changes the grouping of errors in Rollbar. Be sure to
+test if the grouping of errors in Rollbar is important to your Go projects.
+
+* Errors are now fingerprinted by the full stacktrace (filen ames, method
+  names, and line numbers). This significantly improves the grouping of errors
+  in Rollbar. Contributed by @kjk
+* File paths now omit unneeded prefixes. Contributed by @kjk
+* Add severity constants (`rollbar.CRIT`, etc.)
+* Fix `Close()` call on nil responses. Thanks @Soulou!
+* Increase default buffer size to 1,000.
+
 0.0.4 - November 25th, 2013
 ===========================
 
