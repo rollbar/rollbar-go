@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"hash/adler32"
 	"net/http"
+	"net/url"
 	"os"
 	"reflect"
 	"runtime"
@@ -44,6 +45,9 @@ var (
 	// Queue of messages to be sent.
 	bodyChannel chan map[string]interface{}
 	waitGroup   sync.WaitGroup
+
+	// get and post parameters with these names will be replaced with ------
+	scrubFields = []string{"passwd", "password", "secret", "confirm_password", "password_confirmation", "access_token"}
 )
 
 // -- Setup
@@ -66,6 +70,12 @@ func Error(level string, err error) {
 	ErrorWithStackSkip(level, err, 1)
 }
 
+// RequestError asynchronously sends an error to Rollbar with the given severity level.
+// Sends extra information from the given request.
+func RequestError(r *http.Request, level string, err error) {
+	RequestErrorWithStackSkip(r, level, err, 1)
+}
+
 // ErrorWithStackSkip asynchronously sends an error to Rollbar with the given
 // severity level and a given number of stack trace frames skipped.
 func ErrorWithStackSkip(level string, err error, skip int) {
@@ -74,6 +84,22 @@ func ErrorWithStackSkip(level string, err error, skip int) {
 	errBody, fingerprint := errorBody(err, skip)
 	data["body"] = errBody
 	data["fingerprint"] = fingerprint
+
+	push(body)
+}
+
+// RequestErrorWithStackSkip asynchronously sends an error to Rollbar with the given
+// severity level and a given number of stack trace frames skipped.
+// Sends extra information from the given request.
+func RequestErrorWithStackSkip(r *http.Request, level string, err error, skip int) {
+	body := buildBody(level, err.Error())
+	data := body["data"].(map[string]interface{})
+
+	errBody, fingerprint := errorBody(err, skip)
+	data["body"] = errBody
+	data["fingerprint"] = fingerprint
+
+	data["request"] = errorRequest(r)
 
 	push(body)
 }
@@ -138,6 +164,50 @@ func errorBody(err error, skip int) (map[string]interface{}, string) {
 		},
 	}
 	return errBody, fingerprint
+}
+
+// Build out the request body for the rollbar api.
+func errorRequest(r *http.Request) map[string]interface{} {
+	m := map[string]interface{}{
+		"url":    r.URL.String(),
+		"method": r.Method,
+	}
+
+	m["headers"] = flattenValues(r.Header)
+
+	scrubbed := scrubValues(r.URL.Query())
+	m["query_string"] = url.Values(scrubbed).Encode()
+	m["GET"] = flattenValues(scrubbed)
+
+	m["POST"] = flattenValues(scrubValues(r.Form))
+
+	return m
+}
+
+// scrubValues removes "secret" parameter, so they're not sent to rollbar.
+func scrubValues(values map[string][]string) map[string][]string {
+	for _, field := range scrubFields {
+		if values[field] != nil {
+			values[field] = []string{"------"}
+		}
+	}
+
+	return values
+}
+
+func flattenValues(values map[string][]string) map[string]interface{} {
+	result := make(map[string]interface{})
+
+	for k, v := range values {
+		if len(v) == 1 {
+			result[k] = v[0]
+		} else {
+			result[k] = v
+		}
+
+	}
+
+	return result
 }
 
 // Build a message inner-body for the given message string.
