@@ -6,7 +6,7 @@ import (
 
 func TestBuildStack(t *testing.T) {
 	frame := BuildStack(1)[0]
-	if frame.Filename != "github.com/paulmach/rollbar/stack_test.go" {
+	if frame.Filename != "github.com/stvp/rollbar/stack_test.go" {
 		t.Errorf("got: %s", frame.Filename)
 	}
 	if frame.Method != "rollbar.TestBuildStack" {

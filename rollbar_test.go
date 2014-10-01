@@ -89,30 +89,24 @@ func TestErrorRequest(t *testing.T) {
 	}
 }
 
-func TestScrubValues(t *testing.T) {
+func TestFilterParams(t *testing.T) {
 	values := map[string][]string{
 		"password":     []string{"one"},
-		"toallyfine":   []string{"one"},
-		"sswo":         []string{"one"},
+		"ok":           []string{"one"},
 		"access_token": []string{"one"},
 	}
 
-	scrubbed := scrubValues(values)
-	if scrubbed["password"][0] != "------" {
-		t.Error("should scrub password parameter")
+	clean := filterParams(values)
+	if clean["password"][0] != FILTERED {
+		t.Error("should filter password parameter")
 	}
 
-	if scrubbed["toallyfine"][0] == "------" {
-		t.Error("should keep toallyfine parameter")
+	if clean["ok"][0] == FILTERED {
+		t.Error("should keep ok parameter")
 	}
 
-	// substring of scrubField
-	if scrubbed["sswo"][0] == "------" {
-		t.Error("should keep sswo parameter")
-	}
-
-	if scrubbed["access_token"][0] != "------" {
-		t.Error("should keep access_token parameter")
+	if clean["access_token"][0] != FILTERED {
+		t.Error("should filter access_token parameter")
 	}
 }
 

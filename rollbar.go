@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"reflect"
+	"regexp"
 	"runtime"
 	"strings"
 	"sync"
@@ -25,6 +26,8 @@ const (
 	WARN  = "warning"
 	INFO  = "info"
 	DEBUG = "debug"
+
+	FILTERED = "[FILTERED]"
 )
 
 var (
@@ -42,12 +45,12 @@ var (
 	// dropping new errors on the floor.
 	Buffer = 1000
 
+	// Filter GET and POST parameters from being sent to Rollbar.
+	FilterFields = regexp.MustCompile("password|secret|token")
+
 	// Queue of messages to be sent.
 	bodyChannel chan map[string]interface{}
 	waitGroup   sync.WaitGroup
-
-	// get and post parameters with these names will be replaced with ------
-	scrubFields = []string{"passwd", "password", "secret", "confirm_password", "password_confirmation", "access_token"}
 )
 
 // -- Setup
@@ -70,10 +73,10 @@ func Error(level string, err error) {
 	ErrorWithStackSkip(level, err, 1)
 }
 
-// RequestError asynchronously sends an error to Rollbar with the given severity level.
-// Sends extra information from the given request.
-func RequestError(r *http.Request, level string, err error) {
-	RequestErrorWithStackSkip(r, level, err, 1)
+// RequestError asynchronously sends an error to Rollbar with the given
+// severity level and request-specific information.
+func RequestError(level string, r *http.Request, err error) {
+	RequestErrorWithStackSkip(level, r, err, 1)
 }
 
 // ErrorWithStackSkip asynchronously sends an error to Rollbar with the given
@@ -88,10 +91,10 @@ func ErrorWithStackSkip(level string, err error, skip int) {
 	push(body)
 }
 
-// RequestErrorWithStackSkip asynchronously sends an error to Rollbar with the given
-// severity level and a given number of stack trace frames skipped.
-// Sends extra information from the given request.
-func RequestErrorWithStackSkip(r *http.Request, level string, err error, skip int) {
+// RequestErrorWithStackSkip asynchronously sends an error to Rollbar with the
+// given severity level and a given number of stack trace frames skipped, in
+// addition to extra request-specific information.
+func RequestErrorWithStackSkip(level string, r *http.Request, err error, skip int) {
 	body := buildBody(level, err.Error())
 	data := body["data"].(map[string]interface{})
 
@@ -166,29 +169,30 @@ func errorBody(err error, skip int) (map[string]interface{}, string) {
 	return errBody, fingerprint
 }
 
-// Build out the request body for the rollbar api.
+// Extract error details from a Request to a format that Rollbar accepts.
 func errorRequest(r *http.Request) map[string]interface{} {
-	m := map[string]interface{}{
-		"url":    r.URL.String(),
-		"method": r.Method,
+	cleanQuery := filterParams(r.URL.Query())
+
+	return map[string]interface{}{
+		"url":     r.URL.String(),
+		"method":  r.Method,
+		"headers": flattenValues(r.Header),
+
+		// GET params
+		"query_string": url.Values(cleanQuery).Encode(),
+		"GET":          flattenValues(cleanQuery),
+
+		// POST / PUT params
+		"POST": flattenValues(filterParams(r.Form)),
 	}
-
-	m["headers"] = flattenValues(r.Header)
-
-	scrubbed := scrubValues(r.URL.Query())
-	m["query_string"] = url.Values(scrubbed).Encode()
-	m["GET"] = flattenValues(scrubbed)
-
-	m["POST"] = flattenValues(scrubValues(r.Form))
-
-	return m
 }
 
-// scrubValues removes "secret" parameter, so they're not sent to rollbar.
-func scrubValues(values map[string][]string) map[string][]string {
-	for _, field := range scrubFields {
-		if values[field] != nil {
-			values[field] = []string{"------"}
+// filterParams filters sensitive information like passwords from being sent to
+// Rollbar.
+func filterParams(values map[string][]string) map[string][]string {
+	for key, _ := range values {
+		if FilterFields.Match([]byte(key)) {
+			values[key] = []string{FILTERED}
 		}
 	}
 
@@ -204,7 +208,6 @@ func flattenValues(values map[string][]string) map[string]interface{} {
 		} else {
 			result[k] = v
 		}
-
 	}
 
 	return result
