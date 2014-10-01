@@ -1,3 +1,9 @@
+0.2.0 - September 30th, 2014
+============================
+
+* Added support for including `http.Request` details in Rollbar items. Thanks
+  @paulmach!
+
 0.1.0 - June 27th, 2014
 =======================
 
