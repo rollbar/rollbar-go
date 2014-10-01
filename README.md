@@ -55,4 +55,4 @@ A big thank you to everyone who has contributed pull requests and bug reports:
 
 * @kjk
 * @Soulou
-
+* @paulmach
