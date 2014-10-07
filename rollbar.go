@@ -14,6 +14,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"log"
 )
 
 const (
@@ -279,37 +280,37 @@ func push(body map[string]interface{}) {
 		waitGroup.Add(1)
 		bodyChannel <- body
 	} else {
-		stderr("buffer full, dropping error on the floor")
+		rollbarError("buffer full, dropping error on the floor")
 	}
 }
 
 // POST the given JSON body to Rollbar synchronously.
 func post(body map[string]interface{}) {
 	if len(Token) == 0 {
-		stderr("empty token")
+		rollbarError("empty token")
 		return
 	}
 
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
-		stderr("failed to encode payload: %s", err.Error())
+		rollbarError("failed to encode payload: %s", err.Error())
 		return
 	}
 
 	resp, err := http.Post(Endpoint, "application/json", bytes.NewReader(jsonBody))
 	if err != nil {
-		stderr("POST failed: %s", err.Error())
+		rollbarError("POST failed: %s", err.Error())
 	} else if resp.StatusCode != 200 {
-		stderr("received response: %s", resp.Status)
+		rollbarError("received response: %s", resp.Status)
 	}
 	if resp != nil {
 		resp.Body.Close()
 	}
 }
 
-// -- stderr
+// -- rollbarError
 
-func stderr(format string, args ...interface{}) {
+func rollbarError(format string, args ...interface{}) {
 	format = "Rollbar error: " + format + "\n"
-	fmt.Fprintf(os.Stderr, format, args...)
+	log.Printf(format, args...)
 }
