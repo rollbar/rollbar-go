@@ -68,21 +68,40 @@ func init() {
 
 // -- Error reporting
 
+var noExtras map[string]interface{}
+
 // Error asynchronously sends an error to Rollbar with the given severity level.
 func Error(level string, err error) {
-	ErrorWithStackSkip(level, err, 1)
+	ErrorWithExtras(level, err, noExtras)
+}
+
+// Error asynchronously sends an error to Rollbar with the given severity level with extra custom data.
+func ErrorWithExtras(level string, err error, extras map[string]interface{}) {
+	ErrorWithStackSkipWithExtras(level, err, 1, extras)
 }
 
 // RequestError asynchronously sends an error to Rollbar with the given
 // severity level and request-specific information.
 func RequestError(level string, r *http.Request, err error) {
-	RequestErrorWithStackSkip(level, r, err, 1)
+	RequestErrorWithExtras(level, r, err, noExtras)
+}
+
+// RequestError asynchronously sends an error to Rollbar with the given
+// severity level and request-specific information with extra custom data.
+func RequestErrorWithExtras(level string, r *http.Request, err error, extras map[string]interface{}) {
+	RequestErrorWithStackSkipWithExtras(level, r, err, 1, extras)
 }
 
 // ErrorWithStackSkip asynchronously sends an error to Rollbar with the given
 // severity level and a given number of stack trace frames skipped.
 func ErrorWithStackSkip(level string, err error, skip int) {
-	body := buildBody(level, err.Error())
+	ErrorWithStackSkipWithExtras(level, err, skip, noExtras)
+}
+
+// ErrorWithStackSkip asynchronously sends an error to Rollbar with the given
+// severity level and a given number of stack trace frames skipped with extra custom data.
+func ErrorWithStackSkipWithExtras(level string, err error, skip int, extras map[string]interface{}) {
+	body := buildBody(level, err.Error(), extras)
 	data := body["data"].(map[string]interface{})
 	errBody, fingerprint := errorBody(err, skip)
 	data["body"] = errBody
@@ -95,7 +114,14 @@ func ErrorWithStackSkip(level string, err error, skip int) {
 // given severity level and a given number of stack trace frames skipped, in
 // addition to extra request-specific information.
 func RequestErrorWithStackSkip(level string, r *http.Request, err error, skip int) {
-	body := buildBody(level, err.Error())
+	RequestErrorWithStackSkipWithExtras(level, r, err, skip, noExtras)
+}
+
+// RequestErrorWithStackSkip asynchronously sends an error to Rollbar with the
+// given severity level and a given number of stack trace frames skipped, in
+// addition to extra request-specific information and extra custom data.
+func RequestErrorWithStackSkipWithExtras(level string, r *http.Request, err error, skip int, extras map[string]interface{}) {
+	body := buildBody(level, err.Error(), extras)
 	data := body["data"].(map[string]interface{})
 
 	errBody, fingerprint := errorBody(err, skip)
@@ -112,7 +138,13 @@ func RequestErrorWithStackSkip(level string, r *http.Request, err error, skip in
 // Message asynchronously sends a message to Rollbar with the given severity
 // level. Rollbar request is asynchronous.
 func Message(level string, msg string) {
-	body := buildBody(level, msg)
+	MessageWithExtras(level, msg, noExtras)
+}
+
+// Message asynchronously sends a message to Rollbar with the given severity
+// level with extra custom data. Rollbar request is asynchronous.
+func MessageWithExtras(level string, msg string, extras map[string]interface{}) {
+	body := buildBody(level, msg, extras)
 	data := body["data"].(map[string]interface{})
 	data["body"] = messageBody(msg)
 
@@ -128,27 +160,32 @@ func Wait() {
 
 // Build the main JSON structure that will be sent to Rollbar with the
 // appropriate metadata.
-func buildBody(level, title string) map[string]interface{} {
+func buildBody(level, title string, extras map[string]interface{}) map[string]interface{} {
 	timestamp := time.Now().Unix()
 	hostname, _ := os.Hostname()
+	data := map[string]interface{}{
+		"environment": Environment,
+		"title":       title,
+		"level":       level,
+		"timestamp":   timestamp,
+		"platform":    runtime.GOOS,
+		"language":    "go",
+		"server": map[string]interface{}{
+			"host": hostname,
+		},
+		"notifier": map[string]interface{}{
+			"name":    NAME,
+			"version": VERSION,
+		},
+	}
+
+	for k,v := range extras {
+		data[k] = v
+	}
 
 	return map[string]interface{}{
 		"access_token": Token,
-		"data": map[string]interface{}{
-			"environment": Environment,
-			"title":       title,
-			"level":       level,
-			"timestamp":   timestamp,
-			"platform":    runtime.GOOS,
-			"language":    "go",
-			"server": map[string]interface{}{
-				"host": hostname,
-			},
-			"notifier": map[string]interface{}{
-				"name":    NAME,
-				"version": VERSION,
-			},
-		},
+		"data": data,
 	}
 }
 
