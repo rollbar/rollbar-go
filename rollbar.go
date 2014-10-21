@@ -46,6 +46,9 @@ var (
 	// dropping new errors on the floor.
 	Buffer = 1000
 
+	// Filter HTTP Headers parameters from being sent to Rollbar.
+	FilterHeaders = regexp.MustCompile("Authorization")
+
 	// Filter GET and POST parameters from being sent to Rollbar.
 	FilterFields = regexp.MustCompile("password|secret|token")
 
@@ -209,27 +212,27 @@ func errorBody(err error, skip int) (map[string]interface{}, string) {
 
 // Extract error details from a Request to a format that Rollbar accepts.
 func errorRequest(r *http.Request) map[string]interface{} {
-	cleanQuery := filterParams(r.URL.Query())
+	cleanQuery := filterParams(FilterFields, r.URL.Query())
 
 	return map[string]interface{}{
 		"url":     r.URL.String(),
 		"method":  r.Method,
-		"headers": flattenValues(r.Header),
+		"headers": flattenValues(filterParams(FilterHeaders, r.Header)),
 
 		// GET params
 		"query_string": url.Values(cleanQuery).Encode(),
 		"GET":          flattenValues(cleanQuery),
 
 		// POST / PUT params
-		"POST": flattenValues(filterParams(r.Form)),
+		"POST": flattenValues(filterParams(FilterFields, r.Form)),
 	}
 }
 
 // filterParams filters sensitive information like passwords from being sent to
 // Rollbar.
-func filterParams(values map[string][]string) map[string][]string {
+func filterParams(pattern *regexp.Regexp, values map[string][]string) map[string][]string {
 	for key, _ := range values {
-		if FilterFields.Match([]byte(key)) {
+		if pattern.Match([]byte(key)) {
 			values[key] = []string{FILTERED}
 		}
 	}
