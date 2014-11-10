@@ -243,13 +243,16 @@ func getCause(err error) error {
 // otherwise, builds a new stack
 func getOrBuildStack(err error, parent error, skip int) Stack {
 	if cs, ok := err.(CauseStacker); ok {
-		return cs.Stack()
-	} else {
-		if _, ok := parent.(CauseStacker); ok {
-			return make(Stack, 0)
+		if s := cs.Stack(); s != nil {
+			return s
 		}
-		return BuildStack(4 + skip)
+	} else {
+		if _, ok := parent.(CauseStacker); !ok {
+			return BuildStack(4 + skip)
+		}
 	}
+
+	return make(Stack, 0)
 }
 
 // Extract error details from a Request to a format that Rollbar accepts.
