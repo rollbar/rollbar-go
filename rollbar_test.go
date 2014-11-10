@@ -96,7 +96,7 @@ func TestFilterParams(t *testing.T) {
 		"access_token": []string{"one"},
 	}
 
-	clean := filterParams(values)
+	clean := filterParams(FilterFields, values)
 	if clean["password"][0] != FILTERED {
 		t.Error("should filter password parameter")
 	}
