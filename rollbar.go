@@ -197,6 +197,7 @@ func buildBody(level, title string, extras map[string]interface{}) map[string]in
 // Callers are required to call BuildStack on their own at the
 // time the cause is wrapped.
 type CauseStacker interface {
+	error
 	Cause() error
 	Stack() Stack
 }
