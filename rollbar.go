@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"hash/adler32"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -14,7 +15,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"log"
 )
 
 const (
@@ -183,31 +183,72 @@ func buildBody(level, title string, extras map[string]interface{}) map[string]in
 		},
 	}
 
-	for k,v := range extras {
+	for k, v := range extras {
 		data[k] = v
 	}
 
 	return map[string]interface{}{
 		"access_token": Token,
-		"data": data,
+		"data":         data,
 	}
 }
 
+// Errors can implement this interface to create a trace_chain
+// Callers are required to call BuildStack on their own at the
+// time the cause is wrapped.
+type CauseStacker interface {
+	Cause() error
+	Stack() Stack
+}
+
 // Build an error inner-body for the given error. If skip is provided, that
-// number of stack trace frames will be skipped.
+// number of stack trace frames will be skipped. If the error has a Cause
+// method, the causes will be traversed until nil.
 func errorBody(err error, skip int) (map[string]interface{}, string) {
-	stack := BuildStack(3 + skip)
-	fingerprint := stack.Fingerprint()
-	errBody := map[string]interface{}{
-		"trace": map[string]interface{}{
-			"frames": stack,
-			"exception": map[string]interface{}{
-				"class":   errorClass(err),
-				"message": err.Error(),
-			},
+	var parent error
+	traceChain := []map[string]interface{}{}
+	fingerprint := ""
+	for err != nil {
+		stack := getOrBuildStack(err, parent, skip)
+		traceChain = append(traceChain, buildTrace(err, stack))
+		fingerprint = fingerprint + stack.Fingerprint()
+		parent = err
+		err = getCause(err)
+	}
+	errBody := map[string]interface{}{"trace_chain": traceChain}
+	return errBody, fingerprint
+}
+
+// builds one trace element in trace_chain
+func buildTrace(err error, stack Stack) map[string]interface{} {
+	return map[string]interface{}{
+		"frames": stack,
+		"exception": map[string]interface{}{
+			"class":   errorClass(err),
+			"message": err.Error(),
 		},
 	}
-	return errBody, fingerprint
+}
+
+func getCause(err error) error {
+	if cs, ok := err.(CauseStacker); ok {
+		return cs.Cause()
+	} else {
+		return nil
+	}
+}
+
+// gets Stack from errors that provide one of their own
+// otherwise, builds a new stack
+func getOrBuildStack(err error, parent error, skip int) Stack {
+	if cs, ok := err.(CauseStacker); ok {
+		return cs.Stack()
+	} else {
+		if _, ok := parent.(CauseStacker); ok {
+			return make(Stack, 0)
+		}
+		return BuildStack(4 + skip)
+	}
 }
 
 // Extract error details from a Request to a format that Rollbar accepts.
