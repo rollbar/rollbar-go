@@ -52,6 +52,16 @@ var (
 	// Filter GET and POST parameters from being sent to Rollbar.
 	FilterFields = regexp.MustCompile("password|secret|token")
 
+	// String describing the running code version on the server
+	CodeVersion = ""
+
+	// host: The server hostname. Will be indexed.
+	ServerHost, _ = os.Hostname()
+
+	// root: Path to the application code root, not including the final slash.
+	// Used to collapse non-project code when displaying tracebacks.
+	ServerRoot = ""
+
 	// Queue of messages to be sent.
 	bodyChannel chan map[string]interface{}
 	waitGroup   sync.WaitGroup
@@ -166,7 +176,6 @@ func Wait() {
 // appropriate metadata.
 func buildBody(level, title string, extras map[string]interface{}) map[string]interface{} {
 	timestamp := time.Now().Unix()
-	hostname, _ := os.Hostname()
 	data := map[string]interface{}{
 		"environment": Environment,
 		"title":       title,
@@ -174,8 +183,10 @@ func buildBody(level, title string, extras map[string]interface{}) map[string]in
 		"timestamp":   timestamp,
 		"platform":    runtime.GOOS,
 		"language":    "go",
+		"code_version": CodeVersion,
 		"server": map[string]interface{}{
-			"host": hostname,
+			"host": ServerHost,
+			"root": ServerRoot,
 		},
 		"notifier": map[string]interface{}{
 			"name":    NAME,
