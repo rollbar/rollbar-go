@@ -25,7 +25,10 @@ import (
 
 func main() {
   rollbar.Token = "MY_TOKEN"
-  rollbar.Environment = "production" // defaults to "development"
+  rollbar.Environment = "production"                 // defaults to "development"
+  rollbar.CodeVersion = "v2"                         // optional Git hash/branch/tag (required for GitHub integration)
+  rollbar.ServerHost = "web.1"                       // optional override; defaults to hostname
+  rollbar.ServerRoot = "github.com/heroku/myproject" // path of project (required for GitHub integration and non-project stacktrace collapsing)
 
   result, err := DoSomething()
   if err != nil {
