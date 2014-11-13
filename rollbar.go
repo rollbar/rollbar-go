@@ -177,12 +177,12 @@ func Wait() {
 func buildBody(level, title string, extras map[string]interface{}) map[string]interface{} {
 	timestamp := time.Now().Unix()
 	data := map[string]interface{}{
-		"environment": Environment,
-		"title":       title,
-		"level":       level,
-		"timestamp":   timestamp,
-		"platform":    runtime.GOOS,
-		"language":    "go",
+		"environment":  Environment,
+		"title":        title,
+		"level":        level,
+		"timestamp":    timestamp,
+		"platform":     runtime.GOOS,
+		"language":     "go",
 		"code_version": CodeVersion,
 		"server": map[string]interface{}{
 			"host": ServerHost,

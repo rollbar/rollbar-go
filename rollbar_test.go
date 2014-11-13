@@ -140,13 +140,13 @@ func (cs cs) Stack() Stack {
 	return cs.stack
 }
 
-func TestGetCauseOfStdErr(t * testing.T) {
+func TestGetCauseOfStdErr(t *testing.T) {
 	if nil != getCause(fmt.Errorf("")) {
 		t.Error("cause should be nil for standard error")
 	}
 }
 
-func TestGetCauseOfCauseStacker(t * testing.T) {
+func TestGetCauseOfCauseStacker(t *testing.T) {
 	cause := fmt.Errorf("cause")
 	effect := cs{fmt.Errorf("effect"), cause, nil}
 	if cause != getCause(effect) {
@@ -154,14 +154,14 @@ func TestGetCauseOfCauseStacker(t * testing.T) {
 	}
 }
 
-func TestGetOrBuildStackOfStdErrWithoutParent(t * testing.T) {
+func TestGetOrBuildStackOfStdErrWithoutParent(t *testing.T) {
 	err := cs{fmt.Errorf(""), nil, BuildStack(0)}
 	if nil == getOrBuildStack(err, nil, 0) {
 		t.Error("should build stack if parent is not a CauseStacker")
 	}
 }
 
-func TestGetOrBuildStackOfStdErrWithParent(t * testing.T) {
+func TestGetOrBuildStackOfStdErrWithParent(t *testing.T) {
 	cause := fmt.Errorf("cause")
 	effect := cs{fmt.Errorf("effect"), cause, BuildStack(0)}
 	if 0 != len(getOrBuildStack(cause, effect, 0)) {
@@ -169,7 +169,7 @@ func TestGetOrBuildStackOfStdErrWithParent(t * testing.T) {
 	}
 }
 
-func TestGetOrBuildStackOfCauseStackerWithoutParent(t * testing.T) {
+func TestGetOrBuildStackOfCauseStackerWithoutParent(t *testing.T) {
 	cause := fmt.Errorf("cause")
 	effect := cs{fmt.Errorf("effect"), cause, BuildStack(0)}
 	if effect.Stack()[0] != getOrBuildStack(effect, nil, 0)[0] {
@@ -177,7 +177,7 @@ func TestGetOrBuildStackOfCauseStackerWithoutParent(t * testing.T) {
 	}
 }
 
-func TestGetOrBuildStackOfCauseStackerWithParent(t * testing.T) {
+func TestGetOrBuildStackOfCauseStackerWithParent(t *testing.T) {
 	cause := fmt.Errorf("cause")
 	effect := cs{fmt.Errorf("effect"), cause, BuildStack(0)}
 	effect2 := cs{fmt.Errorf("effect2"), effect, BuildStack(0)}
@@ -186,7 +186,7 @@ func TestGetOrBuildStackOfCauseStackerWithParent(t * testing.T) {
 	}
 }
 
-func TestErrorBodyWithoutChain(t * testing.T) {
+func TestErrorBodyWithoutChain(t *testing.T) {
 	err := fmt.Errorf("ERR")
 	errorBody, fingerprint := errorBody(err, 0)
 	if nil != errorBody["trace"] {
@@ -207,7 +207,7 @@ func TestErrorBodyWithoutChain(t * testing.T) {
 	}
 }
 
-func TestErrorBodyWithChain(t * testing.T) {
+func TestErrorBodyWithChain(t *testing.T) {
 	cause := fmt.Errorf("cause")
 	effect := cs{fmt.Errorf("effect1"), cause, BuildStack(0)}
 	effect2 := cs{fmt.Errorf("effect2"), effect, BuildStack(0)}
@@ -231,7 +231,7 @@ func TestErrorBodyWithChain(t * testing.T) {
 	if "cause" != traces[2]["exception"].(map[string]interface{})["message"] {
 		t.Error("chain should contain cause third")
 	}
-	if effect2.Stack().Fingerprint() + effect.Stack().Fingerprint() + "0" != fingerprint {
+	if effect2.Stack().Fingerprint()+effect.Stack().Fingerprint()+"0" != fingerprint {
 		t.Error("fingerprint should be concatination of fingerprints in chain. got: ", fingerprint)
 	}
 }
