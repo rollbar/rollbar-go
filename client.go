@@ -24,19 +24,45 @@ type Client interface {
 	// Used to collapse non-project code when displaying tracebacks.
 	SetServerRoot(serverRoot string)
 
+	// Error asynchronously sends an error to Rollbar with the given severity level.
 	Error(level string, err error)
+	// ErrorWithExtras asynchronously sends an error to Rollbar with the
+	// given severity level with extra custom data.
 	ErrorWithExtras(level string, err error, extras map[string]interface{})
+	// ErrorWithStackSkip asynchronously sends an error to Rollbar with the
+	// given severity level and a given number of stack trace frames skipped.
 	ErrorWithStackSkip(level string, err error, skip int)
+	// ErrorWithStackSkipWithExtras asynchronously sends an error to Rollbar
+	// with the given severity level and a given number of stack trace
+	// frames skipped with extra custom data.
 	ErrorWithStackSkipWithExtras(level string, err error, skip int, extras map[string]interface{})
 
+	// RequestError asynchronously sends an error to Rollbar with the given
+	// severity level and request-specific information.
 	RequestError(level string, r *http.Request, err error)
+	// RequestErrorWithExtras asynchronously sends an error to Rollbar with
+	// the given severity level and request-specific information with extra
+	// custom data.
 	RequestErrorWithExtras(level string, r *http.Request, err error, extras map[string]interface{})
+	// RequestErrorWithStackSkip asynchronously sends an error to Rollbar
+	// with the given severity level and a given number of stack trace
+	// frames skipped, in addition to extra request-specific information.
 	RequestErrorWithStackSkip(level string, r *http.Request, err error, skip int)
+	// RequestErrorWithStackSkipWithExtras asynchronously sends an error to
+	// Rollbar with the given severity level and a given number of stack
+	// trace frames skipped, in addition to extra request-specific
+	// information and extra custom data.
 	RequestErrorWithStackSkipWithExtras(level string, r *http.Request, err error, skip int, extras map[string]interface{})
 
+	// Message asynchronously sends a message to Rollbar with the given
+	// severity level. Rollbar request is asynchronous.
 	Message(level string, msg string)
+	// MessageWithExtras asynchronously sends a message to Rollbar with the
+	// given severity level with extra custom data. Rollbar request is
+	// asynchronous.
 	MessageWithExtras(level string, msg string, extras map[string]interface{})
 
+	// Wait will block until the queue of errors / messages is empty.
 	Wait()
 }
 
@@ -117,36 +143,26 @@ func (c *Rollbar) SetServerRoot(serverRoot string) {
 
 var noExtras map[string]interface{}
 
-// Error asynchronously sends an error to Rollbar with the given severity level.
 func (c *Rollbar) Error(level string, err error) {
 	c.ErrorWithExtras(level, err, noExtras)
 }
 
-// ErrorWithExtras asynchronously sends an error to Rollbar with the given severity level with extra custom data.
 func (c *Rollbar) ErrorWithExtras(level string, err error, extras map[string]interface{}) {
 	c.ErrorWithStackSkipWithExtras(level, err, 1, extras)
 }
 
-// RequestError asynchronously sends an error to Rollbar with the given
-// severity level and request-specific information.
 func (c *Rollbar) RequestError(level string, r *http.Request, err error) {
 	c.RequestErrorWithExtras(level, r, err, noExtras)
 }
 
-// RequestErrorWithExtras asynchronously sends an error to Rollbar with the given
-// severity level and request-specific information with extra custom data.
 func (c *Rollbar) RequestErrorWithExtras(level string, r *http.Request, err error, extras map[string]interface{}) {
 	c.RequestErrorWithStackSkipWithExtras(level, r, err, 1, extras)
 }
 
-// ErrorWithStackSkip asynchronously sends an error to Rollbar with the given
-// severity level and a given number of stack trace frames skipped.
 func (c *Rollbar) ErrorWithStackSkip(level string, err error, skip int) {
 	c.ErrorWithStackSkipWithExtras(level, err, skip, noExtras)
 }
 
-// ErrorWithStackSkipWithExtras asynchronously sends an error to Rollbar with the given
-// severity level and a given number of stack trace frames skipped with extra custom data.
 func (c *Rollbar) ErrorWithStackSkipWithExtras(level string, err error, skip int, extras map[string]interface{}) {
 	body := c.buildBody(level, err.Error(), extras)
 	data := body["data"].(map[string]interface{})
@@ -157,16 +173,10 @@ func (c *Rollbar) ErrorWithStackSkipWithExtras(level string, err error, skip int
 	c.push(body)
 }
 
-// RequestErrorWithStackSkip asynchronously sends an error to Rollbar with the
-// given severity level and a given number of stack trace frames skipped, in
-// addition to extra request-specific information.
 func (c *Rollbar) RequestErrorWithStackSkip(level string, r *http.Request, err error, skip int) {
 	c.RequestErrorWithStackSkipWithExtras(level, r, err, skip, noExtras)
 }
 
-// RequestErrorWithStackSkip asynchronously sends an error to Rollbar with the
-// given severity level and a given number of stack trace frames skipped, in
-// addition to extra request-specific information and extra custom data.
 func (c *Rollbar) RequestErrorWithStackSkipWithExtras(level string, r *http.Request, err error, skip int, extras map[string]interface{}) {
 	body := c.buildBody(level, err.Error(), extras)
 	data := body["data"].(map[string]interface{})
@@ -182,14 +192,10 @@ func (c *Rollbar) RequestErrorWithStackSkipWithExtras(level string, r *http.Requ
 
 // -- Message reporting
 
-// Message asynchronously sends a message to Rollbar with the given severity
-// level. Rollbar request is asynchronous.
 func (c *Rollbar) Message(level string, msg string) {
 	c.MessageWithExtras(level, msg, noExtras)
 }
 
-// Message asynchronously sends a message to Rollbar with the given severity
-// level with extra custom data. Rollbar request is asynchronous.
 func (c *Rollbar) MessageWithExtras(level string, msg string, extras map[string]interface{}) {
 	body := c.buildBody(level, msg, extras)
 	data := body["data"].(map[string]interface{})
@@ -200,7 +206,6 @@ func (c *Rollbar) MessageWithExtras(level string, msg string, extras map[string]
 
 // -- Misc.
 
-// Wait will block until the queue of errors / messages is empty.
 func (c *Rollbar) Wait() {
 	c.waitGroup.Wait()
 }
