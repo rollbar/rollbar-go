@@ -138,7 +138,6 @@ func (c *AsyncClient) SetServerRoot(serverRoot string) {
 
 var noExtras map[string]interface{}
 
-// Error asynchronously sends an error to Rollbar with the given severity level.
 func (c *AsyncClient) Error(level string, err error) {
 	c.ErrorWithExtras(level, err, noExtras)
 }
