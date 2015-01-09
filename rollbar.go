@@ -26,84 +26,84 @@ const (
 
 var (
 	hostname, _ = os.Hostname()
-	Std         = New("", "development", "", hostname, "")
+	std         = New("", "development", "", hostname, "")
 )
 
 // Rollbar access token.
 func SetToken(token string) {
-	Std.SetToken(token)
+	std.SetToken(token)
 }
 
 // All errors and messages will be submitted under this environment.
 func SetEnvironment(environment string) {
-	Std.SetEnvironment(environment)
+	std.SetEnvironment(environment)
 }
 
 // String describing the running code version on the server
 func SetCodeVersion(codeVersion string) {
-	Std.SetCodeVersion(codeVersion)
+	std.SetCodeVersion(codeVersion)
 }
 
 // host: The server hostname. Will be indexed.
 func SetServerHost(serverHost string) {
-	Std.SetServerHost(serverHost)
+	std.SetServerHost(serverHost)
 }
 
 // root: Path to the application code root, not including the final slash.
 // Used to collapse non-project code when displaying tracebacks.
 func SetServerRoot(serverRoot string) {
-	Std.SetServerRoot(serverRoot)
+	std.SetServerRoot(serverRoot)
 }
 
 // -- Error reporting
 
 // Error asynchronously sends an error to Rollbar with the given severity level.
 func Error(level string, err error) {
-	Std.Error(level, err)
+	std.Error(level, err)
 }
 
 // ErrorWithExtras asynchronously sends an error to Rollbar with the given
 // severity level with extra custom data.
 func ErrorWithExtras(level string, err error, extras map[string]interface{}) {
-	Std.ErrorWithExtras(level, err, extras)
+	std.ErrorWithExtras(level, err, extras)
 }
 
 // RequestError asynchronously sends an error to Rollbar with the given
 // severity level and request-specific information.
 func RequestError(level string, r *http.Request, err error) {
-	Std.RequestError(level, r, err)
+	std.RequestError(level, r, err)
 }
 
 // RequestErrorWithExtras asynchronously sends an error to Rollbar with the given
 // severity level and request-specific information with extra custom data.
 func RequestErrorWithExtras(level string, r *http.Request, err error, extras map[string]interface{}) {
-	Std.RequestErrorWithExtras(level, r, err, extras)
+	std.RequestErrorWithExtras(level, r, err, extras)
 }
 
 // ErrorWithStackSkip asynchronously sends an error to Rollbar with the given
 // severity level and a given number of stack trace frames skipped.
 func ErrorWithStackSkip(level string, err error, skip int) {
-	Std.ErrorWithStackSkip(level, err, skip)
+	std.ErrorWithStackSkip(level, err, skip)
 }
 
 // ErrorWithStackSkipWithExtras asynchronously sends an error to Rollbar with the given
 // severity level and a given number of stack trace frames skipped with extra custom data.
 func ErrorWithStackSkipWithExtras(level string, err error, skip int, extras map[string]interface{}) {
-	Std.ErrorWithStackSkipWithExtras(level, err, skip, extras)
+	std.ErrorWithStackSkipWithExtras(level, err, skip, extras)
 }
 
 // RequestErrorWithStackSkip asynchronously sends an error to Rollbar with the
 // given severity level and a given number of stack trace frames skipped, in
 // addition to extra request-specific information.
 func RequestErrorWithStackSkip(level string, r *http.Request, err error, skip int) {
-	Std.RequestErrorWithStackSkip(level, r, err, skip)
+	std.RequestErrorWithStackSkip(level, r, err, skip)
 }
 
 // RequestErrorWithStackSkipWithExtras asynchronously sends an error to Rollbar
 // with the given severity level and a given number of stack trace frames skipped,
 // in addition to extra request-specific information and extra custom data.
 func RequestErrorWithStackSkipWithExtras(level string, r *http.Request, err error, skip int, extras map[string]interface{}) {
-	Std.RequestErrorWithStackSkipWithExtras(level, r, err, skip, extras)
+	std.RequestErrorWithStackSkipWithExtras(level, r, err, skip, extras)
 }
 
 // -- Message reporting
@@ -111,20 +111,20 @@ func RequestErrorWithStackSkipWithExtras(level string, r *http.Request, err erro
 // Message asynchronously sends a message to Rollbar with the given severity
 // level. Rollbar request is asynchronous.
 func Message(level string, msg string) {
-	Std.Message(level, msg)
+	std.Message(level, msg)
 }
 
 // MessageWithExtras asynchronously sends a message to Rollbar with the given severity
 // level with extra custom data. Rollbar request is asynchronous.
 func MessageWithExtras(level string, msg string, extras map[string]interface{}) {
-	Std.MessageWithExtras(level, msg, extras)
+	std.MessageWithExtras(level, msg, extras)
 }
 
 // -- Misc.
 
 // Wait will block until the queue of errors / messages is empty.
 func Wait() {
-	Std.Wait()
+	std.Wait()
 }
 
 // Errors can implement this interface to create a trace_chain
