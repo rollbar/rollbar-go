@@ -67,14 +67,14 @@ func TestEverything(t *testing.T) {
 
 	// If you don't see the message sent on line 65 in Rollbar, that means this
 	// is broken:
-	Wait()
+	std.(*AsyncClient).wait()
 }
 
 func TestErrorRequest(t *testing.T) {
 	r, _ := http.NewRequest("GET", "http://foo.com/somethere?param1=true", nil)
 	r.RemoteAddr = "1.1.1.1:123"
 
-	object := std.(*Rollbar).errorRequest(r)
+	object := std.(*AsyncClient).errorRequest(r)
 
 	if object["url"] != "http://foo.com/somethere?param1=true" {
 		t.Errorf("wrong url, got %v", object["url"])
@@ -96,7 +96,7 @@ func TestFilterParams(t *testing.T) {
 		"access_token": []string{"one"},
 	}
 
-	clean := filterParams(std.(*Rollbar).FilterFields, values)
+	clean := filterParams(std.(*AsyncClient).FilterFields, values)
 	if clean["password"][0] != FILTERED {
 		t.Error("should filter password parameter")
 	}

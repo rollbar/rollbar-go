@@ -122,11 +122,6 @@ func MessageWithExtras(level string, msg string, extras map[string]interface{}) 
 
 // -- Misc.
 
-// Wait will block until the queue of errors / messages is empty.
-func Wait() {
-	std.Wait()
-}
-
 // Errors can implement this interface to create a trace_chain
 // Callers are required to call BuildStack on their own at the
 // time the cause is wrapped.

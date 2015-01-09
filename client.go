@@ -24,50 +24,45 @@ type Client interface {
 	// Used to collapse non-project code when displaying tracebacks.
 	SetServerRoot(serverRoot string)
 
-	// Error asynchronously sends an error to Rollbar with the given severity level.
+	// Error sends an error to Rollbar with the given severity level.
 	Error(level string, err error)
-	// ErrorWithExtras asynchronously sends an error to Rollbar with the
-	// given severity level with extra custom data.
+	// ErrorWithExtras sends an error to Rollbar with the given severity
+	// level with extra custom data.
 	ErrorWithExtras(level string, err error, extras map[string]interface{})
-	// ErrorWithStackSkip asynchronously sends an error to Rollbar with the
-	// given severity level and a given number of stack trace frames skipped.
+	// ErrorWithStackSkip sends an error to Rollbar with the given severity
+	// level and a given number of stack trace frames skipped.
 	ErrorWithStackSkip(level string, err error, skip int)
-	// ErrorWithStackSkipWithExtras asynchronously sends an error to Rollbar
-	// with the given severity level and a given number of stack trace
-	// frames skipped with extra custom data.
+	// ErrorWithStackSkipWithExtras sends an error to Rollbar with the given
+	// severity level and a given number of stack trace frames skipped with
+	// extra custom data.
 	ErrorWithStackSkipWithExtras(level string, err error, skip int, extras map[string]interface{})
 
-	// RequestError asynchronously sends an error to Rollbar with the given
-	// severity level and request-specific information.
+	// RequestError sends an error to Rollbar with the given severity level
+	// and request-specific information.
 	RequestError(level string, r *http.Request, err error)
-	// RequestErrorWithExtras asynchronously sends an error to Rollbar with
-	// the given severity level and request-specific information with extra
-	// custom data.
+	// RequestErrorWithExtras sends an error to Rollbar with the given
+	// severity level and request-specific information with extra custom data.
 	RequestErrorWithExtras(level string, r *http.Request, err error, extras map[string]interface{})
-	// RequestErrorWithStackSkip asynchronously sends an error to Rollbar
-	// with the given severity level and a given number of stack trace
-	// frames skipped, in addition to extra request-specific information.
+	// RequestErrorWithStackSkip sends an error to Rollbar with the given
+	// severity level and a given number of stack trace frames skipped, in
+	// addition to extra request-specific information.
 	RequestErrorWithStackSkip(level string, r *http.Request, err error, skip int)
-	// RequestErrorWithStackSkipWithExtras asynchronously sends an error to
-	// Rollbar with the given severity level and a given number of stack
-	// trace frames skipped, in addition to extra request-specific
-	// information and extra custom data.
+	// RequestErrorWithStackSkipWithExtras sends an error to Rollbar with
+	// the given severity level and a given number of stack trace frames
+	// skipped, in addition to extra request-specific information and extra
+	// custom data.
 	RequestErrorWithStackSkipWithExtras(level string, r *http.Request, err error, skip int, extras map[string]interface{})
 
-	// Message asynchronously sends a message to Rollbar with the given
-	// severity level. Rollbar request is asynchronous.
+	// Message sends a message to Rollbar with the given severity level.
 	Message(level string, msg string)
-	// MessageWithExtras asynchronously sends a message to Rollbar with the
-	// given severity level with extra custom data. Rollbar request is
-	// asynchronous.
+	// MessageWithExtras sends a message to Rollbar with the given severity
+	// level with extra custom data.
 	MessageWithExtras(level string, msg string, extras map[string]interface{})
-
-	// Wait will block until the queue of errors / messages is empty.
-	Wait()
 }
 
-// Rollbar is the default concrete implementation of the Client interface
-type Rollbar struct {
+// AsyncClient is the default concrete implementation of the Client interface
+// which sends all data to Rollbar asynchronously.
+type AsyncClient struct {
 	// Rollbar access token. If this is blank, no errors will be reported to
 	// Rollbar.
 	Token string
@@ -97,7 +92,7 @@ type Rollbar struct {
 // New returns the default implementation of a Client
 func New(token, environment, codeVersion, serverHost, serverRoot string) Client {
 	buffer := 1000
-	client := &Rollbar{
+	client := &AsyncClient{
 		Token:         token,
 		Environment:   environment,
 		Endpoint:      "https://api.rollbar.com/api/1/item/",
@@ -119,23 +114,23 @@ func New(token, environment, codeVersion, serverHost, serverRoot string) Client 
 	return client
 }
 
-func (c *Rollbar) SetToken(token string) {
+func (c *AsyncClient) SetToken(token string) {
 	c.Token = token
 }
 
-func (c *Rollbar) SetEnvironment(environment string) {
+func (c *AsyncClient) SetEnvironment(environment string) {
 	c.Environment = environment
 }
 
-func (c *Rollbar) SetCodeVersion(codeVersion string) {
+func (c *AsyncClient) SetCodeVersion(codeVersion string) {
 	c.CodeVersion = codeVersion
 }
 
-func (c *Rollbar) SetServerHost(serverHost string) {
+func (c *AsyncClient) SetServerHost(serverHost string) {
 	c.ServerHost = serverHost
 }
 
-func (c *Rollbar) SetServerRoot(serverRoot string) {
+func (c *AsyncClient) SetServerRoot(serverRoot string) {
 	c.ServerRoot = serverRoot
 }
 
@@ -143,27 +138,28 @@ func (c *Rollbar) SetServerRoot(serverRoot string) {
 
 var noExtras map[string]interface{}
 
-func (c *Rollbar) Error(level string, err error) {
+// Error asynchronously sends an error to Rollbar with the given severity level.
+func (c *AsyncClient) Error(level string, err error) {
 	c.ErrorWithExtras(level, err, noExtras)
 }
 
-func (c *Rollbar) ErrorWithExtras(level string, err error, extras map[string]interface{}) {
+func (c *AsyncClient) ErrorWithExtras(level string, err error, extras map[string]interface{}) {
 	c.ErrorWithStackSkipWithExtras(level, err, 1, extras)
 }
 
-func (c *Rollbar) RequestError(level string, r *http.Request, err error) {
+func (c *AsyncClient) RequestError(level string, r *http.Request, err error) {
 	c.RequestErrorWithExtras(level, r, err, noExtras)
 }
 
-func (c *Rollbar) RequestErrorWithExtras(level string, r *http.Request, err error, extras map[string]interface{}) {
+func (c *AsyncClient) RequestErrorWithExtras(level string, r *http.Request, err error, extras map[string]interface{}) {
 	c.RequestErrorWithStackSkipWithExtras(level, r, err, 1, extras)
 }
 
-func (c *Rollbar) ErrorWithStackSkip(level string, err error, skip int) {
+func (c *AsyncClient) ErrorWithStackSkip(level string, err error, skip int) {
 	c.ErrorWithStackSkipWithExtras(level, err, skip, noExtras)
 }
 
-func (c *Rollbar) ErrorWithStackSkipWithExtras(level string, err error, skip int, extras map[string]interface{}) {
+func (c *AsyncClient) ErrorWithStackSkipWithExtras(level string, err error, skip int, extras map[string]interface{}) {
 	body := c.buildBody(level, err.Error(), extras)
 	data := body["data"].(map[string]interface{})
 	errBody, fingerprint := errorBody(err, skip)
@@ -173,11 +169,11 @@ func (c *Rollbar) ErrorWithStackSkipWithExtras(level string, err error, skip int
 	c.push(body)
 }
 
-func (c *Rollbar) RequestErrorWithStackSkip(level string, r *http.Request, err error, skip int) {
+func (c *AsyncClient) RequestErrorWithStackSkip(level string, r *http.Request, err error, skip int) {
 	c.RequestErrorWithStackSkipWithExtras(level, r, err, skip, noExtras)
 }
 
-func (c *Rollbar) RequestErrorWithStackSkipWithExtras(level string, r *http.Request, err error, skip int, extras map[string]interface{}) {
+func (c *AsyncClient) RequestErrorWithStackSkipWithExtras(level string, r *http.Request, err error, skip int, extras map[string]interface{}) {
 	body := c.buildBody(level, err.Error(), extras)
 	data := body["data"].(map[string]interface{})
 
@@ -192,11 +188,11 @@ func (c *Rollbar) RequestErrorWithStackSkipWithExtras(level string, r *http.Requ
 
 // -- Message reporting
 
-func (c *Rollbar) Message(level string, msg string) {
+func (c *AsyncClient) Message(level string, msg string) {
 	c.MessageWithExtras(level, msg, noExtras)
 }
 
-func (c *Rollbar) MessageWithExtras(level string, msg string, extras map[string]interface{}) {
+func (c *AsyncClient) MessageWithExtras(level string, msg string, extras map[string]interface{}) {
 	body := c.buildBody(level, msg, extras)
 	data := body["data"].(map[string]interface{})
 	data["body"] = messageBody(msg)
@@ -206,13 +202,14 @@ func (c *Rollbar) MessageWithExtras(level string, msg string, extras map[string]
 
 // -- Misc.
 
-func (c *Rollbar) Wait() {
+// wait will block until the queue of errors / messages is empty.
+func (c *AsyncClient) wait() {
 	c.waitGroup.Wait()
 }
 
 // Build the main JSON structure that will be sent to Rollbar with the
 // appropriate metadata.
-func (c *Rollbar) buildBody(level, title string, extras map[string]interface{}) map[string]interface{} {
+func (c *AsyncClient) buildBody(level, title string, extras map[string]interface{}) map[string]interface{} {
 	timestamp := time.Now().Unix()
 	data := map[string]interface{}{
 		"environment":  c.Environment,
@@ -243,7 +240,7 @@ func (c *Rollbar) buildBody(level, title string, extras map[string]interface{}) 
 }
 
 // Extract error details from a Request to a format that Rollbar accepts.
-func (c *Rollbar) errorRequest(r *http.Request) map[string]interface{} {
+func (c *AsyncClient) errorRequest(r *http.Request) map[string]interface{} {
 	cleanQuery := filterParams(c.FilterFields, r.URL.Query())
 
 	return map[string]interface{}{
@@ -289,7 +286,7 @@ func flattenValues(values map[string][]string) map[string]interface{} {
 // -- POST handling
 
 // Queue the given JSON body to be POSTed to Rollbar.
-func (c *Rollbar) push(body map[string]interface{}) {
+func (c *AsyncClient) push(body map[string]interface{}) {
 	if len(c.bodyChannel) < c.Buffer {
 		c.waitGroup.Add(1)
 		c.bodyChannel <- body
@@ -299,7 +296,7 @@ func (c *Rollbar) push(body map[string]interface{}) {
 }
 
 // POST the given JSON body to Rollbar synchronously.
-func (c *Rollbar) post(body map[string]interface{}) {
+func (c *AsyncClient) post(body map[string]interface{}) {
 	if len(c.Token) == 0 {
 		rollbarError("empty token")
 		return
