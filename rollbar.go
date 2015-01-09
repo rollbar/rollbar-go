@@ -26,27 +26,27 @@ const (
 
 var (
 	hostname, _ = os.Hostname()
-	Std         = newRollbar("", "development", "", hostname, "")
+	Std         = New("", "development", "", hostname, "")
 )
 
 func SetToken(token string) {
-	Std.Token = token
+	Std.SetToken(token)
 }
 
 func SetEnvironment(environment string) {
-	Std.Environment = environment
+	Std.SetEnvironment(environment)
 }
 
 func SetCodeVersion(codeVersion string) {
-	Std.CodeVersion = codeVersion
+	Std.SetCodeVersion(codeVersion)
 }
 
 func SetServerHost(serverHost string) {
-	Std.ServerHost = serverHost
+	Std.SetServerHost(serverHost)
 }
 
 func SetServerRoot(serverRoot string) {
-	Std.ServerRoot = serverRoot
+	Std.SetServerRoot(serverRoot)
 }
 
 // -- Error reporting

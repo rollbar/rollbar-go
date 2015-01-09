@@ -12,6 +12,18 @@ import (
 )
 
 type Client interface {
+	// Rollbar access token.
+	SetToken(token string)
+	// All errors and messages will be submitted under this environment.
+	SetEnvironment(environment string)
+	// String describing the running code version on the server
+	SetCodeVersion(codeVersion string)
+	// host: The server hostname. Will be indexed.
+	SetServerHost(serverHost string)
+	// root: Path to the application code root, not including the final slash.
+	// Used to collapse non-project code when displaying tracebacks.
+	SetServerRoot(serverRoot string)
+
 	Error(level string, err error)
 	ErrorWithExtras(level string, err error, extras map[string]interface{})
 	ErrorWithStackSkip(level string, err error, skip int)
@@ -58,10 +70,6 @@ type Rollbar struct {
 
 // New returns the default implementation of a Client
 func New(token, environment, codeVersion, serverHost, serverRoot string) Client {
-	return newRollbar(token, environment, codeVersion, serverHost, serverRoot)
-}
-
-func newRollbar(token, environment, codeVersion, serverHost, serverRoot string) *Rollbar {
 	buffer := 1000
 	client := &Rollbar{
 		Token:         token,
@@ -83,6 +91,26 @@ func newRollbar(token, environment, codeVersion, serverHost, serverRoot string) 
 		}
 	}()
 	return client
+}
+
+func (c *Rollbar) SetToken(token string) {
+	c.Token = token
+}
+
+func (c *Rollbar) SetEnvironment(environment string) {
+	c.Environment = environment
+}
+
+func (c *Rollbar) SetCodeVersion(codeVersion string) {
+	c.CodeVersion = codeVersion
+}
+
+func (c *Rollbar) SetServerHost(serverHost string) {
+	c.ServerHost = serverHost
+}
+
+func (c *Rollbar) SetServerRoot(serverRoot string) {
+	c.ServerRoot = serverRoot
 }
 
 // -- Error reporting
