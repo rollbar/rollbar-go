@@ -46,8 +46,8 @@ func TestErrorClass(t *testing.T) {
 }
 
 func TestEverything(t *testing.T) {
-	Token = os.Getenv("TOKEN")
-	Environment = "test"
+	SetToken(os.Getenv("TOKEN"))
+	SetEnvironment("test")
 
 	Error("critical", errors.New("Normal critical error"))
 	Error("error", &CustomError{"This is a custom error"})
@@ -74,7 +74,7 @@ func TestErrorRequest(t *testing.T) {
 	r, _ := http.NewRequest("GET", "http://foo.com/somethere?param1=true", nil)
 	r.RemoteAddr = "1.1.1.1:123"
 
-	object := errorRequest(r)
+	object := Std.errorRequest(r)
 
 	if object["url"] != "http://foo.com/somethere?param1=true" {
 		t.Errorf("wrong url, got %v", object["url"])
@@ -96,7 +96,7 @@ func TestFilterParams(t *testing.T) {
 		"access_token": []string{"one"},
 	}
 
-	clean := filterParams(FilterFields, values)
+	clean := filterParams(Std.FilterFields, values)
 	if clean["password"][0] != FILTERED {
 		t.Error("should filter password parameter")
 	}
