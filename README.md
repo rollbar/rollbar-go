@@ -24,11 +24,11 @@ import (
 )
 
 func main() {
-  rollbar.Token = "MY_TOKEN"
-  rollbar.Environment = "production"                 // defaults to "development"
-  rollbar.CodeVersion = "v2"                         // optional Git hash/branch/tag (required for GitHub integration)
-  rollbar.ServerHost = "web.1"                       // optional override; defaults to hostname
-  rollbar.ServerRoot = "github.com/heroku/myproject" // path of project (required for GitHub integration and non-project stacktrace collapsing)
+  rollbar.SetToken("MY_TOKEN")
+  rollbar.SetEnvironment("production")                 // defaults to "development"
+  rollbar.SetCodeVersion("v2")                         // optional Git hash/branch/tag (required for GitHub integration)
+  rollbar.SetServerHost("web.1")                       // optional override; defaults to hostname
+  rollbar.SetServerRoot("github.com/heroku/myproject") // path of project (required for GitHub integration and non-project stacktrace collapsing)
 
   result, err := DoSomething()
   if err != nil {
@@ -59,3 +59,4 @@ A big thank you to everyone who has contributed pull requests and bug reports:
 * @kjk
 * @Soulou
 * @paulmach
+* @fabiokung
