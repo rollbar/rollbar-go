@@ -23,6 +23,8 @@ type Client interface {
 	// root: Path to the application code root, not including the final slash.
 	// Used to collapse non-project code when displaying tracebacks.
 	SetServerRoot(serverRoot string)
+	// custom: Any arbitrary metadata you want to send.
+	SetCustom(custom map[string]interface{})
 
 	// Error sends an error to Rollbar with the given severity level.
 	Error(level string, err error)
@@ -84,6 +86,8 @@ type AsyncClient struct {
 	// root: Path to the application code root, not including the final slash.
 	// Used to collapse non-project code when displaying tracebacks.
 	ServerRoot string
+	// custom: Any arbitrary metadata you want to send.
+	Custom map[string]interface{}
 	// Queue of messages to be sent.
 	bodyChannel chan map[string]interface{}
 	waitGroup   sync.WaitGroup
@@ -132,6 +136,10 @@ func (c *AsyncClient) SetServerHost(serverHost string) {
 
 func (c *AsyncClient) SetServerRoot(serverRoot string) {
 	c.ServerRoot = serverRoot
+}
+
+func (c *AsyncClient) SetCustom(custom map[string]interface{}) {
+	c.Custom = custom
 }
 
 // -- Error reporting
@@ -210,6 +218,12 @@ func (c *AsyncClient) wait() {
 // appropriate metadata.
 func (c *AsyncClient) buildBody(level, title string, extras map[string]interface{}) map[string]interface{} {
 	timestamp := time.Now().Unix()
+
+	custom := c.Custom
+	for k, v := range extras {
+		custom[k] = v
+	}
+
 	data := map[string]interface{}{
 		"environment":  c.Environment,
 		"title":        title,
@@ -226,10 +240,7 @@ func (c *AsyncClient) buildBody(level, title string, extras map[string]interface
 			"name":    NAME,
 			"version": VERSION,
 		},
-	}
-
-	for k, v := range extras {
-		data[k] = v
+		"custom": custom,
 	}
 
 	return map[string]interface{}{

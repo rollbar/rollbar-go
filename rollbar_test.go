@@ -70,6 +70,40 @@ func TestEverything(t *testing.T) {
 	std.(*AsyncClient).wait()
 }
 
+func TestBuildBody(t *testing.T) {
+	// custom provided at config time
+	baseCustom := map[string]interface{}{
+		"BASE_CUSTOM_KEY":       "BASE_CUSTOM_VALUE",
+		"OVERRIDDEN_CUSTOM_KEY": "BASE",
+	}
+	SetCustom(baseCustom)
+
+	// custom provided at call site
+	extraCustom := map[string]interface{}{
+		"EXTRA_CUSTOM_KEY":      "EXTRA_CUSTOM_VALUE",
+		"OVERRIDDEN_CUSTOM_KEY": "EXTRA",
+	}
+	body := std.(*AsyncClient).buildBody(ERR, "test error", extraCustom)
+
+	if body["data"] == nil {
+		t.Error("body should have data")
+	}
+	data := body["data"].(map[string]interface{})
+	if data["custom"] == nil {
+		t.Error("data should have custom")
+	}
+	custom := data["custom"].(map[string]interface{})
+	if custom["BASE_CUSTOM_KEY"] != "BASE_CUSTOM_VALUE" {
+		t.Error("custom should have base")
+	}
+	if custom["EXTRA_CUSTOM_KEY"] != "EXTRA_CUSTOM_VALUE" {
+		t.Error("custom should have extra")
+	}
+	if custom["OVERRIDDEN_CUSTOM_KEY"] != "EXTRA" {
+		t.Error("extra custom should overwrite base custom where keys match")
+	}
+}
+
 func TestErrorRequest(t *testing.T) {
 	r, _ := http.NewRequest("GET", "http://foo.com/somethere?param1=true", nil)
 	r.RemoteAddr = "1.1.1.1:123"
