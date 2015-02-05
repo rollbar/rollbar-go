@@ -26,6 +26,20 @@ type Client interface {
 	// custom: Any arbitrary metadata you want to send.
 	SetCustom(custom map[string]interface{})
 
+	// Rollbar access token.
+	GetToken() string
+	// All errors and messages will be submitted under this environment.
+	GetEnvironment() string
+	// String describing the running code version on the server
+	GetCodeVersion() string
+	// host: The server hostname. Will be indexed.
+	GetServerHost() string
+	// root: Path to the application code root, not including the final slash.
+	// Used to collapse non-project code when displaying tracebacks.
+	GetServerRoot() string
+	// custom: Any arbitrary metadata you want to send.
+	GetCustom() map[string]interface{}
+
 	// Error sends an error to Rollbar with the given severity level.
 	Error(level string, err error)
 	// ErrorWithExtras sends an error to Rollbar with the given severity
@@ -140,6 +154,32 @@ func (c *AsyncClient) SetServerRoot(serverRoot string) {
 
 func (c *AsyncClient) SetCustom(custom map[string]interface{}) {
 	c.Custom = custom
+}
+
+// -- Getters
+
+func (c *AsyncClient) GetToken() string {
+	return c.Token
+}
+
+func (c *AsyncClient) GetEnvironment() string {
+	return c.Environment
+}
+
+func (c *AsyncClient) GetCodeVersion() string {
+	return c.CodeVersion
+}
+
+func (c *AsyncClient) GetServerHost() string {
+	return c.ServerHost
+}
+
+func (c *AsyncClient) GetServerRoot() string {
+	return c.ServerRoot
+}
+
+func (c *AsyncClient) GetCustom() map[string]interface{} {
+	return c.Custom
 }
 
 // -- Error reporting

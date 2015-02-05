@@ -48,6 +48,12 @@ func TestErrorClass(t *testing.T) {
 func TestEverything(t *testing.T) {
 	SetToken(os.Getenv("TOKEN"))
 	SetEnvironment("test")
+	if GetToken() != os.Getenv("TOKEN") {
+		t.Error("Token should be as set")
+	}
+	if GetEnvironment() != "test" {
+		t.Error("Token should be as set")
+	}
 
 	Error("critical", errors.New("Normal critical error"))
 	Error("error", &CustomError{"This is a custom error"})

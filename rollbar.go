@@ -12,7 +12,7 @@ import (
 
 const (
 	NAME    = "heroku/rollbar"
-	VERSION = "0.4.0"
+	VERSION = "0.4.1"
 
 	// Severity levels
 	CRIT  = "critical"
@@ -58,6 +58,39 @@ func SetServerRoot(serverRoot string) {
 // custom: Any arbitrary metadata you want to send.
 func SetCustom(custom map[string]interface{}) {
 	std.SetCustom(custom)
+}
+
+// -- Getters
+
+// Rollbar access token.
+func GetToken() string {
+	return std.GetToken()
+}
+
+// All errors and messages will be submitted under this environment.
+func GetEnvironment() string {
+	return std.GetEnvironment()
+}
+
+// String describing the running code version on the server
+func GetCodeVersion() string {
+	return std.GetCodeVersion()
+}
+
+// host: The server hostname. Will be indexed.
+func GetServerHost() string {
+	return std.GetServerHost()
+}
+
+// root: Path to the application code root, not including the final slash.
+// Used to collapse non-project code when displaying tracebacks.
+func GetServerRoot() string {
+	return std.GetServerRoot()
+}
+
+// custom: Any arbitrary metadata you want to send.
+func GetCustom() map[string]interface{} {
+	return std.GetCustom()
 }
 
 // -- Error reporting
