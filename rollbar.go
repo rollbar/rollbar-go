@@ -55,6 +55,11 @@ func SetServerRoot(serverRoot string) {
 	std.SetServerRoot(serverRoot)
 }
 
+// custom: Any arbitrary metadata you want to send.
+func SetCustom(custom map[string]interface{}) {
+	std.SetCustom(custom)
+}
+
 // -- Error reporting
 
 // Error asynchronously sends an error to Rollbar with the given severity level.
