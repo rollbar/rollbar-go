@@ -3,6 +3,7 @@ package rollbar
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -12,6 +13,8 @@ import (
 )
 
 type Client interface {
+	io.Closer
+
 	// Rollbar access token.
 	SetToken(token string)
 	// All errors and messages will be submitted under this environment.
@@ -109,6 +112,11 @@ type AsyncClient struct {
 
 // New returns the default implementation of a Client
 func New(token, environment, codeVersion, serverHost, serverRoot string) Client {
+	return NewAsync(token, environment, codeVersion, serverHost, serverRoot)
+}
+
+// NewAsync builds an asynchronous implementation of the Client interface
+func NewAsync(token, environment, codeVersion, serverHost, serverRoot string) *AsyncClient {
 	buffer := 1000
 	client := &AsyncClient{
 		Token:         token,
@@ -250,8 +258,14 @@ func (c *AsyncClient) MessageWithExtras(level string, msg string, extras map[str
 // -- Misc.
 
 // wait will block until the queue of errors / messages is empty.
-func (c *AsyncClient) wait() {
+func (c *AsyncClient) Wait() {
 	c.waitGroup.Wait()
+}
+
+// Close on the asynchronous Client is an alias to Wait
+func (c *AsyncClient) Close() error {
+	c.Wait()
+	return nil
 }
 
 // Build the main JSON structure that will be sent to Rollbar with the

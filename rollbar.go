@@ -26,7 +26,7 @@ const (
 
 var (
 	hostname, _ = os.Hostname()
-	std         = New("", "development", "", hostname, "")
+	std         = NewAsync("", "development", "", hostname, "")
 )
 
 // Rollbar access token.
@@ -156,6 +156,11 @@ func Message(level string, msg string) {
 // level with extra custom data. Rollbar request is asynchronous.
 func MessageWithExtras(level string, msg string, extras map[string]interface{}) {
 	std.MessageWithExtras(level, msg, extras)
+}
+
+// Wait will block until the queue of errors / messages is empty.
+func Wait() {
+	std.Wait()
 }
 
 // -- Misc.
