@@ -63,34 +63,34 @@ func SetCustom(custom map[string]interface{}) {
 // -- Getters
 
 // Rollbar access token.
-func GetToken() string {
-	return std.GetToken()
+func Token() string {
+	return std.Token()
 }
 
 // All errors and messages will be submitted under this environment.
-func GetEnvironment() string {
-	return std.GetEnvironment()
+func Environment() string {
+	return std.Environment()
 }
 
 // String describing the running code version on the server
-func GetCodeVersion() string {
-	return std.GetCodeVersion()
+func CodeVersion() string {
+	return std.CodeVersion()
 }
 
 // host: The server hostname. Will be indexed.
-func GetServerHost() string {
-	return std.GetServerHost()
+func ServerHost() string {
+	return std.ServerHost()
 }
 
 // root: Path to the application code root, not including the final slash.
 // Used to collapse non-project code when displaying tracebacks.
-func GetServerRoot() string {
-	return std.GetServerRoot()
+func ServerRoot() string {
+	return std.ServerRoot()
 }
 
 // custom: Any arbitrary metadata you want to send.
-func GetCustom() map[string]interface{} {
-	return std.GetCustom()
+func Custom() map[string]interface{} {
+	return std.Custom()
 }
 
 // -- Error reporting
