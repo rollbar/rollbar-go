@@ -164,6 +164,6 @@ func (c *SyncClient) errorRequest(r *http.Request) map[string]interface{} {
 // -- POST handling
 
 // POST the given JSON body to Rollbar synchronously.
-func (c *SyncClient) post(body map[string]interface{}) {
-	clientPost(c.configuration.token, c.configuration.endpoint, body)
+func (c *SyncClient) post(body map[string]interface{}) error {
+	return clientPost(c.configuration.token, c.configuration.endpoint, body)
 }

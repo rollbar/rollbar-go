@@ -200,25 +200,29 @@ func flattenValues(values map[string][]string) map[string]interface{} {
 
 // -- POST handling
 
-func clientPost(token, endpoint string, body map[string]interface{}) {
+func clientPost(token, endpoint string, body map[string]interface{}) error {
 	if len(token) == 0 {
 		rollbarError("empty token")
-		return
+		return nil
 	}
 
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
 		rollbarError("failed to encode payload: %s", err.Error())
-		return
+		return err
 	}
 
 	resp, err := http.Post(endpoint, "application/json", bytes.NewReader(jsonBody))
 	if err != nil {
 		rollbarError("POST failed: %s", err.Error())
-	} else if resp.StatusCode != 200 {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
 		rollbarError("received response: %s", resp.Status)
+		return ErrHTTPError(resp.StatusCode)
 	}
-	if resp != nil {
-		resp.Body.Close()
-	}
+
+	return nil
 }

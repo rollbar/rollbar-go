@@ -206,6 +206,6 @@ func (c *AsyncClient) push(body map[string]interface{}) {
 }
 
 // POST the given JSON body to Rollbar synchronously.
-func (c *AsyncClient) post(body map[string]interface{}) {
-	clientPost(c.configuration.token, c.configuration.endpoint, body)
+func (c *AsyncClient) post(body map[string]interface{}) error {
+	return clientPost(c.configuration.token, c.configuration.endpoint, body)
 }
