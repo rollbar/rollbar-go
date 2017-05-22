@@ -167,7 +167,8 @@ func errorRequest(configuration configuration, r *http.Request) map[string]inter
 		"GET":          flattenValues(cleanQuery),
 
 		// POST / PUT params
-		"POST": flattenValues(filterParams(configuration.filterFields, r.Form)),
+		"POST":    flattenValues(filterParams(configuration.filterFields, r.Form)),
+		"user_ip": r.RemoteAddr,
 	}
 }
 
