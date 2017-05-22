@@ -27,6 +27,7 @@ const (
 var (
 	hostname, _ = os.Hostname()
 	std         = NewAsync("", "development", "", hostname, "")
+	nilErrTitle = "<nil>"
 )
 
 // Rollbar access token.
@@ -181,12 +182,15 @@ func errorBody(err error, skip int) (map[string]interface{}, string) {
 	var parent error
 	traceChain := []map[string]interface{}{}
 	fingerprint := ""
-	for err != nil {
+	for {
 		stack := getOrBuildStack(err, parent, skip)
 		traceChain = append(traceChain, buildTrace(err, stack))
 		fingerprint = fingerprint + stack.Fingerprint()
 		parent = err
 		err = getCause(err)
+		if err == nil {
+			break
+		}
 	}
 	errBody := map[string]interface{}{"trace_chain": traceChain}
 	return errBody, fingerprint
@@ -194,11 +198,15 @@ func errorBody(err error, skip int) (map[string]interface{}, string) {
 
 // builds one trace element in trace_chain
 func buildTrace(err error, stack Stack) map[string]interface{} {
+	message := nilErrTitle
+	if err != nil {
+		message = err.Error()
+	}
 	return map[string]interface{}{
 		"frames": stack,
 		"exception": map[string]interface{}{
 			"class":   errorClass(err),
-			"message": err.Error(),
+			"message": message,
 		},
 	}
 }
@@ -237,6 +245,10 @@ func messageBody(s string) map[string]interface{} {
 }
 
 func errorClass(err error) string {
+	if err == nil {
+		return nilErrTitle
+	}
+
 	class := reflect.TypeOf(err).String()
 	if class == "" {
 		return "panic"
