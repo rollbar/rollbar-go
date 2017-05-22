@@ -175,7 +175,7 @@ func errorRequest(configuration configuration, r *http.Request) map[string]inter
 // filterParams filters sensitive information like passwords from being sent to
 // Rollbar.
 func filterParams(pattern *regexp.Regexp, values map[string][]string) map[string][]string {
-	for key, _ := range values {
+	for key := range values {
 		if pattern.Match([]byte(key)) {
 			values[key] = []string{FILTERED}
 		}
