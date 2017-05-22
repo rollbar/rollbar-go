@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
 	"runtime"
 	"time"
@@ -123,6 +124,11 @@ func buildBody(configuration configuration, level, title string, extras map[stri
 		custom[k] = v
 	}
 
+	hostname := configuration.serverHost
+	if hostname == "" {
+		hostname, _ = os.Hostname()
+	}
+
 	data := map[string]interface{}{
 		"environment":  configuration.environment,
 		"title":        title,
@@ -132,7 +138,7 @@ func buildBody(configuration configuration, level, title string, extras map[stri
 		"language":     "go",
 		"code_version": configuration.codeVersion,
 		"server": map[string]interface{}{
-			"host": configuration.serverHost,
+			"host": hostname,
 			"root": configuration.serverRoot,
 		},
 		"notifier": map[string]interface{}{
