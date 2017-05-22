@@ -50,6 +50,8 @@ type Client interface {
 
 	// Error sends an error to Rollbar with the given severity level.
 	Error(level string, err error)
+	// Errorf sends an error to Rollbar with the given format string and arguments.
+	Errorf(level string, format string, args ...interface{})
 	// ErrorWithExtras sends an error to Rollbar with the given severity
 	// level with extra custom data.
 	ErrorWithExtras(level string, err error, extras map[string]interface{})

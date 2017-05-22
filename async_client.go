@@ -1,6 +1,7 @@
 package rollbar
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
 )
@@ -105,6 +106,10 @@ var noExtras map[string]interface{}
 
 func (c *AsyncClient) Error(level string, err error) {
 	c.ErrorWithExtras(level, err, noExtras)
+}
+
+func (c *AsyncClient) Errorf(level string, format string, args ...interface{}) {
+	c.ErrorWithStackSkipWithExtras(level, fmt.Errorf(format, args...), 1, noExtras)
 }
 
 func (c *AsyncClient) ErrorWithExtras(level string, err error, extras map[string]interface{}) {

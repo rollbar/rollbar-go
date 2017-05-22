@@ -1,6 +1,7 @@
 package rollbar
 
 import (
+	"fmt"
 	"net/http"
 )
 
@@ -79,6 +80,10 @@ func (c *SyncClient) Custom() map[string]interface{} {
 
 func (c *SyncClient) Error(level string, err error) {
 	c.ErrorWithExtras(level, err, noExtras)
+}
+
+func (c *SyncClient) Errorf(level string, format string, args ...interface{}) {
+	c.ErrorWithStackSkipWithExtras(level, fmt.Errorf(format, args...), 1, noExtras)
 }
 
 func (c *SyncClient) ErrorWithExtras(level string, err error, extras map[string]interface{}) {
