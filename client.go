@@ -18,6 +18,8 @@ type Client interface {
 	SetToken(token string)
 	// All errors and messages will be submitted under this environment.
 	SetEnvironment(environment string)
+	// Set the Platform to be reported for all items
+	SetPlatform(platform string)
 	// String describing the running code version on the server
 	SetCodeVersion(codeVersion string)
 	// host: The server hostname. Will be indexed.
@@ -32,6 +34,10 @@ type Client interface {
 	Token() string
 	// All errors and messages will be submitted under this environment.
 	Environment() string
+	// Platform is the platform reported for all Rollbar items. The default is
+	// the running operating system (darwin, freebsd, linux, etc.) but it can
+	// also be application specific (client, heroku, etc.).
+	Platform() string
 	// String describing the running code version on the server
 	CodeVersion() string
 	// host: The server hostname. Will be indexed.
@@ -81,6 +87,7 @@ type Client interface {
 type configuration struct {
 	token         string
 	environment   string
+	platform      string
 	codeVersion   string
 	serverHost    string
 	serverRoot    string
@@ -88,6 +95,20 @@ type configuration struct {
 	custom        map[string]interface{}
 	filterHeaders *regexp.Regexp
 	filterFields  *regexp.Regexp
+}
+
+func createConfiguration(token, environment, codeVersion, serverHost, serverRoot string) configuration {
+	return configuration{
+		token:         token,
+		environment:   environment,
+		platform:      runtime.GOOS,
+		endpoint:      "https://api.rollbar.com/api/1/item",
+		filterHeaders: regexp.MustCompile("Authorization"),
+		filterFields:  regexp.MustCompile("password|secret|token"),
+		codeVersion:   codeVersion,
+		serverHost:    serverHost,
+		serverRoot:    serverRoot,
+	}
 }
 
 // Build the main JSON structure that will be sent to Rollbar with the
@@ -105,7 +126,7 @@ func buildBody(configuration configuration, level, title string, extras map[stri
 		"title":        title,
 		"level":        level,
 		"timestamp":    timestamp,
-		"platform":     runtime.GOOS,
+		"platform":     configuration.platform,
 		"language":     "go",
 		"code_version": configuration.codeVersion,
 		"server": map[string]interface{}{

@@ -2,10 +2,6 @@ package rollbar
 
 import (
 	"net/http"
-	"net/url"
-	"regexp"
-	"runtime"
-	"time"
 )
 
 // SyncClient is an alternate concrete implementation of the Client interface
@@ -16,16 +12,7 @@ type SyncClient struct {
 
 // NewSync builds a synchronous implementation of the Client interface
 func NewSync(token, environment, codeVersion, serverHost, serverRoot string) *SyncClient {
-	configuration := configuration{
-		token:         token,
-		environment:   environment,
-		endpoint:      "https://api.rollbar.com/api/1/item",
-		filterHeaders: regexp.MustCompile("Authorization"),
-		filterFields:  regexp.MustCompile("password|secret|token"),
-		codeVersion:   codeVersion,
-		serverHost:    serverHost,
-		serverRoot:    serverRoot,
-	}
+	configuration := createConfiguration(token, environment, codeVersion, serverHost, serverRoot)
 	client := &SyncClient{
 		configuration: configuration,
 	}
@@ -38,6 +25,10 @@ func (c *SyncClient) SetToken(token string) {
 
 func (c *SyncClient) SetEnvironment(environment string) {
 	c.configuration.environment = environment
+}
+
+func (c *SyncClient) SetPlatform(platform string) {
+	c.configuration.platform = platform
 }
 
 func (c *SyncClient) SetCodeVersion(codeVersion string) {
@@ -62,6 +53,10 @@ func (c *SyncClient) Token() string {
 
 func (c *SyncClient) Environment() string {
 	return c.configuration.environment
+}
+
+func (c *SyncClient) Platform() string {
+	return c.configuration.platform
 }
 
 func (c *SyncClient) CodeVersion() string {
@@ -153,54 +148,12 @@ func (c *SyncClient) Close() error {
 // Build the main JSON structure that will be sent to Rollbar with the
 // appropriate metadata.
 func (c *SyncClient) buildBody(level, title string, extras map[string]interface{}) map[string]interface{} {
-	timestamp := time.Now().Unix()
-
-	custom := c.configuration.custom
-	for k, v := range extras {
-		custom[k] = v
-	}
-
-	data := map[string]interface{}{
-		"environment":  c.configuration.environment,
-		"title":        title,
-		"level":        level,
-		"timestamp":    timestamp,
-		"platform":     runtime.GOOS,
-		"language":     "go",
-		"code_version": c.configuration.codeVersion,
-		"server": map[string]interface{}{
-			"host": c.configuration.serverHost,
-			"root": c.configuration.serverRoot,
-		},
-		"notifier": map[string]interface{}{
-			"name":    NAME,
-			"version": VERSION,
-		},
-		"custom": custom,
-	}
-
-	return map[string]interface{}{
-		"access_token": c.configuration.token,
-		"data":         data,
-	}
+	return buildBody(c.configuration, level, title, extras)
 }
 
 // Extract error details from a Request to a format that Rollbar accepts.
 func (c *SyncClient) errorRequest(r *http.Request) map[string]interface{} {
-	cleanQuery := filterParams(c.configuration.filterFields, r.URL.Query())
-
-	return map[string]interface{}{
-		"url":     r.URL.String(),
-		"method":  r.Method,
-		"headers": flattenValues(filterParams(c.configuration.filterHeaders, r.Header)),
-
-		// GET params
-		"query_string": url.Values(cleanQuery).Encode(),
-		"GET":          flattenValues(cleanQuery),
-
-		// POST / PUT params
-		"POST": flattenValues(filterParams(c.configuration.filterFields, r.Form)),
-	}
+	return errorRequest(c.configuration, r)
 }
 
 // -- POST handling

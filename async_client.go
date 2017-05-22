@@ -2,7 +2,6 @@ package rollbar
 
 import (
 	"net/http"
-	"regexp"
 	"sync"
 )
 
@@ -26,16 +25,7 @@ func New(token, environment, codeVersion, serverHost, serverRoot string) Client 
 // NewAsync builds an asynchronous implementation of the Client interface
 func NewAsync(token, environment, codeVersion, serverHost, serverRoot string) *AsyncClient {
 	buffer := 1000
-	configuration := configuration{
-		token:         token,
-		environment:   environment,
-		endpoint:      "https://api.rollbar.com/api/1/item",
-		filterHeaders: regexp.MustCompile("Authorization"),
-		filterFields:  regexp.MustCompile("password|secret|token"),
-		codeVersion:   codeVersion,
-		serverHost:    serverHost,
-		serverRoot:    serverRoot,
-	}
+	configuration := createConfiguration(token, environment, codeVersion, serverHost, serverRoot)
 	client := &AsyncClient{
 		Buffer:        buffer,
 		configuration: configuration,
@@ -57,6 +47,10 @@ func (c *AsyncClient) SetToken(token string) {
 
 func (c *AsyncClient) SetEnvironment(environment string) {
 	c.configuration.environment = environment
+}
+
+func (c *AsyncClient) SetPlatform(platform string) {
+	c.configuration.platform = platform
 }
 
 func (c *AsyncClient) SetCodeVersion(codeVersion string) {
@@ -83,6 +77,10 @@ func (c *AsyncClient) Token() string {
 
 func (c *AsyncClient) Environment() string {
 	return c.configuration.environment
+}
+
+func (c *AsyncClient) Platform() string {
+	return c.configuration.platform
 }
 
 func (c *AsyncClient) CodeVersion() string {
