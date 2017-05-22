@@ -101,6 +101,10 @@ type configuration struct {
 }
 
 func createConfiguration(token, environment, codeVersion, serverHost, serverRoot string) configuration {
+	hostname := serverHost
+	if hostname == "" {
+		hostname, _ = os.Hostname()
+	}
 	return configuration{
 		token:         token,
 		environment:   environment,
@@ -109,7 +113,7 @@ func createConfiguration(token, environment, codeVersion, serverHost, serverRoot
 		filterHeaders: regexp.MustCompile("Authorization"),
 		filterFields:  regexp.MustCompile("password|secret|token"),
 		codeVersion:   codeVersion,
-		serverHost:    serverHost,
+		serverHost:    hostname,
 		serverRoot:    serverRoot,
 	}
 }
@@ -124,11 +128,6 @@ func buildBody(configuration configuration, level, title string, extras map[stri
 		custom[k] = v
 	}
 
-	hostname := configuration.serverHost
-	if hostname == "" {
-		hostname, _ = os.Hostname()
-	}
-
 	data := map[string]interface{}{
 		"environment":  configuration.environment,
 		"title":        title,
@@ -138,7 +137,7 @@ func buildBody(configuration configuration, level, title string, extras map[stri
 		"language":     "go",
 		"code_version": configuration.codeVersion,
 		"server": map[string]interface{}{
-			"host": hostname,
+			"host": configuration.serverHost,
 			"root": configuration.serverRoot,
 		},
 		"notifier": map[string]interface{}{
