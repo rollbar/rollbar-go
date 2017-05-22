@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	NAME    = "heroku/rollbar"
-	VERSION = "0.4.1"
+	NAME    = "rollbar/rollbar-go"
+	VERSION = "0.6.0"
 
 	// Severity levels
 	CRIT  = "critical"
