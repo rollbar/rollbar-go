@@ -228,7 +228,7 @@ func TestGetOrBuildStackOfCauseStackerWithParent(t *testing.T) {
 
 func TestErrorBodyWithoutChain(t *testing.T) {
 	err := fmt.Errorf("ERR")
-	errorBody, fingerprint := errorBody(err, 0)
+	errorBody, fingerprint := errorBody(configuration{fingerprint: true}, err, 0)
 	if nil != errorBody["trace"] {
 		t.Error("should not have trace element")
 	}
@@ -251,7 +251,7 @@ func TestErrorBodyWithChain(t *testing.T) {
 	cause := fmt.Errorf("cause")
 	effect := cs{fmt.Errorf("effect1"), cause, BuildStack(0)}
 	effect2 := cs{fmt.Errorf("effect2"), effect, BuildStack(0)}
-	errorBody, fingerprint := errorBody(effect2, 0)
+	errorBody, fingerprint := errorBody(configuration{fingerprint: true}, effect2, 0)
 	if nil != errorBody["trace"] {
 		t.Error("should not have trace element")
 	}

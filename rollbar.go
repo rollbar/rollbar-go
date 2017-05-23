@@ -178,14 +178,16 @@ type CauseStacker interface {
 // Build an error inner-body for the given error. If skip is provided, that
 // number of stack trace frames will be skipped. If the error has a Cause
 // method, the causes will be traversed until nil.
-func errorBody(err error, skip int) (map[string]interface{}, string) {
+func errorBody(configuration configuration, err error, skip int) (map[string]interface{}, string) {
 	var parent error
 	traceChain := []map[string]interface{}{}
 	fingerprint := ""
 	for {
 		stack := getOrBuildStack(err, parent, skip)
 		traceChain = append(traceChain, buildTrace(err, stack))
-		fingerprint = fingerprint + stack.Fingerprint()
+		if configuration.fingerprint {
+			fingerprint = fingerprint + stack.Fingerprint()
+		}
 		parent = err
 		err = getCause(err)
 		if err == nil {

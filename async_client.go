@@ -70,6 +70,10 @@ func (c *AsyncClient) SetCustom(custom map[string]interface{}) {
 	c.configuration.custom = custom
 }
 
+func (c *AsyncClient) SetFingerprint(fingerprint bool) {
+	c.configuration.fingerprint = fingerprint
+}
+
 // -- Getters
 
 func (c *AsyncClient) Token() string {
@@ -98,6 +102,10 @@ func (c *AsyncClient) ServerRoot() string {
 
 func (c *AsyncClient) Custom() map[string]interface{} {
 	return c.configuration.custom
+}
+
+func (c *AsyncClient) Fingerprint() bool {
+	return c.configuration.fingerprint
 }
 
 // -- Error reporting
@@ -130,11 +138,7 @@ func (c *AsyncClient) ErrorWithStackSkip(level string, err error, skip int) {
 
 func (c *AsyncClient) ErrorWithStackSkipWithExtras(level string, err error, skip int, extras map[string]interface{}) {
 	body := c.buildBody(level, err.Error(), extras)
-	data := body["data"].(map[string]interface{})
-	errBody, fingerprint := errorBody(err, skip)
-	data["body"] = errBody
-	data["fingerprint"] = fingerprint
-
+	addErrorToBody(c.configuration, body, err, skip)
 	c.push(body)
 }
 
@@ -144,14 +148,8 @@ func (c *AsyncClient) RequestErrorWithStackSkip(level string, r *http.Request, e
 
 func (c *AsyncClient) RequestErrorWithStackSkipWithExtras(level string, r *http.Request, err error, skip int, extras map[string]interface{}) {
 	body := c.buildBody(level, err.Error(), extras)
-	data := body["data"].(map[string]interface{})
-
-	errBody, fingerprint := errorBody(err, skip)
-	data["body"] = errBody
-	data["fingerprint"] = fingerprint
-
+	data := addErrorToBody(c.configuration, body, err, skip)
 	data["request"] = c.errorRequest(r)
-
 	c.push(body)
 }
 

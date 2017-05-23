@@ -104,11 +104,7 @@ func (c *SyncClient) ErrorWithStackSkip(level string, err error, skip int) {
 
 func (c *SyncClient) ErrorWithStackSkipWithExtras(level string, err error, skip int, extras map[string]interface{}) {
 	body := c.buildBody(level, err.Error(), extras)
-	data := body["data"].(map[string]interface{})
-	errBody, fingerprint := errorBody(err, skip)
-	data["body"] = errBody
-	data["fingerprint"] = fingerprint
-
+	addErrorToBody(c.configuration, body, err, skip)
 	c.post(body)
 }
 
@@ -118,14 +114,8 @@ func (c *SyncClient) RequestErrorWithStackSkip(level string, r *http.Request, er
 
 func (c *SyncClient) RequestErrorWithStackSkipWithExtras(level string, r *http.Request, err error, skip int, extras map[string]interface{}) {
 	body := c.buildBody(level, err.Error(), extras)
-	data := body["data"].(map[string]interface{})
-
-	errBody, fingerprint := errorBody(err, skip)
-	data["body"] = errBody
-	data["fingerprint"] = fingerprint
-
+	data := addErrorToBody(c.configuration, body, err, skip)
 	data["request"] = c.errorRequest(r)
-
 	c.post(body)
 }
 

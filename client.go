@@ -30,6 +30,8 @@ type Client interface {
 	SetServerRoot(serverRoot string)
 	// custom: Any arbitrary metadata you want to send.
 	SetCustom(custom map[string]interface{})
+	// Whether or not to use custom client-side fingerprint
+	SetFingerprint(fingerprint bool)
 
 	// Rollbar access token.
 	Token() string
@@ -48,6 +50,8 @@ type Client interface {
 	ServerRoot() string
 	// custom: Any arbitrary metadata you want to send.
 	Custom() map[string]interface{}
+	// Whether or not to use custom client-side fingerprint
+	Fingerprint() bool
 
 	// Error sends an error to Rollbar with the given severity level.
 	Error(level string, err error)
@@ -96,6 +100,7 @@ type configuration struct {
 	serverRoot    string
 	endpoint      string
 	custom        map[string]interface{}
+	fingerprint   bool
 	filterHeaders *regexp.Regexp
 	filterFields  *regexp.Regexp
 }
@@ -115,6 +120,7 @@ func createConfiguration(token, environment, codeVersion, serverHost, serverRoot
 		codeVersion:   codeVersion,
 		serverHost:    hostname,
 		serverRoot:    serverRoot,
+		fingerprint:   false,
 	}
 }
 
@@ -151,6 +157,16 @@ func buildBody(configuration configuration, level, title string, extras map[stri
 		"access_token": configuration.token,
 		"data":         data,
 	}
+}
+
+func addErrorToBody(configuration configuration, body map[string]interface{}, err error, skip int) map[string]interface{} {
+	data := body["data"].(map[string]interface{})
+	errBody, fingerprint := errorBody(configuration, err, skip)
+	data["body"] = errBody
+	if configuration.fingerprint {
+		data["fingerprint"] = fingerprint
+	}
+	return data
 }
 
 // Extract error details from a Request to a format that Rollbar accepts.
