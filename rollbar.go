@@ -159,6 +159,19 @@ func MessageWithExtras(level string, msg string, extras map[string]interface{}) 
 	std.MessageWithExtras(level, msg, extras)
 }
 
+// RequestMessage asynchronously sends a message to Rollbar with the given
+// severity level and request-specific information.
+func RequestMessage(level string, r *http.Request, msg string) {
+	std.RequestMessage(level, r, msg)
+}
+
+// RequestMessageWithExtras asynchronously sends a message to Rollbar with the given severity
+// level with extra custom data in addition to extra request-specific information.
+// Rollbar request is asynchronous.
+func RequestMessageWithExtras(level string, r *http.Request, msg string, extras map[string]interface{}) {
+	std.RequestMessageWithExtras(level, r, msg, extras)
+}
+
 // Wait will block until the queue of errors / messages is empty.
 func Wait() {
 	std.Wait()

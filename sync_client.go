@@ -115,7 +115,7 @@ func (c *SyncClient) RequestErrorWithStackSkip(level string, r *http.Request, er
 func (c *SyncClient) RequestErrorWithStackSkipWithExtras(level string, r *http.Request, err error, skip int, extras map[string]interface{}) {
 	body := c.buildBody(level, err.Error(), extras)
 	data := addErrorToBody(c.configuration, body, err, skip)
-	data["request"] = c.errorRequest(r)
+	data["request"] = c.requestDetails(r)
 	c.post(body)
 }
 
@@ -129,7 +129,18 @@ func (c *SyncClient) MessageWithExtras(level string, msg string, extras map[stri
 	body := c.buildBody(level, msg, extras)
 	data := body["data"].(map[string]interface{})
 	data["body"] = messageBody(msg)
+	c.post(body)
+}
 
+func (c *SyncClient) RequestMessage(level string, r *http.Request, msg string) {
+	c.RequestMessageWithExtras(level, r, msg, noExtras)
+}
+
+func (c *SyncClient) RequestMessageWithExtras(level string, r *http.Request, msg string, extras map[string]interface{}) {
+	body := c.buildBody(level, msg, extras)
+	data := body["data"].(map[string]interface{})
+	data["body"] = messageBody(msg)
+	data["request"] = c.requestDetails(r)
 	c.post(body)
 }
 
@@ -147,8 +158,8 @@ func (c *SyncClient) buildBody(level, title string, extras map[string]interface{
 }
 
 // Extract error details from a Request to a format that Rollbar accepts.
-func (c *SyncClient) errorRequest(r *http.Request) map[string]interface{} {
-	return errorRequest(c.configuration, r)
+func (c *SyncClient) requestDetails(r *http.Request) map[string]interface{} {
+	return requestDetails(c.configuration, r)
 }
 
 // -- POST handling

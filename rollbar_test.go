@@ -114,7 +114,7 @@ func TestErrorRequest(t *testing.T) {
 	r, _ := http.NewRequest("GET", "http://foo.com/somethere?param1=true", nil)
 	r.RemoteAddr = "1.1.1.1:123"
 
-	object := std.errorRequest(r)
+	object := std.requestDetails(r)
 
 	if object["url"] != "http://foo.com/somethere?param1=true" {
 		t.Errorf("wrong url, got %v", object["url"])

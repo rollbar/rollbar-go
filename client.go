@@ -89,6 +89,13 @@ type Client interface {
 	// MessageWithExtras sends a message to Rollbar with the given severity
 	// level with extra custom data.
 	MessageWithExtras(level string, msg string, extras map[string]interface{})
+
+	// RequestMessage sends a message to Rollbar with the given severity level
+	// and request-specific information.
+	RequestMessage(level string, r *http.Request, msg string)
+	// RequestMessageWithExtras sends a message to Rollbar with the given
+	// severity level and request-specific information with extra custom data.
+	RequestMessageWithExtras(level string, r *http.Request, msg string, extras map[string]interface{})
 }
 
 type configuration struct {
@@ -114,7 +121,7 @@ func createConfiguration(token, environment, codeVersion, serverHost, serverRoot
 		token:         token,
 		environment:   environment,
 		platform:      runtime.GOOS,
-		endpoint:      "https://api.rollbar.com/api/1/item",
+		endpoint:      "https://api.rollbar.com/api/1/item/",
 		filterHeaders: regexp.MustCompile("Authorization"),
 		filterFields:  regexp.MustCompile("password|secret|token"),
 		codeVersion:   codeVersion,
@@ -169,8 +176,7 @@ func addErrorToBody(configuration configuration, body map[string]interface{}, er
 	return data
 }
 
-// Extract error details from a Request to a format that Rollbar accepts.
-func errorRequest(configuration configuration, r *http.Request) map[string]interface{} {
+func requestDetails(configuration configuration, r *http.Request) map[string]interface{} {
 	cleanQuery := filterParams(configuration.filterFields, r.URL.Query())
 
 	return map[string]interface{}{
