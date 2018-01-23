@@ -48,10 +48,10 @@ func TestErrorClass(t *testing.T) {
 func TestEverything(t *testing.T) {
 	SetToken(os.Getenv("TOKEN"))
 	SetEnvironment("test")
-	if GetToken() != os.Getenv("TOKEN") {
+	if Token() != os.Getenv("TOKEN") {
 		t.Error("Token should be as set")
 	}
-	if GetEnvironment() != "test" {
+	if Environment() != "test" {
 		t.Error("Token should be as set")
 	}
 
@@ -89,7 +89,7 @@ func TestBuildBody(t *testing.T) {
 		"EXTRA_CUSTOM_KEY":      "EXTRA_CUSTOM_VALUE",
 		"OVERRIDDEN_CUSTOM_KEY": "EXTRA",
 	}
-	body := std.(*AsyncClient).buildBody(ERR, "test error", extraCustom)
+	body := interface{}(std).(*AsyncClient).buildBody(ERR, "test error", extraCustom)
 
 	if body["data"] == nil {
 		t.Error("body should have data")
@@ -114,7 +114,7 @@ func TestErrorRequest(t *testing.T) {
 	r, _ := http.NewRequest("GET", "http://foo.com/somethere?param1=true", nil)
 	r.RemoteAddr = "1.1.1.1:123"
 
-	object := std.errorRequest(r)
+	object := std.requestDetails(r)
 
 	if object["url"] != "http://foo.com/somethere?param1=true" {
 		t.Errorf("wrong url, got %v", object["url"])
@@ -136,7 +136,7 @@ func TestFilterParams(t *testing.T) {
 		"access_token": []string{"one"},
 	}
 
-	clean := filterParams(std.FilterFields, values)
+	clean := filterParams(std.configuration.filterFields, values)
 	if clean["password"][0] != FILTERED {
 		t.Error("should filter password parameter")
 	}
@@ -228,7 +228,7 @@ func TestGetOrBuildStackOfCauseStackerWithParent(t *testing.T) {
 
 func TestErrorBodyWithoutChain(t *testing.T) {
 	err := fmt.Errorf("ERR")
-	errorBody, fingerprint := errorBody(err, 0)
+	errorBody, fingerprint := errorBody(configuration{fingerprint: true}, err, 0)
 	if nil != errorBody["trace"] {
 		t.Error("should not have trace element")
 	}
@@ -251,7 +251,7 @@ func TestErrorBodyWithChain(t *testing.T) {
 	cause := fmt.Errorf("cause")
 	effect := cs{fmt.Errorf("effect1"), cause, BuildStack(0)}
 	effect2 := cs{fmt.Errorf("effect2"), effect, BuildStack(0)}
-	errorBody, fingerprint := errorBody(effect2, 0)
+	errorBody, fingerprint := errorBody(configuration{fingerprint: true}, effect2, 0)
 	if nil != errorBody["trace"] {
 		t.Error("should not have trace element")
 	}

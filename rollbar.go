@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	NAME    = "heroku/rollbar"
-	VERSION = "0.4.1"
+	NAME    = "rollbar/rollbar-go"
+	VERSION = "0.6.0"
 
 	// Severity levels
 	CRIT  = "critical"
@@ -27,6 +27,7 @@ const (
 var (
 	hostname, _ = os.Hostname()
 	std         = NewAsync("", "development", "", hostname, "")
+	nilErrTitle = "<nil>"
 )
 
 // Rollbar access token.
@@ -63,34 +64,34 @@ func SetCustom(custom map[string]interface{}) {
 // -- Getters
 
 // Rollbar access token.
-func GetToken() string {
-	return std.GetToken()
+func Token() string {
+	return std.Token()
 }
 
 // All errors and messages will be submitted under this environment.
-func GetEnvironment() string {
-	return std.GetEnvironment()
+func Environment() string {
+	return std.Environment()
 }
 
 // String describing the running code version on the server
-func GetCodeVersion() string {
-	return std.GetCodeVersion()
+func CodeVersion() string {
+	return std.CodeVersion()
 }
 
 // host: The server hostname. Will be indexed.
-func GetServerHost() string {
-	return std.GetServerHost()
+func ServerHost() string {
+	return std.ServerHost()
 }
 
 // root: Path to the application code root, not including the final slash.
 // Used to collapse non-project code when displaying tracebacks.
-func GetServerRoot() string {
-	return std.GetServerRoot()
+func ServerRoot() string {
+	return std.ServerRoot()
 }
 
 // custom: Any arbitrary metadata you want to send.
-func GetCustom() map[string]interface{} {
-	return std.GetCustom()
+func Custom() map[string]interface{} {
+	return std.Custom()
 }
 
 // -- Error reporting
@@ -158,6 +159,19 @@ func MessageWithExtras(level string, msg string, extras map[string]interface{}) 
 	std.MessageWithExtras(level, msg, extras)
 }
 
+// RequestMessage asynchronously sends a message to Rollbar with the given
+// severity level and request-specific information.
+func RequestMessage(level string, r *http.Request, msg string) {
+	std.RequestMessage(level, r, msg)
+}
+
+// RequestMessageWithExtras asynchronously sends a message to Rollbar with the given severity
+// level with extra custom data in addition to extra request-specific information.
+// Rollbar request is asynchronous.
+func RequestMessageWithExtras(level string, r *http.Request, msg string, extras map[string]interface{}) {
+	std.RequestMessageWithExtras(level, r, msg, extras)
+}
+
 // Wait will block until the queue of errors / messages is empty.
 func Wait() {
 	std.Wait()
@@ -177,16 +191,21 @@ type CauseStacker interface {
 // Build an error inner-body for the given error. If skip is provided, that
 // number of stack trace frames will be skipped. If the error has a Cause
 // method, the causes will be traversed until nil.
-func errorBody(err error, skip int) (map[string]interface{}, string) {
+func errorBody(configuration configuration, err error, skip int) (map[string]interface{}, string) {
 	var parent error
 	traceChain := []map[string]interface{}{}
 	fingerprint := ""
-	for err != nil {
+	for {
 		stack := getOrBuildStack(err, parent, skip)
 		traceChain = append(traceChain, buildTrace(err, stack))
-		fingerprint = fingerprint + stack.Fingerprint()
+		if configuration.fingerprint {
+			fingerprint = fingerprint + stack.Fingerprint()
+		}
 		parent = err
 		err = getCause(err)
+		if err == nil {
+			break
+		}
 	}
 	errBody := map[string]interface{}{"trace_chain": traceChain}
 	return errBody, fingerprint
@@ -194,11 +213,15 @@ func errorBody(err error, skip int) (map[string]interface{}, string) {
 
 // builds one trace element in trace_chain
 func buildTrace(err error, stack Stack) map[string]interface{} {
+	message := nilErrTitle
+	if err != nil {
+		message = err.Error()
+	}
 	return map[string]interface{}{
 		"frames": stack,
 		"exception": map[string]interface{}{
 			"class":   errorClass(err),
-			"message": err.Error(),
+			"message": message,
 		},
 	}
 }
@@ -237,6 +260,10 @@ func messageBody(s string) map[string]interface{} {
 }
 
 func errorClass(err error) string {
+	if err == nil {
+		return nilErrTitle
+	}
+
 	class := reflect.TypeOf(err).String()
 	if class == "" {
 		return "panic"

@@ -6,10 +6,10 @@ import (
 
 func TestBuildStack(t *testing.T) {
 	frame := BuildStack(1)[0]
-	if frame.Filename != "github.com/heroku/rollbar/stack_test.go" {
+	if frame.Filename != "github.com/rollbar/rollbar-go/stack_test.go" {
 		t.Errorf("got: %s", frame.Filename)
 	}
-	if frame.Method != "rollbar.TestBuildStack" {
+	if frame.Method != "rollbar-go.TestBuildStack" {
 		t.Errorf("got: %s", frame.Method)
 	}
 	if frame.Line != 8 {

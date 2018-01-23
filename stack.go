@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	knownFilePathPatterns []string = []string{
+	knownFilePathPatterns = []string{
 		"github.com/",
 		"code.google.com/",
 		"bitbucket.org/",
