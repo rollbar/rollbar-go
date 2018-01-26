@@ -175,7 +175,7 @@ func (c *AsyncClient) RequestMessageWithExtras(level string, r *http.Request, ms
 	data := body["data"].(map[string]interface{})
 	data["body"] = messageBody(msg)
 	data["request"] = c.requestDetails(r)
-	c.post(body)
+	c.push(body)
 }
 
 // -- Misc.
