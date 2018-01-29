@@ -40,6 +40,15 @@ func buildBody(configuration configuration, level, title string, extras map[stri
 		"custom": custom,
 	}
 
+	person := configuration.person
+	if person.id != "" {
+		data["person"] = map[string]string{
+			"id":       person.id,
+			"username": person.username,
+			"email":    person.email,
+		}
+	}
+
 	return map[string]interface{}{
 		"access_token": configuration.token,
 		"data":         data,
