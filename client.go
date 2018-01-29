@@ -86,6 +86,22 @@ func (c *Client) SetCustom(custom map[string]interface{}) {
 	c.configuration.custom = custom
 }
 
+// Person information for identifying a user associated with
+// any subsequent errors or messages. Only id is required to be
+// non-empty.
+func (c *Client) SetPerson(id, username, email string) {
+	c.configuration.person = person{
+		id:       id,
+		username: username,
+		email:    email,
+	}
+}
+
+// ClearPerson clears any previously set person information.
+func (c *Client) ClearPerson() {
+	c.configuration.person = person{}
+}
+
 // Whether or not to use custom client-side fingerprint
 func (c *Client) SetFingerprint(fingerprint bool) {
 	c.configuration.fingerprint = fingerprint
@@ -363,6 +379,12 @@ func (c *Client) push(body map[string]interface{}) error {
 
 // -- Internal
 
+type person struct {
+	id       string
+	username string
+	email    string
+}
+
 type configuration struct {
 	token        string
 	environment  string
@@ -376,6 +398,7 @@ type configuration struct {
 	scrubHeaders *regexp.Regexp
 	scrubFields  *regexp.Regexp
 	checkIgnore  func(string) bool
+	person       person
 }
 
 func createConfiguration(token, environment, codeVersion, serverHost, serverRoot string) configuration {
@@ -395,6 +418,7 @@ func createConfiguration(token, environment, codeVersion, serverHost, serverRoot
 		serverRoot:   serverRoot,
 		fingerprint:  false,
 		checkIgnore:  func(_s string) bool { return false },
+		person:       person{},
 	}
 }
 

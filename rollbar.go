@@ -80,6 +80,18 @@ func SetCheckIgnore(checkIgnore func(string) bool) {
 	std.SetCheckIgnore(checkIgnore)
 }
 
+// SetPerson information for identifying a user associated with
+// any subsequent errors or messages. Only id is required to be
+// non-empty.
+func SetPerson(id, username, email string) {
+	std.SetPerson(id, username, email)
+}
+
+// ClearPerson clears any previously set person information.
+func ClearPerson() {
+	std.ClearPerson()
+}
+
 // -- Getters
 
 // Rollbar access token.
