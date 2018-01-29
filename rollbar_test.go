@@ -89,7 +89,7 @@ func TestBuildBody(t *testing.T) {
 		"EXTRA_CUSTOM_KEY":      "EXTRA_CUSTOM_VALUE",
 		"OVERRIDDEN_CUSTOM_KEY": "EXTRA",
 	}
-	body := interface{}(std).(*AsyncClient).buildBody(ERR, "test error", extraCustom)
+	body := interface{}(std).(*Client).buildBody(ERR, "test error", extraCustom)
 
 	if body["data"] == nil {
 		t.Error("body should have data")
@@ -136,7 +136,7 @@ func TestFilterParams(t *testing.T) {
 		"access_token": []string{"one"},
 	}
 
-	clean := filterParams(std.configuration.filterFields, values)
+	clean := filterParams(std.configuration.scrubFields, values)
 	if clean["password"][0] != FILTERED {
 		t.Error("should filter password parameter")
 	}

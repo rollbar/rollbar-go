@@ -50,12 +50,17 @@ func main() {
 Running Tests
 =============
 
-Set up a dummy project in Rollbar and pass the access token as an environment
-variable to `go test`:
+For full integation tests, set up a dummy project in Rollbar and pass the
+access token as an environment variable to `go test`:
 
-    TOKEN=f0df01587b8f76b2c217af34c479f9ea go test
+    TOKEN=POST_SERVER_ITEM_ACCESS_TOKEN go test
 
 And verify the reported errors manually.
+
+For coverage results, run:
+
+    TOKEN=POST_SERVER_ITEM_ACCESS_TOKEN go test -coverprofile=cover.out
+    go tool cover -html=cover.out -o cover.html
 
 History
 =======

@@ -12,3 +12,9 @@ type ErrHTTPError int
 func (e ErrHTTPError) Error() string {
 	return fmt.Sprintf("rollbar: service returned status: %d", e)
 }
+
+type ErrBufferFull struct{}
+
+func (e ErrBufferFull) Error() string {
+	return "buffer full, dropping error on the floor"
+}
