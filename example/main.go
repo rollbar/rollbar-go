@@ -38,6 +38,10 @@ func helloForm(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello world!")
 }
 
+// In one terminal: TOKEN=POST_SERVER_ITEM_ACCESS_TOKEN go run example/main.go
+// In another:
+//    curl -X POST -H "Content-Type: application/x-www-form-urlencoded" \
+//      http://localhost:9090/form -d "password=foobar&fuzz=buzz"
 func main() {
   var token = os.Getenv("TOKEN")
 	rollbar.SetToken(token)
