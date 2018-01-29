@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 )
 
 const (
@@ -55,6 +56,28 @@ func SetServerRoot(serverRoot string) {
 // custom: Any arbitrary metadata you want to send.
 func SetCustom(custom map[string]interface{}) {
 	std.SetCustom(custom)
+}
+
+// Regular expression used to match headers for scrubbing
+// The default value is regexp.MustCompile("Authorization")
+func SetScrubHeaders(headers *regexp.Regexp) {
+	std.SetScrubHeaders(headers)
+}
+
+// Regular expression to match keys in the item payload for scrubbing
+// The default vlaue is regexp.MustCompile("password|secret|token"),
+func SetScrubFields(fields *regexp.Regexp) {
+	std.SetScrubFields(fields)
+}
+
+// CheckIgnore is called during the recovery process of a panic that
+// occurred inside a function wrapped by Wrap or WrapAndWait
+// Return true if you wish to ignore this panic, false if you wish to
+// report it to Rollbar. If an error is the argument to the panic, then
+// this function is called with the result of calling Error(), otherwise
+// the string representation of the value is passed to this function.
+func SetCheckIgnore(checkIgnore func(string) bool) {
+	std.SetCheckIgnore(checkIgnore)
 }
 
 // -- Getters
