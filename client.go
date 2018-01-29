@@ -103,6 +103,16 @@ func (c *Client) SetScrubFields(fields *regexp.Regexp) {
 	c.configuration.scrubFields = fields
 }
 
+// CheckIgnore is called during the recovery process of a panic that
+// occurred inside a function wrapped by Wrap or WrapAndWait
+// Return true if you wish to ignore this panic, false if you wish to
+// report it to Rollbar. If an error is the argument to the panic, then
+// this function is called with the result of calling Error(), otherwise
+// the string representation of the value is passed to this function.
+func (c *Client) SetCheckIgnore(checkIgnore func(string) bool) {
+	c.configuration.checkIgnore = checkIgnore
+}
+
 // -- Getters
 
 // Rollbar access token.
@@ -260,6 +270,62 @@ func (c *Client) RequestMessageWithExtras(level string, r *http.Request, msg str
 	c.push(body)
 }
 
+// -- Panics
+
+// Wrap calls f and then recovers and reports a panic to Rollbar if it occurs.
+// If an error is captured it is subsequently returned
+func (c *Client) Wrap(f func()) (err interface{}) {
+	defer func() {
+		err = recover()
+		switch val := err.(type) {
+		case nil:
+			return
+		case error:
+			if c.configuration.checkIgnore(val.Error()) {
+				return
+			}
+			c.ErrorWithStackSkip(CRIT, val, 2)
+		default:
+			str := fmt.Sprint(val)
+			if c.configuration.checkIgnore(str) {
+				return
+			}
+			c.Message(CRIT, str)
+		}
+	}()
+
+	f()
+	return
+}
+
+// WrapAndWait calls f, and recovers and reports a panic to Rollbar if it occurs.
+// This also waits before returning to ensure the message was reported
+// If an error is captured it is subsequently returned.
+func (c *Client) WrapAndWait(f func()) (err interface{}) {
+	defer func() {
+		err = recover()
+		switch val := err.(type) {
+		case nil:
+			return
+		case error:
+			if c.configuration.checkIgnore(val.Error()) {
+				return
+			}
+			c.ErrorWithStackSkip(CRIT, val, 2)
+		default:
+			str := fmt.Sprint(val)
+			if c.configuration.checkIgnore(str) {
+				return
+			}
+			c.Message(CRIT, str)
+		}
+		c.Wait()
+	}()
+
+	f()
+	return
+}
+
 // -- Misc.
 
 // Wait will call the Wait method of the Transport. If using an asyncronous
@@ -309,6 +375,7 @@ type configuration struct {
 	fingerprint  bool
 	scrubHeaders *regexp.Regexp
 	scrubFields  *regexp.Regexp
+	checkIgnore  func(string) bool
 }
 
 func createConfiguration(token, environment, codeVersion, serverHost, serverRoot string) configuration {
@@ -327,6 +394,7 @@ func createConfiguration(token, environment, codeVersion, serverHost, serverRoot
 		serverHost:   hostname,
 		serverRoot:   serverRoot,
 		fingerprint:  false,
+		checkIgnore:  func(_s string) bool { return false },
 	}
 }
 

@@ -173,6 +173,19 @@ func Wait() {
 	std.Wait()
 }
 
+// Wrap calls f and then recovers and reports a panic to Rollbar if it occurs.
+// If an error is captured it is subsequently returned.
+func Wrap(f func()) interface{} {
+	return std.Wrap(f)
+}
+
+// WrapAndWait calls f, and recovers and reports a panic to Rollbar if it occurs.
+// This also waits before returning to ensure the message was reported
+// If an error is captured it is subsequently returned.
+func WrapAndWait(f func()) interface{} {
+	return std.WrapAndWait(f)
+}
+
 // Errors can implement this interface to create a trace_chain
 // Callers are required to call BuildStack on their own at the
 // time the cause is wrapped.
