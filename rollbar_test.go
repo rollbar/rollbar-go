@@ -21,7 +21,7 @@ func testErrorStack(s string) {
 }
 
 func testErrorStack2(s string) {
-	Error("error", errors.New(s))
+	ErrorWithLevel("error", errors.New(s))
 }
 
 func testErrorStackWithSkip(s string) {
@@ -30,6 +30,14 @@ func testErrorStackWithSkip(s string) {
 
 func testErrorStackWithSkip2(s string) {
 	ErrorWithStackSkip("error", errors.New(s), 2)
+}
+
+func testErrorStackWithSkipGeneric(s string) {
+	testErrorStackWithSkipGeneric2(s)
+}
+
+func testErrorStackWithSkipGeneric2(s string) {
+	Warning(errors.New(s), 2)
 }
 
 func TestErrorClass(t *testing.T) {
@@ -55,8 +63,8 @@ func TestEverything(t *testing.T) {
 		t.Error("Token should be as set")
 	}
 
-	Error("critical", errors.New("Normal critical error"))
-	Error("error", &CustomError{"This is a custom error"})
+	ErrorWithLevel("critical", errors.New("Normal critical error"))
+	ErrorWithLevel("error", &CustomError{"This is a custom error"})
 
 	testErrorStack("This error should have a nice stacktrace")
 	testErrorStackWithSkip("This error should have a skipped stacktrace")
@@ -73,6 +81,34 @@ func TestEverything(t *testing.T) {
 
 	// If you don't see the message sent on line 65 in Rollbar, that means this
 	// is broken:
+	Wait()
+}
+
+func TestEverythingGeneric(t *testing.T) {
+	SetToken(os.Getenv("TOKEN"))
+	SetEnvironment("test")
+	if Token() != os.Getenv("TOKEN") {
+		t.Error("Token should be as set")
+	}
+	if Environment() != "test" {
+		t.Error("Token should be as set")
+	}
+
+	Critical(errors.New("Normal generic critical error"))
+	Error(&CustomError{"This is a generic custom error"})
+
+	testErrorStackWithSkipGeneric("This generic error should have a skipped stacktrace")
+
+	done := make(chan bool)
+	go func() {
+		testErrorStack("I'm in a generic goroutine")
+		done <- true
+	}()
+	<-done
+
+	Error("This is a generic error message")
+	Info("And this is a generic info message")
+
 	Wait()
 }
 

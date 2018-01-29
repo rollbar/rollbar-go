@@ -165,47 +165,47 @@ func errorIfNotEqual(a, b string, t *testing.T) {
 }
 
 func TestSetPerson(t *testing.T) {
-  client := testClient()
-  id, username, email := "42", "bork", "bork@foobar.com"
+	client := testClient()
+	id, username, email := "42", "bork", "bork@foobar.com"
 
-  client.SetPerson(id, username, email)
-  client.Error(rollbar.ERR, errors.New("Person Bork"))
+	client.SetPerson(id, username, email)
+	client.ErrorWithLevel(rollbar.ERR, errors.New("Person Bork"))
 
 	if transport, ok := client.Transport.(*TestTransport); ok {
-    body := transport.Body
-    if body["data"] == nil {
-      t.Error("body should have data")
-    }
-    data := body["data"].(map[string]interface{})
-    if data["person"] == nil {
-      t.Error("data should have person")
-    }
-    person := data["person"].(map[string]string)
-    errorIfNotEqual(id, person["id"], t)
-    errorIfNotEqual(username, person["username"], t)
-    errorIfNotEqual(email, person["email"], t)
+		body := transport.Body
+		if body["data"] == nil {
+			t.Error("body should have data")
+		}
+		data := body["data"].(map[string]interface{})
+		if data["person"] == nil {
+			t.Error("data should have person")
+		}
+		person := data["person"].(map[string]string)
+		errorIfNotEqual(id, person["id"], t)
+		errorIfNotEqual(username, person["username"], t)
+		errorIfNotEqual(email, person["email"], t)
 	} else {
 		t.Fail()
 	}
 }
 
 func TestClearPerson(t *testing.T) {
-  client := testClient()
-  id, username, email := "42", "bork", "bork@foobar.com"
+	client := testClient()
+	id, username, email := "42", "bork", "bork@foobar.com"
 
-  client.SetPerson(id, username, email)
-  client.ClearPerson()
-  client.Error(rollbar.ERR, errors.New("Person Bork"))
+	client.SetPerson(id, username, email)
+	client.ClearPerson()
+	client.ErrorWithLevel(rollbar.ERR, errors.New("Person Bork"))
 
 	if transport, ok := client.Transport.(*TestTransport); ok {
-    body := transport.Body
-    if body["data"] == nil {
-      t.Error("body should have data")
-    }
-    data := body["data"].(map[string]interface{})
-    if data["person"] != nil {
-      t.Error("data should not have a person")
-    }
+		body := transport.Body
+		if body["data"] == nil {
+			t.Error("body should have data")
+		}
+		data := body["data"].(map[string]interface{})
+		if data["person"] != nil {
+			t.Error("data should not have a person")
+		}
 	} else {
 		t.Fail()
 	}

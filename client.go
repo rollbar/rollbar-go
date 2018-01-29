@@ -193,8 +193,8 @@ func (c *Client) ScrubFields() *regexp.Regexp {
 
 var noExtras map[string]interface{}
 
-// Error sends an error to Rollbar with the given severity level.
-func (c *Client) Error(level string, err error) {
+// ErrorWithLevel sends an error to Rollbar with the given severity level.
+func (c *Client) ErrorWithLevel(level string, err error) {
 	c.ErrorWithExtras(level, err, noExtras)
 }
 

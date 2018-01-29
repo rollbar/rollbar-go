@@ -125,11 +125,70 @@ func Custom() map[string]interface{} {
 	return std.Custom()
 }
 
+// -- Reporting
+
+func Critical(interfaces ...interface{}) {
+	Log(CRIT, interfaces...)
+}
+
+func Error(interfaces ...interface{}) {
+	Log(ERR, interfaces...)
+}
+
+func Warning(interfaces ...interface{}) {
+	Log(WARN, interfaces...)
+}
+
+func Info(interfaces ...interface{}) {
+	Log(INFO, interfaces...)
+}
+
+func Debug(interfaces ...interface{}) {
+	Log(DEBUG, interfaces...)
+}
+
+func Log(level string, interfaces ...interface{}) {
+	var r *http.Request
+	var err error
+	var skip int
+	var extras map[string]interface{}
+	var msg string
+	for _, ival := range interfaces {
+		switch val := ival.(type) {
+		case *http.Request:
+			r = val
+		case error:
+			err = val
+		case int:
+			skip = val
+		case string:
+			msg = val
+		case map[string]interface{}:
+			extras = val
+		default:
+			rollbarError("Unknown input type: %T", val)
+		}
+	}
+	if err != nil {
+		if r == nil {
+			std.ErrorWithStackSkipWithExtras(level, err, skip, extras)
+		} else {
+			std.RequestErrorWithStackSkipWithExtras(level, r, err, skip, extras)
+		}
+	} else {
+		if r == nil {
+			std.MessageWithExtras(level, msg, extras)
+		} else {
+			std.RequestMessageWithExtras(level, r, msg, extras)
+		}
+	}
+}
+
 // -- Error reporting
 
-// Error asynchronously sends an error to Rollbar with the given severity level.
-func Error(level string, err error) {
-	std.Error(level, err)
+// ErrorWithLevel asynchronously sends an error to Rollbar with the given severity level.
+func ErrorWithLevel(level string, err error) {
+	std.ErrorWithLevel(level, err)
 }
 
 // ErrorWithExtras asynchronously sends an error to Rollbar with the given
