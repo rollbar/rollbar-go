@@ -146,6 +146,9 @@ func TestBuildBody(t *testing.T) {
 	if custom["OVERRIDDEN_CUSTOM_KEY"] != "EXTRA" {
 		t.Error("extra custom should overwrite base custom where keys match")
 	}
+	if Custom()["EXTRA_CUSTOM_KEY"] != nil {
+		t.Error("adding extra modified the client custom data config")
+	}
 }
 
 func TestBuildBodyNoBaseCustom(t *testing.T) {

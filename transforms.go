@@ -16,14 +16,6 @@ import (
 func buildBody(configuration configuration, level, title string, extras map[string]interface{}) map[string]interface{} {
 	timestamp := time.Now().Unix()
 
-	custom := configuration.custom
-	if extras != nil && custom == nil {
-		custom = make(map[string]interface{})
-	}
-	for k, v := range extras {
-		custom[k] = v
-	}
-
 	data := map[string]interface{}{
 		"environment":  configuration.environment,
 		"title":        title,
@@ -42,6 +34,7 @@ func buildBody(configuration configuration, level, title string, extras map[stri
 		},
 	}
 
+	custom := buildCustom(configuration.custom, extras)
 	if custom != nil {
 		data["custom"] = custom
 	}
@@ -59,6 +52,20 @@ func buildBody(configuration configuration, level, title string, extras map[stri
 		"access_token": configuration.token,
 		"data":         data,
 	}
+}
+
+func buildCustom(custom map[string]interface{}, extras map[string]interface{}) map[string]interface{} {
+	if custom == nil && extras == nil {
+		return nil
+	}
+	m := map[string]interface{}{}
+	for k, v := range custom {
+		m[k] = v
+	}
+	for k, v := range extras {
+		m[k] = v
+	}
+	return m
 }
 
 func addErrorToBody(configuration configuration, body map[string]interface{}, err error, skip int) map[string]interface{} {
