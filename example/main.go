@@ -22,7 +22,7 @@ func helloJson(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("key:", k)
 		fmt.Println("val:", v)
 	}
-	rollbar.RequestMessage(rollbar.INFO, r, "Example message json")
+	rollbar.Info(r, "Example message json")
 	fmt.Fprintf(w, "Hello world!")
 }
 
@@ -34,7 +34,7 @@ func helloForm(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("key:", k)
 		fmt.Println("val:", strings.Join(v, " "))
 	}
-	rollbar.RequestMessage(rollbar.INFO, r, "Example message form")
+	rollbar.Info("Example message form")
 	fmt.Fprintf(w, "Hello world!")
 }
 

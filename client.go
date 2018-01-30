@@ -11,20 +11,25 @@ import (
 	"runtime"
 )
 
-// AsyncClient is the default concrete implementation of the Client interface
-// which sends all data to Rollbar asynchronously.
+// An instance of Client can be used to interact with Rollbar via the configured Transport.
+// The functions at the root of the `rollbar` package are the recommend way of using a Client. One
+// should not need to manage instances of the Client type manually in most normal scenarios.
+// However, if you want to customize the underlying transport layer, or you need to have
+// independent instances of a Client, then you can use the constructors provided for this
+// type.
 type Client struct {
 	io.Closer
 	Transport     Transport
 	configuration configuration
 }
 
-// New returns the default implementation of a Client
+// New returns the default implementation of a Client.
+// This uses the AsyncTransport.
 func New(token, environment, codeVersion, serverHost, serverRoot string) *Client {
 	return NewAsync(token, environment, codeVersion, serverHost, serverRoot)
 }
 
-// NewAsync builds an asynchronous implementation of the Client interface
+// NewAsync builds a Client with the asynchronous implementation of the transport interface.
 func NewAsync(token, environment, codeVersion, serverHost, serverRoot string) *Client {
 	configuration := createConfiguration(token, environment, codeVersion, serverHost, serverRoot)
 	transport := NewTransport(token, configuration.endpoint)
@@ -34,6 +39,7 @@ func NewAsync(token, environment, codeVersion, serverHost, serverRoot string) *C
 	}
 }
 
+// NewSync builds a Client with the synchronous implementation of the transport interface.
 func NewSync(token, environment, codeVersion, serverHost, serverRoot string) *Client {
 	configuration := createConfiguration(token, environment, codeVersion, serverHost, serverRoot)
 	transport := NewSyncTransport(token, configuration.endpoint)
@@ -43,7 +49,9 @@ func NewSync(token, environment, codeVersion, serverHost, serverRoot string) *Cl
 	}
 }
 
-// Rollbar access token.
+// A Rollbar access token with scope "post_server_item"
+// It is required to set this value before any of the other functions herein will be able to work
+// properly. This also configures the underlying Transport.
 func (c *Client) SetToken(token string) {
 	c.configuration.token = token
 	c.Transport.SetToken(token)
@@ -97,7 +105,8 @@ func (c *Client) SetPerson(id, username, email string) {
 	}
 }
 
-// ClearPerson clears any previously set person information.
+// ClearPerson clears any previously set person information. See `SetPerson` for more
+// information.
 func (c *Client) ClearPerson() {
 	c.configuration.person = person{}
 }
@@ -158,18 +167,18 @@ func (c *Client) CodeVersion() string {
 	return c.configuration.codeVersion
 }
 
-// host: The server hostname. Will be indexed.
+// The server hostname. Will be indexed.
 func (c *Client) ServerHost() string {
 	return c.configuration.serverHost
 }
 
-// root: Path to the application code root, not including the final slash.
+// Path to the application code root, not including the final slash.
 // Used to collapse non-project code when displaying tracebacks.
 func (c *Client) ServerRoot() string {
 	return c.configuration.serverRoot
 }
 
-// custom: Any arbitrary metadata you want to send.
+// Any arbitrary metadata you want to send with every subsequently sent item.
 func (c *Client) Custom() map[string]interface{} {
 	return c.configuration.custom
 }
@@ -193,8 +202,8 @@ func (c *Client) ScrubFields() *regexp.Regexp {
 
 var noExtras map[string]interface{}
 
-// Error sends an error to Rollbar with the given severity level.
-func (c *Client) Error(level string, err error) {
+// ErrorWithLevel sends an error to Rollbar with the given severity level.
+func (c *Client) ErrorWithLevel(level string, err error) {
 	c.ErrorWithExtras(level, err, noExtras)
 }
 
@@ -342,10 +351,8 @@ func (c *Client) WrapAndWait(f func()) (err interface{}) {
 	return
 }
 
-// -- Misc.
-
 // Wait will call the Wait method of the Transport. If using an asyncronous
-// transport then this will blow until until the queue of
+// transport then this will block until the queue of
 // errors / messages is empty. If using a syncronous transport then there
 // is no queue so this will be a no-op.
 func (c *Client) Wait() {
@@ -359,25 +366,17 @@ func (c *Client) Close() error {
 	return c.Transport.Close()
 }
 
-// Build the main JSON structure that will be sent to Rollbar with the
-// appropriate metadata.
 func (c *Client) buildBody(level, title string, extras map[string]interface{}) map[string]interface{} {
 	return buildBody(c.configuration, level, title, extras)
 }
 
-// Extract error details from a Request to a format that Rollbar accepts.
 func (c *Client) requestDetails(r *http.Request) map[string]interface{} {
 	return requestDetails(c.configuration, r)
 }
 
-// -- POST handling
-
-// Queue the given JSON body to be POSTed to Rollbar.
 func (c *Client) push(body map[string]interface{}) error {
 	return c.Transport.Send(body)
 }
-
-// -- Internal
 
 type person struct {
 	id       string
@@ -421,8 +420,6 @@ func createConfiguration(token, environment, codeVersion, serverHost, serverRoot
 		person:       person{},
 	}
 }
-
-// -- POST handling
 
 func clientPost(token, endpoint string, body map[string]interface{}) error {
 	if len(token) == 0 {
