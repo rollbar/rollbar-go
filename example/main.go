@@ -34,7 +34,7 @@ func helloForm(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("key:", k)
 		fmt.Println("val:", strings.Join(v, " "))
 	}
-	rollbar.Info("Example message form")
+	rollbar.Info(r, "Example message form")
 	fmt.Fprintf(w, "Hello world!")
 }
 
