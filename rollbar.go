@@ -42,14 +42,14 @@ func SetEnvironment(environment string) {
 // The endpoint to post items to.
 // The default value is https://api.rollbar.com/api/1/item/
 func SetEndpoint(endpoint string) {
-  std.SetEndpoint(endpoint)
+	std.SetEndpoint(endpoint)
 }
 
 // Platform is the platform reported for all Rollbar items. The default is
 // the running operating system (darwin, freebsd, linux, etc.) but it can
 // also be application specific (client, heroku, etc.).
 func SetPlatform(platform string) {
-  std.SetPlatform(platform)
+	std.SetPlatform(platform)
 }
 
 // String describing the running code version on the server
@@ -111,7 +111,7 @@ func ClearPerson() {
 // based on a CRC32 checksum. The alternative is to let the server compute a fingerprint for each
 // item. The default is false.
 func SetFingerprint(fingerprint bool) {
-  std.SetFingerprint(fingerprint)
+	std.SetFingerprint(fingerprint)
 }
 
 // -- Getters
@@ -128,7 +128,7 @@ func Environment() string {
 
 // Get the currently configured endpoint.
 func Endpoint() string {
-  std.Endpoint()
+	return std.Endpoint()
 }
 
 // Platform is the platform reported for all Rollbar items. The default is
@@ -163,7 +163,6 @@ func Custom() map[string]interface{} {
 func Fingerprint() bool {
 	return std.Fingerprint()
 }
-
 
 // -- Reporting
 
