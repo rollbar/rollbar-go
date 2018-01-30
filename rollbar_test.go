@@ -107,7 +107,9 @@ func TestEverythingGeneric(t *testing.T) {
 	<-done
 
 	Error("This is a generic error message")
-	Info("And this is a generic info message")
+	Info("And this is a generic info message", map[string]interface{}{
+		"hello": "rollbar",
+	})
 
 	Wait()
 }
@@ -143,6 +145,29 @@ func TestBuildBody(t *testing.T) {
 	}
 	if custom["OVERRIDDEN_CUSTOM_KEY"] != "EXTRA" {
 		t.Error("extra custom should overwrite base custom where keys match")
+	}
+}
+
+func TestBuildBodyNoBaseCustom(t *testing.T) {
+	extraCustom := map[string]interface{}{
+		"EXTRA_CUSTOM_KEY":      "EXTRA_CUSTOM_VALUE",
+		"OVERRIDDEN_CUSTOM_KEY": "EXTRA",
+	}
+	body := interface{}(std).(*Client).buildBody(ERR, "test error", extraCustom)
+
+	if body["data"] == nil {
+		t.Error("body should have data")
+	}
+	data := body["data"].(map[string]interface{})
+	if data["custom"] == nil {
+		t.Error("data should have custom")
+	}
+	custom := data["custom"].(map[string]interface{})
+	if custom["EXTRA_CUSTOM_KEY"] != "EXTRA_CUSTOM_VALUE" {
+		t.Error("custom should have extra")
+	}
+	if custom["OVERRIDDEN_CUSTOM_KEY"] != "EXTRA" {
+		t.Error("extra custom should also work")
 	}
 }
 

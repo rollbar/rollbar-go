@@ -17,6 +17,9 @@ func buildBody(configuration configuration, level, title string, extras map[stri
 	timestamp := time.Now().Unix()
 
 	custom := configuration.custom
+	if extras != nil && custom == nil {
+		custom = make(map[string]interface{})
+	}
 	for k, v := range extras {
 		custom[k] = v
 	}
@@ -37,7 +40,10 @@ func buildBody(configuration configuration, level, title string, extras map[stri
 			"name":    NAME,
 			"version": VERSION,
 		},
-		"custom": custom,
+	}
+
+	if custom != nil {
+		data["custom"] = custom
 	}
 
 	person := configuration.person
