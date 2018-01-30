@@ -27,7 +27,9 @@ var (
 	nilErrTitle = "<nil>"
 )
 
-// Rollbar access token.
+// A Rollbar access token with scope "post_server_item"
+// It is required to set this value before any of the other functions herein will be able to work
+// properly.
 func SetToken(token string) {
 	std.SetToken(token)
 }
@@ -37,23 +39,36 @@ func SetEnvironment(environment string) {
 	std.SetEnvironment(environment)
 }
 
+// The endpoint to post items to.
+// The default value is https://api.rollbar.com/api/1/item/
+func SetEndpoint(endpoint string) {
+  std.SetEndpoint(endpoint)
+}
+
+// Platform is the platform reported for all Rollbar items. The default is
+// the running operating system (darwin, freebsd, linux, etc.) but it can
+// also be application specific (client, heroku, etc.).
+func SetPlatform(platform string) {
+  std.SetPlatform(platform)
+}
+
 // String describing the running code version on the server
 func SetCodeVersion(codeVersion string) {
 	std.SetCodeVersion(codeVersion)
 }
 
-// host: The server hostname. Will be indexed.
+// The server hostname. Will be indexed.
 func SetServerHost(serverHost string) {
 	std.SetServerHost(serverHost)
 }
 
-// root: Path to the application code root, not including the final slash.
+// Path to the application code root, not including the final slash.
 // Used to collapse non-project code when displaying tracebacks.
 func SetServerRoot(serverRoot string) {
 	std.SetServerRoot(serverRoot)
 }
 
-// custom: Any arbitrary metadata you want to send.
+// Any arbitrary metadata you want to send with every subsequently sent item.
 func SetCustom(custom map[string]interface{}) {
 	std.SetCustom(custom)
 }
@@ -87,9 +102,16 @@ func SetPerson(id, username, email string) {
 	std.SetPerson(id, username, email)
 }
 
-// ClearPerson clears any previously set person information.
+// ClearPerson clears any previously set person information. See `SetPerson` for more information.
 func ClearPerson() {
 	std.ClearPerson()
+}
+
+// Whether or not to use custom client-side fingerprint
+// based on a CRC32 checksum. The alternative is to let the server compute a fingerprint for each
+// item. The default is false.
+func SetFingerprint(fingerprint bool) {
+  std.SetFingerprint(fingerprint)
 }
 
 // -- Getters
@@ -104,49 +126,133 @@ func Environment() string {
 	return std.Environment()
 }
 
-// String describing the running code version on the server
+// Get the currently configured endpoint.
+func Endpoint() string {
+  std.Endpoint()
+}
+
+// Platform is the platform reported for all Rollbar items. The default is
+// the running operating system (darwin, freebsd, linux, etc.) but it can
+// also be application specific (client, heroku, etc.).
+func Platform() string {
+	return std.Platform()
+}
+
+// String describing the running code version on the server.
 func CodeVersion() string {
 	return std.CodeVersion()
 }
 
-// host: The server hostname. Will be indexed.
+// The server hostname. Will be indexed.
 func ServerHost() string {
 	return std.ServerHost()
 }
 
-// root: Path to the application code root, not including the final slash.
+// Path to the application code root, not including the final slash.
 // Used to collapse non-project code when displaying tracebacks.
 func ServerRoot() string {
 	return std.ServerRoot()
 }
 
-// custom: Any arbitrary metadata you want to send.
+// Any arbitrary metadata you want to send with every subsequently sent item.
 func Custom() map[string]interface{} {
 	return std.Custom()
 }
 
+// Whether or not to use a custom client-side fingerprint.
+func Fingerprint() bool {
+	return std.Fingerprint()
+}
+
+
 // -- Reporting
 
+// Report an item with level `critical`. This function recognizes arguments with the following types:
+//    *http.Request
+//    error
+//    string
+//    map[string]interface{}
+//    int
+// The string and error types are mutually exclusive.
+// If an error is present then a stack trace is captured. If an int is also present then we skip
+// that number of stack frames. If the map is present it is used as extra custom data in the
+// item. If a string is present without an error, then we log a message without a stack
+// trace. If a request is present we extract as much relevant information from it as we can.
 func Critical(interfaces ...interface{}) {
 	Log(CRIT, interfaces...)
 }
 
+// Report an item with level `error`. This function recognizes arguments with the following types:
+//    *http.Request
+//    error
+//    string
+//    map[string]interface{}
+//    int
+// The string and error types are mutually exclusive.
+// If an error is present then a stack trace is captured. If an int is also present then we skip
+// that number of stack frames. If the map is present it is used as extra custom data in the
+// item. If a string is present without an error, then we log a message without a stack
+// trace. If a request is present we extract as much relevant information from it as we can.
 func Error(interfaces ...interface{}) {
 	Log(ERR, interfaces...)
 }
 
+// Report an item with level `warning`. This function recognizes arguments with the following types:
+//    *http.Request
+//    error
+//    string
+//    map[string]interface{}
+//    int
+// The string and error types are mutually exclusive.
+// If an error is present then a stack trace is captured. If an int is also present then we skip
+// that number of stack frames. If the map is present it is used as extra custom data in the
+// item. If a string is present without an error, then we log a message without a stack
+// trace. If a request is present we extract as much relevant information from it as we can.
 func Warning(interfaces ...interface{}) {
 	Log(WARN, interfaces...)
 }
 
+// Report an item with level `info`. This function recognizes arguments with the following types:
+//    *http.Request
+//    error
+//    string
+//    map[string]interface{}
+//    int
+// The string and error types are mutually exclusive.
+// If an error is present then a stack trace is captured. If an int is also present then we skip
+// that number of stack frames. If the map is present it is used as extra custom data in the
+// item. If a string is present without an error, then we log a message without a stack
+// trace. If a request is present we extract as much relevant information from it as we can.
 func Info(interfaces ...interface{}) {
 	Log(INFO, interfaces...)
 }
 
+// Report an item with level `debug`. This function recognizes arguments with the following types:
+//    *http.Request
+//    error
+//    string
+//    map[string]interface{}
+//    int
+// The string and error types are mutually exclusive.
+// If an error is present then a stack trace is captured. If an int is also present then we skip
+// that number of stack frames. If the map is present it is used as extra custom data in the
+// item. If a string is present without an error, then we log a message without a stack
+// trace. If a request is present we extract as much relevant information from it as we can.
 func Debug(interfaces ...interface{}) {
 	Log(DEBUG, interfaces...)
 }
 
+// Report an item with the given level. This function recognizes arguments with the following types:
+//    *http.Request
+//    error
+//    string
+//    map[string]interface{}
+//    int
+// The string and error types are mutually exclusive.
+// If an error is present then a stack trace is captured. If an int is also present then we skip
+// that number of stack frames. If the map is present it is used as extra custom data in the
+// item. If a string is present without an error, then we log a message without a stack
+// trace. If a request is present we extract as much relevant information from it as we can.
 func Log(level string, interfaces ...interface{}) {
 	var r *http.Request
 	var err error
