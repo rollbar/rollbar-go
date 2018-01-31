@@ -323,6 +323,11 @@ func ErrorWithLevel(level string, err error) {
 	std.ErrorWithLevel(level, err)
 }
 
+// Errorf sends an error to Rollbar with the given level using the format string and arguments.
+func Errorf(level string, format string, args ...interface{}) {
+	std.Errorf(level, format, args...)
+}
+
 // ErrorWithExtras asynchronously sends an error to Rollbar with the given
 // severity level with extra custom data.
 func ErrorWithExtras(level string, err error, extras map[string]interface{}) {

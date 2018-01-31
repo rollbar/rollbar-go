@@ -3,6 +3,7 @@ package rollbar_test
 import (
 	"errors"
 	"github.com/rollbar/rollbar-go"
+	"regexp"
 	"testing"
 )
 
@@ -49,6 +50,7 @@ func TestWrap(t *testing.T) {
 	} else {
 		t.Fail()
 	}
+	client.Close()
 }
 
 func TestWrapNonError(t *testing.T) {
@@ -59,6 +61,14 @@ func TestWrapNonError(t *testing.T) {
 	})
 	if err != result {
 		t.Error("Got:", result, "Expected:", err)
+	}
+}
+
+func TestWrapNoPanic(t *testing.T) {
+	client := testClient()
+	result := client.Wrap(func() {})
+	if result != nil {
+		t.Error("Got:", result, "Expected:", nil)
 	}
 }
 
@@ -77,6 +87,32 @@ func TestWrapIgnore(t *testing.T) {
 	if err != result {
 		t.Error("Got:", result, "Expected:", err)
 	}
+	client.Wait()
+	if transport, ok := client.Transport.(*TestTransport); ok {
+		if transport.Body != nil {
+			t.Error("Expected Body to be nil, got:", transport.Body)
+		}
+	} else {
+		t.Fail()
+	}
+}
+
+func TestWrapNonErrorIgnore(t *testing.T) {
+	client := testClient()
+	err := "borkXXX"
+	client.SetCheckIgnore(func(msg string) bool {
+		if msg == "borkXXX" {
+			return true
+		}
+		return false
+	})
+	result := client.Wrap(func() {
+		panic(err)
+	})
+	if err != result {
+		t.Error("Got:", result, "Expected:", err)
+	}
+	client.Wait()
 	if transport, ok := client.Transport.(*TestTransport); ok {
 		if transport.Body != nil {
 			t.Error("Expected Body to be nil, got:", transport.Body)
@@ -98,6 +134,73 @@ func TestWrapAndWait(t *testing.T) {
 	if transport, ok := client.Transport.(*TestTransport); ok {
 		if !transport.WaitCalled {
 			t.Error("Expected wait to be called")
+		}
+	} else {
+		t.Fail()
+	}
+}
+
+func TestWrapAndWaitNonError(t *testing.T) {
+	client := testClient()
+	err := "hello rollbar"
+	result := client.WrapAndWait(func() {
+		panic(err)
+	})
+	if err != result {
+		t.Error("Got:", result, "Expected:", err)
+	}
+}
+
+func TestWrapAndWaitNoPanic(t *testing.T) {
+	client := testClient()
+	result := client.WrapAndWait(func() {})
+	if result != nil {
+		t.Error("Got:", result, "Expected:", nil)
+	}
+}
+
+func TestWrapAndWaitIgnore(t *testing.T) {
+	client := testClient()
+	err := errors.New("bork 42")
+	client.SetCheckIgnore(func(msg string) bool {
+		if msg == "bork 42" {
+			return true
+		}
+		return false
+	})
+	result := client.WrapAndWait(func() {
+		panic(err)
+	})
+	if err != result {
+		t.Error("Got:", result, "Expected:", err)
+	}
+	if transport, ok := client.Transport.(*TestTransport); ok {
+		if transport.Body != nil {
+			t.Error("Expected Body to be nil, got:", transport.Body)
+		}
+	} else {
+		t.Fail()
+	}
+}
+
+func TestWrapAndWaitNonErrorIgnore(t *testing.T) {
+	client := testClient()
+	err := "borkXXX"
+	client.SetCheckIgnore(func(msg string) bool {
+		if msg == "borkXXX" {
+			return true
+		}
+		return false
+	})
+	result := client.WrapAndWait(func() {
+		panic(err)
+	})
+	if err != result {
+		t.Error("Got:", result, "Expected:", err)
+	}
+	if transport, ok := client.Transport.(*TestTransport); ok {
+		if transport.Body != nil {
+			t.Error("Expected Body to be nil, got:", transport.Body)
 		}
 	} else {
 		t.Fail()
@@ -127,6 +230,8 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 	codeVersion := "CodeVersion"
 	host := "SomeHost"
 	root := "////"
+	scrubHeaders := regexp.MustCompile("Foo")
+	scrubFields := regexp.MustCompile("squirrel|doggo")
 
 	errorIfEqual(token, client.Token(), t)
 	errorIfEqual(environment, client.Environment(), t)
@@ -136,6 +241,18 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 	errorIfEqual(host, client.ServerHost(), t)
 	errorIfEqual(root, client.ServerRoot(), t)
 
+	if client.Fingerprint() {
+		t.Error("expected fingerprint to default to false")
+	}
+
+	if client.ScrubHeaders().MatchString("Foo") {
+		t.Error("unexpected matching scrub header")
+	}
+
+	if client.ScrubFields().MatchString("squirrel") {
+		t.Error("unexpected matching scrub field")
+	}
+
 	client.SetToken(token)
 	client.SetEnvironment(environment)
 	client.SetEndpoint(endpoint)
@@ -143,6 +260,10 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 	client.SetCodeVersion(codeVersion)
 	client.SetServerHost(host)
 	client.SetServerRoot(root)
+	client.SetFingerprint(true)
+	client.SetLogger(&rollbar.SilentClientLogger{})
+	client.SetScrubHeaders(scrubHeaders)
+	client.SetScrubFields(scrubFields)
 
 	errorIfNotEqual(token, client.Token(), t)
 	errorIfNotEqual(environment, client.Environment(), t)
@@ -151,6 +272,18 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 	errorIfNotEqual(codeVersion, client.CodeVersion(), t)
 	errorIfNotEqual(host, client.ServerHost(), t)
 	errorIfNotEqual(root, client.ServerRoot(), t)
+
+	if !client.Fingerprint() {
+		t.Error("expected fingerprint to default to false")
+	}
+
+	if !client.ScrubHeaders().MatchString("Foo") {
+		t.Error("expected matching scrub header")
+	}
+
+	if !client.ScrubFields().MatchString("squirrel") {
+		t.Error("expected matching scrub field")
+	}
 }
 
 func errorIfEqual(a, b string, t *testing.T) {

@@ -79,8 +79,17 @@ func TestEverything(t *testing.T) {
 	Message("error", "This is an error message")
 	Message("info", "And this is an info message")
 
-	// If you don't see the message sent on line 65 in Rollbar, that means this
-	// is broken:
+	SetFingerprint(true)
+
+	Errorf("error", "%s %s", "Some argument", "Another argument")
+
+	r, _ := http.NewRequest("GET", "http://foo.com/somethere?param1=true", nil)
+	r.RemoteAddr = "1.1.1.1:123"
+
+	RequestMessage("debug", r, "This is a debug message with a request")
+	RequestError("info", r, errors.New("Some info error with a request"))
+	RequestErrorWithStackSkip("info", r, errors.New("Some info error with a request"), 2)
+
 	Wait()
 }
 
@@ -109,6 +118,14 @@ func TestEverythingGeneric(t *testing.T) {
 	Error("This is a generic error message")
 	Info("And this is a generic info message", map[string]interface{}{
 		"hello": "rollbar",
+	})
+
+	r, _ := http.NewRequest("GET", "http://foo.com/somethere?param1=true", nil)
+	r.RemoteAddr = "1.1.1.1:123"
+
+	Debug(r, "This is a message with a generic request")
+	Warning(errors.New("Some generic error with a request"), r, map[string]interface{}{
+		"hello": "request",
 	})
 
 	Wait()

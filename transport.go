@@ -34,6 +34,12 @@ type ClientLogger interface {
 	Printf(format string, args ...interface{})
 }
 
+// SilentClientLogger is a type that implements the ClientLogger interface but produces no output.
+type SilentClientLogger struct{}
+
+// Printf implements the ClientLogger interface.
+func (s *SilentClientLogger) Printf(format string, args ...interface{}) {}
+
 // NewTransport creates a transport that sends items to the Rollbar API asynchronously.
 func NewTransport(token, endpoint string) Transport {
 	return NewAsyncTransport(token, endpoint, DefaultBuffer)
