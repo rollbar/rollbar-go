@@ -11,7 +11,7 @@ import (
 	"runtime"
 )
 
-// An instance of Client can be used to interact with Rollbar via the configured Transport.
+// A Client can be used to interact with Rollbar via the configured Transport.
 // The functions at the root of the `rollbar` package are the recommend way of using a Client. One
 // should not need to manage instances of the Client type manually in most normal scenarios.
 // However, if you want to customize the underlying transport layer, or you need to have
@@ -51,7 +51,8 @@ func NewSync(token, environment, codeVersion, serverHost, serverRoot string) *Cl
 	}
 }
 
-// A Rollbar access token with scope "post_server_item"
+// SetToken sets the token used by this client.
+// The value is a Rollbar access token with scope "post_server_item".
 // It is required to set this value before any of the other functions herein will be able to work
 // properly. This also configures the underlying Transport.
 func (c *Client) SetToken(token string) {
@@ -59,44 +60,44 @@ func (c *Client) SetToken(token string) {
 	c.Transport.SetToken(token)
 }
 
-// All errors and messages will be submitted under this environment.
+// SetEnvironment sets the environment under which all errors and messages will be submitted.
 func (c *Client) SetEnvironment(environment string) {
 	c.configuration.environment = environment
 }
 
-// The endpoint to post items to
+// SetEndpoint sets the endpoint to post items to. This also configures the underlying Transport.
 func (c *Client) SetEndpoint(endpoint string) {
 	c.configuration.endpoint = endpoint
 	c.Transport.SetEndpoint(endpoint)
 }
 
-// Set the Platform to be reported for all items
+// SetPlatform sets the platform to be reported for all items.
 func (c *Client) SetPlatform(platform string) {
 	c.configuration.platform = platform
 }
 
-// String describing the running code version on the server
+// SetCodeVersion sets the string describing the running code version on the server.
 func (c *Client) SetCodeVersion(codeVersion string) {
 	c.configuration.codeVersion = codeVersion
 }
 
-// host: The server hostname. Will be indexed.
+// SetServerHost sets the hostname sent with each item. This value will be indexed.
 func (c *Client) SetServerHost(serverHost string) {
 	c.configuration.serverHost = serverHost
 }
 
-// root: Path to the application code root, not including the final slash.
-// Used to collapse non-project code when displaying tracebacks.
+// SetServerRoot sets the path to the application code root, not including the final slash.
+// This is used to collapse non-project code when displaying tracebacks.
 func (c *Client) SetServerRoot(serverRoot string) {
 	c.configuration.serverRoot = serverRoot
 }
 
-// custom: Any arbitrary metadata you want to send.
+// SetCustom sets any arbitrary metadata you want to send with every item.
 func (c *Client) SetCustom(custom map[string]interface{}) {
 	c.configuration.custom = custom
 }
 
-// Person information for identifying a user associated with
+// SetPerson information for identifying a user associated with
 // any subsequent errors or messages. Only id is required to be
 // non-empty.
 func (c *Client) SetPerson(id, username, email string) {
@@ -113,30 +114,31 @@ func (c *Client) ClearPerson() {
 	c.configuration.person = person{}
 }
 
-// Whether or not to use custom client-side fingerprint
+// SetFingerprint sets whether or not to use a custom client-side fingerprint. The default value is
+// false.
 func (c *Client) SetFingerprint(fingerprint bool) {
 	c.configuration.fingerprint = fingerprint
 }
 
-// Set the logger on the underlying transport
+// SetLogger sets the logger on the underlying transport. By default log.Printf is used.
 func (c *Client) SetLogger(logger ClientLogger) {
 	c.Transport.SetLogger(logger)
 }
 
-// Regular expression used to match headers for scrubbing
+// SetScrubHeaders sets the regular expression used to match headers for scrubbing.
 // The default value is regexp.MustCompile("Authorization")
 func (c *Client) SetScrubHeaders(headers *regexp.Regexp) {
 	c.configuration.scrubHeaders = headers
 }
 
-// Regular expression to match keys in the item payload for scrubbing
+// SetScrubFields sets the regular expression to match keys in the item payload for scrubbing.
 // The default vlaue is regexp.MustCompile("password|secret|token"),
 func (c *Client) SetScrubFields(fields *regexp.Regexp) {
 	c.configuration.scrubFields = fields
 }
 
-// CheckIgnore is called during the recovery process of a panic that
-// occurred inside a function wrapped by Wrap or WrapAndWait
+// SetCheckIgnore sets the checkIgnore function which is called during the recovery
+// process of a panic that occurred inside a function wrapped by Wrap or WrapAndWait.
 // Return true if you wish to ignore this panic, false if you wish to
 // report it to Rollbar. If an error is the argument to the panic, then
 // this function is called with the result of calling Error(), otherwise
@@ -145,62 +147,61 @@ func (c *Client) SetCheckIgnore(checkIgnore func(string) bool) {
 	c.configuration.checkIgnore = checkIgnore
 }
 
-// -- Getters
-
-// Rollbar access token.
+// Token is the currently set Rollbar access token.
 func (c *Client) Token() string {
 	return c.configuration.token
 }
 
-// All errors and messages will be submitted under this environment.
+// Environment is the currently set environment underwhich all errors and
+// messages will be submitted.
 func (c *Client) Environment() string {
 	return c.configuration.environment
 }
 
-// The endpoint used for posting items
+// Endpoint is the currently set endpoint used for posting items.
 func (c *Client) Endpoint() string {
 	return c.configuration.endpoint
 }
 
-// Platform is the platform reported for all Rollbar items. The default is
+// Platform is the currently set platform reported for all Rollbar items. The default is
 // the running operating system (darwin, freebsd, linux, etc.) but it can
 // also be application specific (client, heroku, etc.).
 func (c *Client) Platform() string {
 	return c.configuration.platform
 }
 
-// String describing the running code version on the server
+// CodeVersion is the currently set string describing the running code version on the server.
 func (c *Client) CodeVersion() string {
 	return c.configuration.codeVersion
 }
 
-// The server hostname. Will be indexed.
+// ServerHost is the currently set server hostname. This value will be indexed.
 func (c *Client) ServerHost() string {
 	return c.configuration.serverHost
 }
 
-// Path to the application code root, not including the final slash.
-// Used to collapse non-project code when displaying tracebacks.
+// ServerRoot is the currently set path to the application code root, not including the final slash.
+// This is used to collapse non-project code when displaying tracebacks.
 func (c *Client) ServerRoot() string {
 	return c.configuration.serverRoot
 }
 
-// Any arbitrary metadata you want to send with every subsequently sent item.
+// Custom is the currently set arbitrary metadata you want to send with every subsequently sent item.
 func (c *Client) Custom() map[string]interface{} {
 	return c.configuration.custom
 }
 
-// Whether or not to use custom client-side fingerprint
+// Fingerprint specifies whether or not to use a custom client-side fingerprint.
 func (c *Client) Fingerprint() bool {
 	return c.configuration.fingerprint
 }
 
-// Regular expression used to match headers for scrubbing
+// ScrubHeaders is the currently set regular expression used to match headers for scrubbing.
 func (c *Client) ScrubHeaders() *regexp.Regexp {
 	return c.configuration.scrubHeaders
 }
 
-// Regular expression to match keys in the item payload for scrubbing
+// ScrubFields is the currently set regular expression to match keys in the item payload for scrubbing.
 func (c *Client) ScrubFields() *regexp.Regexp {
 	return c.configuration.scrubFields
 }
