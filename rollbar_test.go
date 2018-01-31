@@ -93,6 +93,8 @@ func TestEverything(t *testing.T) {
 	Wait()
 }
 
+type someNonstandardTypeForLogFailing struct{}
+
 func TestEverythingGeneric(t *testing.T) {
 	SetToken(os.Getenv("TOKEN"))
 	SetEnvironment("test")
@@ -119,6 +121,10 @@ func TestEverythingGeneric(t *testing.T) {
 	Info("And this is a generic info message", map[string]interface{}{
 		"hello": "rollbar",
 	})
+
+	SetLogger(&SilentClientLogger{})
+	Info(someNonstandardTypeForLogFailing{}, "I am a string and I did not fail")
+	SetLogger(nil)
 
 	r, _ := http.NewRequest("GET", "http://foo.com/somethere?param1=true", nil)
 	r.RemoteAddr = "1.1.1.1:123"
