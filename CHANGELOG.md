@@ -1,3 +1,9 @@
+1.0.0-alpha.1
+=====
+
+* Add `Wrap` and `WrapAndWait` for automatically capturing and reporting panics.
+
+
 0.2.0 - September 30th, 2014
 ============================
 
