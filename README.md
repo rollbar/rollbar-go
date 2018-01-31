@@ -73,13 +73,3 @@ official library is actually a fork of the Heroku fork with some git magic to ma
 standalone repository along with all of that history. We then also went back to the original stvp
 library and brought over most of the divergent changes. Since then we have moved forward to add more
 functionality to this library and it is the recommended notifier for Go going forward.
-
-Contributors
-============
-
-A big thank you to everyone who has contributed pull requests and bug reports:
-
-* @kjk
-* @Soulou
-* @paulmach
-* @fabiokung
