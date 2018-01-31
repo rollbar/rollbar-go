@@ -38,10 +38,10 @@ func main() {
 
   result, err := DoSomething()
   if err != nil {
-    rollbar.Error(rollbar.ERR, err)
+    rollbar.Critical(err)
   }
 
-  rollbar.Message("info", "Message body goes here")
+  rollbar.Info("Message body goes here")
 
   rollbar.Wait()
 }

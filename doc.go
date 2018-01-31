@@ -18,7 +18,7 @@ Basic Usage
 
     result, err := DoSomething()
     if err != nil {
-      rollbar.Error(err)
+      rollbar.Critical(err)
     }
 
     rollbar.Info("Message body goes here")
