@@ -17,14 +17,21 @@ var (
 	}
 )
 
+// Frame represents one frame in a stack trace
 type Frame struct {
+	// Filename is the name of the file for this frame
 	Filename string `json:"filename"`
-	Method   string `json:"method"`
-	Line     int    `json:"lineno"`
+	// Method is the name of the method for this frame
+	Method string `json:"method"`
+	// Line is the line number in the file for this frame
+	Line int `json:"lineno"`
 }
 
+// A Stack is a slice of frames
 type Stack []Frame
 
+// BuildStack uses the Go runtime to construct a slice of frames optionally skipping the number of
+// frames specified by the input skip argument.
 func BuildStack(skip int) Stack {
 	stack := make(Stack, 0)
 
@@ -40,7 +47,7 @@ func BuildStack(skip int) Stack {
 	return stack
 }
 
-// Create a fingerprint that uniqely identify a given message. We use the full
+// Fingerprint creates a fingerprint that uniqely identify a given message. We use the full
 // callstack, including file names. That ensure that there are no false duplicates
 // but also means that after changing the code (adding/removing lines), the
 // fingerprints will change. It's a trade-off.

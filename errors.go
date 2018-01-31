@@ -13,8 +13,11 @@ func (e ErrHTTPError) Error() string {
 	return fmt.Sprintf("rollbar: service returned status: %d", e)
 }
 
+// ErrBufferFull is an error which is returned when the asynchronous transport is used and the
+// channel used for buffering items for sending to Rollbar is full.
 type ErrBufferFull struct{}
 
+// Error implements the error interface.
 func (e ErrBufferFull) Error() string {
 	return "buffer full, dropping error on the floor"
 }

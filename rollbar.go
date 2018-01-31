@@ -7,16 +7,24 @@ import (
 )
 
 const (
-	NAME    = "rollbar/rollbar-go"
+	// NAME is the name of this notifier sent with the payload to Rollbar.
+	NAME = "rollbar/rollbar-go"
+	// VERSION is the version of this notifier sent with the payload to Rollbar.
 	VERSION = "1.0.0-alpha.1"
 
-	// Severity levels
-	CRIT  = "critical"
-	ERR   = "error"
-	WARN  = "warning"
-	INFO  = "info"
+	// CRIT is the critial severity level.
+	CRIT = "critical"
+	// ERR is the error severity level.
+	ERR = "error"
+	// WARN is the warning severity level.
+	WARN = "warning"
+	// INFO is the info severity level.
+	INFO = "info"
+	// DEBUG is the debug severity level.
 	DEBUG = "debug"
 
+	// FILTERED is the string used to replace values that are scrubbed based on the configured headers
+	// and fields used for scrubbing.
 	FILTERED = "[FILTERED]"
 )
 
@@ -26,66 +34,76 @@ var (
 	nilErrTitle = "<nil>"
 )
 
-// A Rollbar access token with scope "post_server_item"
-// It is required to set this value before any of the other functions herein will be able to work
-// properly.
+// SetToken sets the token on the managed Client instance. The value is a Rollbar access token
+// with scope "post_server_item". It is required to set this value before any of the other
+// functions herein will be able to work properly.
 func SetToken(token string) {
 	std.SetToken(token)
 }
 
+// SetEnvironment sets the environment on the managed Client instance.
 // All errors and messages will be submitted under this environment.
 func SetEnvironment(environment string) {
 	std.SetEnvironment(environment)
 }
 
+// SetEndpoint sets the endpoint on the managed Client instance.
 // The endpoint to post items to.
 // The default value is https://api.rollbar.com/api/1/item/
 func SetEndpoint(endpoint string) {
 	std.SetEndpoint(endpoint)
 }
 
-// Platform is the platform reported for all Rollbar items. The default is
+// SetPlatform sets the platform on the managed Client instance.
+// The platform is reported for all Rollbar items. The default is
 // the running operating system (darwin, freebsd, linux, etc.) but it can
 // also be application specific (client, heroku, etc.).
 func SetPlatform(platform string) {
 	std.SetPlatform(platform)
 }
 
-// String describing the running code version on the server
+// SetCodeVersion sets the code version on the managed Client instance.
+// The code version is a string describing the running code version on the server.
 func SetCodeVersion(codeVersion string) {
 	std.SetCodeVersion(codeVersion)
 }
 
-// The server hostname. Will be indexed.
+// SetServerHost sets the host value on the managed Client instance.
+// Server host is the hostname sent with all Rollbar items. The value will be indexed.
 func SetServerHost(serverHost string) {
 	std.SetServerHost(serverHost)
 }
 
+// SetServerRoot sets the code root value on the managed Client instance.
 // Path to the application code root, not including the final slash.
 // Used to collapse non-project code when displaying tracebacks.
 func SetServerRoot(serverRoot string) {
 	std.SetServerRoot(serverRoot)
 }
 
-// Any arbitrary metadata you want to send with every subsequently sent item.
+// SetCustom sets custom data on the managed Client instance.
+// The data set is any arbitrary metadata you want to send with every subsequently sent item.
 func SetCustom(custom map[string]interface{}) {
 	std.SetCustom(custom)
 }
 
-// Regular expression used to match headers for scrubbing
-// The default value is regexp.MustCompile("Authorization")
+// SetScrubHeaders sets the headers to scrub on the managed Client instance.
+// The value is a regular expression used to match headers for scrubbing.
+// The default value is regexp.MustCompile("Authorization").
 func SetScrubHeaders(headers *regexp.Regexp) {
 	std.SetScrubHeaders(headers)
 }
 
-// Regular expression to match keys in the item payload for scrubbing
-// The default vlaue is regexp.MustCompile("password|secret|token"),
+// SetScrubFields sets the fields to scrub on the managed Client instance.
+// The value is a regular expression to match keys in the item payload for scrubbing.
+// The default vlaue is regexp.MustCompile("password|secret|token").
 func SetScrubFields(fields *regexp.Regexp) {
 	std.SetScrubFields(fields)
 }
 
+// SetCheckIgnore sets the checkIgnore function on the managed Client instance.
 // CheckIgnore is called during the recovery process of a panic that
-// occurred inside a function wrapped by Wrap or WrapAndWait
+// occurred inside a function wrapped by Wrap or WrapAndWait.
 // Return true if you wish to ignore this panic, false if you wish to
 // report it to Rollbar. If an error is the argument to the panic, then
 // this function is called with the result of calling Error(), otherwise
@@ -106,31 +124,32 @@ func ClearPerson() {
 	std.ClearPerson()
 }
 
-// Whether or not to use custom client-side fingerprint
-// based on a CRC32 checksum. The alternative is to let the server compute a fingerprint for each
-// item. The default is false.
+// SetFingerprint sets whether or not to use custom client-side fingerprinting on the managed Client
+// instance. This custom fingerprinting is based on a CRC32 checksum. The alternative is to let
+// the server compute a fingerprint for each item. The default is false.
 func SetFingerprint(fingerprint bool) {
 	std.SetFingerprint(fingerprint)
 }
 
-// Set an alternative logger to be used by the underlying transport layer.
+// SetLogger sets an alternative logger to be used by the underlying transport layer on the managed
+// Client instance.
 func SetLogger(logger ClientLogger) {
 	std.SetLogger(logger)
 }
 
 // -- Getters
 
-// Rollbar access token.
+// Token returns the currently set Rollbar access token on the managed Client instance.
 func Token() string {
 	return std.Token()
 }
 
-// All errors and messages will be submitted under this environment.
+// Environment is the environment currently set on the managed Client instance.
 func Environment() string {
 	return std.Environment()
 }
 
-// Get the currently configured endpoint.
+// Endpoint is the currently configured endpoint to send items on the managed Client instance.
 func Endpoint() string {
 	return std.Endpoint()
 }
@@ -142,35 +161,39 @@ func Platform() string {
 	return std.Platform()
 }
 
-// String describing the running code version on the server.
+// CodeVersion is the string describing the running code version on the server that is currently set
+// on the managed Client instance.
 func CodeVersion() string {
 	return std.CodeVersion()
 }
 
-// The server hostname. Will be indexed.
+// ServerHost is the currently set hostname on the managed Client instance. The value will be
+// indexed.
 func ServerHost() string {
 	return std.ServerHost()
 }
 
-// Path to the application code root, not including the final slash.
-// Used to collapse non-project code when displaying tracebacks.
+// ServerRoot is the currently set path to the code root set on the managed Client instance.
+// This should be a path to the application code root, not including the final slash.
+// It is used to collapse non-project code when displaying tracebacks.
 func ServerRoot() string {
 	return std.ServerRoot()
 }
 
-// Any arbitrary metadata you want to send with every subsequently sent item.
+// Custom is the currently set extra metadata on the managed Client instance.
 func Custom() map[string]interface{} {
 	return std.Custom()
 }
 
-// Whether or not to use a custom client-side fingerprint.
+// Fingerprint is whether or not the current managed Client instance uses a custom client-side
+// fingerprint. The default is false.
 func Fingerprint() bool {
 	return std.Fingerprint()
 }
 
 // -- Reporting
 
-// Report an item with level `critical`. This function recognizes arguments with the following types:
+// Critical reports an item with level `critical`. This function recognizes arguments with the following types:
 //    *http.Request
 //    error
 //    string
@@ -185,7 +208,7 @@ func Critical(interfaces ...interface{}) {
 	Log(CRIT, interfaces...)
 }
 
-// Report an item with level `error`. This function recognizes arguments with the following types:
+// Error reports an item with level `error`. This function recognizes arguments with the following types:
 //    *http.Request
 //    error
 //    string
@@ -200,7 +223,7 @@ func Error(interfaces ...interface{}) {
 	Log(ERR, interfaces...)
 }
 
-// Report an item with level `warning`. This function recognizes arguments with the following types:
+// Warning reports an item with level `warning`. This function recognizes arguments with the following types:
 //    *http.Request
 //    error
 //    string
@@ -215,7 +238,7 @@ func Warning(interfaces ...interface{}) {
 	Log(WARN, interfaces...)
 }
 
-// Report an item with level `info`. This function recognizes arguments with the following types:
+// Info reports an item with level `info`. This function recognizes arguments with the following types:
 //    *http.Request
 //    error
 //    string
@@ -230,7 +253,7 @@ func Info(interfaces ...interface{}) {
 	Log(INFO, interfaces...)
 }
 
-// Report an item with level `debug`. This function recognizes arguments with the following types:
+// Debug reports an item with level `debug`. This function recognizes arguments with the following types:
 //    *http.Request
 //    error
 //    string
@@ -245,7 +268,7 @@ func Debug(interfaces ...interface{}) {
 	Log(DEBUG, interfaces...)
 }
 
-// Report an item with the given level. This function recognizes arguments with the following types:
+// Log reports an item with the given level. This function recognizes arguments with the following types:
 //    *http.Request
 //    error
 //    string
@@ -383,15 +406,14 @@ func Wrap(f func()) interface{} {
 }
 
 // WrapAndWait calls f, and recovers and reports a panic to Rollbar if it occurs.
-// This also waits before returning to ensure the message was reported
+// This also waits before returning to ensure the message was reported.
 // If an error is captured it is subsequently returned.
 func WrapAndWait(f func()) interface{} {
 	return std.WrapAndWait(f)
 }
 
-// Errors can implement this interface to create a trace_chain
-// Callers are required to call BuildStack on their own at the
-// time the cause is wrapped.
+// CauseStacker is an interface that errors can implement to create a trace_chain.
+// Callers are required to call BuildStack on their own at the time the cause is wrapped.
 type CauseStacker interface {
 	error
 	Cause() error

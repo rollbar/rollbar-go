@@ -6,9 +6,10 @@ import (
 )
 
 const (
-	// We use a buffered channel for queueing items to send to Rollbar in the asynchronous
-	// implementation of Transport. By default the channel has a capacity of this size.
-	DEFAULT_BUFFER = 1000
+	// DefaultBuffer is the default size of the buffered channel used
+	// for queueing items to send to Rollbar in the asynchronous
+	// implementation of Transport.
+	DefaultBuffer = 1000
 )
 
 // Transport represents an object used for communicating with the Rollbar API.
@@ -33,9 +34,9 @@ type ClientLogger interface {
 	Printf(format string, args ...interface{})
 }
 
-/// NewTransport creates a transport that sends items to the Rollbar API asyncronously.
+// NewTransport creates a transport that sends items to the Rollbar API asyncronously.
 func NewTransport(token, endpoint string) Transport {
-	return NewAsyncTransport(token, endpoint, DEFAULT_BUFFER)
+	return NewAsyncTransport(token, endpoint, DefaultBuffer)
 }
 
 // -- rollbarError
