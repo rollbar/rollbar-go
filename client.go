@@ -19,7 +19,7 @@ import (
 // type.
 type Client struct {
 	io.Closer
-	// Transport used to send data to the Rollbar API. By default an asyncronous
+	// Transport used to send data to the Rollbar API. By default an asynchronous
 	// implementation of the Transport interface is used.
 	Transport     Transport
 	configuration configuration
@@ -359,15 +359,15 @@ func (c *Client) WrapAndWait(f func()) (err interface{}) {
 	return
 }
 
-// Wait will call the Wait method of the Transport. If using an asyncronous
+// Wait will call the Wait method of the Transport. If using an asynchronous
 // transport then this will block until the queue of
-// errors / messages is empty. If using a syncronous transport then there
+// errors / messages is empty. If using a synchronous transport then there
 // is no queue so this will be a no-op.
 func (c *Client) Wait() {
 	c.Transport.Wait()
 }
 
-// Close delegates to the Close method of the Transport. For the asyncronous
+// Close delegates to the Close method of the Transport. For the asynchronous
 // transport this is an alias for Wait, and is a no-op for the synchronous
 // transport.
 func (c *Client) Close() error {

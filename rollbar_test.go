@@ -195,9 +195,9 @@ func TestErrorRequest(t *testing.T) {
 
 func TestFilterParams(t *testing.T) {
 	values := map[string][]string{
-		"password":     []string{"one"},
-		"ok":           []string{"one"},
-		"access_token": []string{"one"},
+		"password":     {"one"},
+		"ok":           {"one"},
+		"access_token": {"one"},
 	}
 
 	clean := filterParams(std.configuration.scrubFields, values)
@@ -216,8 +216,8 @@ func TestFilterParams(t *testing.T) {
 
 func TestFlattenValues(t *testing.T) {
 	values := map[string][]string{
-		"a": []string{"one"},
-		"b": []string{"one", "two"},
+		"a": {"one"},
+		"b": {"one", "two"},
 	}
 
 	flattened := flattenValues(values)
@@ -336,6 +336,6 @@ func TestErrorBodyWithChain(t *testing.T) {
 		t.Error("chain should contain cause third")
 	}
 	if effect2.Stack().Fingerprint()+effect.Stack().Fingerprint()+"0" != fingerprint {
-		t.Error("fingerprint should be concatination of fingerprints in chain. got: ", fingerprint)
+		t.Error("fingerprint should be the fingerprints in chain concatenated together. got: ", fingerprint)
 	}
 }

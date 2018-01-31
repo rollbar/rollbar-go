@@ -31,7 +31,7 @@ This package is designed to be used via the functions exposed at the root of the
 
 If you wish for more fine grained control over the client or you wish to have multiple independent clients then you can create and manage your own instances of the `Client` type.
 
-We provide two implementations of the `Transport` interface, `AsyncTransport` and `SyncTransport`. These manage the communication with the network layer. The Async version uses a buffered channel to communicate with the Rollbar API in a separate go routine. The Sync version is fully synchronous. It is possible to create your own `Transport` and configure a Client to use your prefered implementation.
+We provide two implementations of the `Transport` interface, `AsyncTransport` and `SyncTransport`. These manage the communication with the network layer. The Async version uses a buffered channel to communicate with the Rollbar API in a separate go routine. The Sync version is fully synchronous. It is possible to create your own `Transport` and configure a Client to use your preferred implementation.
 
 Go does not provide a mechanism for handling all panics automatically, therefore we provide two functions `Wrap` and `WrapAndWait` to make working with panics easier. They both take a function and then report to Rollbar if that function panics. They use the recover mechanism to capture the panic, and therefore if you wish your process to have the normal behaviour on panic (i.e. to crash), you will need to re-panic the result of calling `Wrap`. For example,
 

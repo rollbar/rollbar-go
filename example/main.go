@@ -1,12 +1,12 @@
 package main
 
 import (
-  "os"
 	"encoding/json"
 	"fmt"
 	"github.com/rollbar/rollbar-go"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 )
 
@@ -34,7 +34,7 @@ func helloForm(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("key:", k)
 		fmt.Println("val:", strings.Join(v, " "))
 	}
-  rollbar.Info(r, "Example message form")
+	rollbar.Info(r, "Example message form")
 	fmt.Fprintf(w, "Hello world!")
 }
 
@@ -43,7 +43,7 @@ func helloForm(w http.ResponseWriter, r *http.Request) {
 //    curl -X POST -H "Content-Type: application/x-www-form-urlencoded" \
 //      http://localhost:9090/form -d "password=foobar&fuzz=buzz"
 func main() {
-  var token = os.Getenv("TOKEN")
+	var token = os.Getenv("TOKEN")
 	rollbar.SetToken(token)
 	rollbar.SetEnvironment("test")
 	http.HandleFunc("/json", helloJson)

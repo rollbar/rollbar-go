@@ -16,7 +16,7 @@ const (
 type Transport interface {
 	io.Closer
 	// Send the body to the API, returning an error if the send fails. If the implementation to
-	// asyncronous, then a failure can still occur when this method returns no error. In that case
+	// asynchronous, then a failure can still occur when this method returns no error. In that case
 	// this error represents a failure (or not) of enqueuing the payload.
 	Send(body map[string]interface{}) error
 	// Wait blocks until all messages currently waiting to be processed have been sent.
@@ -34,7 +34,7 @@ type ClientLogger interface {
 	Printf(format string, args ...interface{})
 }
 
-// NewTransport creates a transport that sends items to the Rollbar API asyncronously.
+// NewTransport creates a transport that sends items to the Rollbar API asynchronously.
 func NewTransport(token, endpoint string) Transport {
 	return NewAsyncTransport(token, endpoint, DefaultBuffer)
 }

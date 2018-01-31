@@ -87,5 +87,5 @@ func functionName(pc uintptr) string {
 	}
 	name := fn.Name()
 	end := strings.LastIndex(name, string(os.PathSeparator))
-	return name[end+1 : len(name)]
+	return name[end+1:]
 }

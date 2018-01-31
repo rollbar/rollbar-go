@@ -61,7 +61,7 @@ func (t *AsyncTransport) Wait() {
 	t.waitGroup.Wait()
 }
 
-// Close is an alias for Wait for the asyncronous transport
+// Close is an alias for Wait for the asynchronous transport
 func (t *AsyncTransport) Close() error {
 	t.Wait()
 	return nil
