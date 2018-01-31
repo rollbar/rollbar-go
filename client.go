@@ -19,6 +19,8 @@ import (
 // type.
 type Client struct {
 	io.Closer
+	// Transport used to send data to the Rollbar API. By default an asyncronous
+	// implementation of the Transport interface is used.
 	Transport     Transport
 	configuration configuration
 }
@@ -114,6 +116,11 @@ func (c *Client) ClearPerson() {
 // Whether or not to use custom client-side fingerprint
 func (c *Client) SetFingerprint(fingerprint bool) {
 	c.configuration.fingerprint = fingerprint
+}
+
+// Set the logger on the underlying transport
+func (c *Client) SetLogger(logger ClientLogger) {
+	c.Transport.SetLogger(logger)
 }
 
 // Regular expression used to match headers for scrubbing
@@ -421,27 +428,27 @@ func createConfiguration(token, environment, codeVersion, serverHost, serverRoot
 	}
 }
 
-func clientPost(token, endpoint string, body map[string]interface{}) error {
+func clientPost(token, endpoint string, body map[string]interface{}, logger ClientLogger) error {
 	if len(token) == 0 {
-		rollbarError("empty token")
+		rollbarError(logger, "empty token")
 		return nil
 	}
 
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
-		rollbarError("failed to encode payload: %s", err.Error())
+		rollbarError(logger, "failed to encode payload: %s", err.Error())
 		return err
 	}
 
 	resp, err := http.Post(endpoint, "application/json", bytes.NewReader(jsonBody))
 	if err != nil {
-		rollbarError("POST failed: %s", err.Error())
+		rollbarError(logger, "POST failed: %s", err.Error())
 		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		rollbarError("received response: %s", resp.Status)
+		rollbarError(logger, "received response: %s", resp.Status)
 		return ErrHTTPError(resp.StatusCode)
 	}
 

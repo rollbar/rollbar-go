@@ -19,8 +19,9 @@ func (t *TestTransport) Wait() {
 	t.WaitCalled = true
 }
 
-func (t *TestTransport) SetToken(_t string)    {}
-func (t *TestTransport) SetEndpoint(_e string) {}
+func (t *TestTransport) SetToken(_t string)                {}
+func (t *TestTransport) SetEndpoint(_e string)             {}
+func (t *TestTransport) SetLogger(_l rollbar.ClientLogger) {}
 func (t *TestTransport) Send(body map[string]interface{}) error {
 	t.Body = body
 	return nil

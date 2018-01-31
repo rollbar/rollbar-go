@@ -1,7 +1,6 @@
 package rollbar
 
 import (
-	"log"
 	"net/http"
 	"os"
 	"regexp"
@@ -112,6 +111,11 @@ func ClearPerson() {
 // item. The default is false.
 func SetFingerprint(fingerprint bool) {
 	std.SetFingerprint(fingerprint)
+}
+
+// Set an alternative logger to be used by the underlying transport layer.
+func SetLogger(logger ClientLogger) {
+	std.SetLogger(logger)
 }
 
 // -- Getters
@@ -271,7 +275,7 @@ func Log(level string, interfaces ...interface{}) {
 		case map[string]interface{}:
 			extras = val
 		default:
-			rollbarError("Unknown input type: %T", val)
+			rollbarError(std.Transport.(*AsyncTransport).Logger, "Unknown input type: %T", val)
 		}
 	}
 	if err != nil {
@@ -392,11 +396,4 @@ type CauseStacker interface {
 	error
 	Cause() error
 	Stack() Stack
-}
-
-// -- rollbarError
-
-func rollbarError(format string, args ...interface{}) {
-	format = "Rollbar error: " + format + "\n"
-	log.Printf(format, args...)
 }
