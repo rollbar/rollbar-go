@@ -163,9 +163,8 @@ func buildTrace(err error, stack Stack) map[string]interface{} {
 func getCause(err error) error {
 	if cs, ok := err.(CauseStacker); ok {
 		return cs.Cause()
-	} else {
-		return nil
 	}
+	return nil
 }
 
 // gets Stack from errors that provide one of their own
