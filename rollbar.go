@@ -283,6 +283,7 @@ func Log(level string, interfaces ...interface{}) {
 	var r *http.Request
 	var err error
 	var skip int
+	skipSet := false
 	var extras map[string]interface{}
 	var msg string
 	for _, ival := range interfaces {
@@ -293,6 +294,7 @@ func Log(level string, interfaces ...interface{}) {
 			err = val
 		case int:
 			skip = val
+			skipSet = true
 		case string:
 			msg = val
 		case map[string]interface{}:
@@ -300,6 +302,9 @@ func Log(level string, interfaces ...interface{}) {
 		default:
 			rollbarError(std.Transport.(*AsyncTransport).Logger, "Unknown input type: %T", val)
 		}
+	}
+	if !skipSet {
+		skip = 2
 	}
 	if err != nil {
 		if r == nil {
