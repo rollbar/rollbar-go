@@ -1,4 +1,4 @@
-rollbar [![Build Status](https://travis-ci.org/rollbar/rollbar-go.svg?branch=master)](https://travis-ci.org/rollbar/rollbar-go) [![Go Report Card](https://goreportcard.com/badge/github.com/rollbar/rollbar-go)](https://goreportcard.com/report/github.com/rollbar/rollbar-go)
+rollbar [![Build Status](https://travis-ci.org/rollbar/rollbar-go.svg?branch=master)](https://travis-ci.org/rollbar/rollbar-go)
 -------
 
 ALPHA STATUS
