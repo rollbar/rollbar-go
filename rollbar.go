@@ -10,7 +10,7 @@ const (
 	// NAME is the name of this notifier sent with the payload to Rollbar.
 	NAME = "rollbar/rollbar-go"
 	// VERSION is the version of this notifier sent with the payload to Rollbar.
-	VERSION = "1.0.0-alpha.1"
+	VERSION = "1.0.0-alpha.3"
 
 	// CRIT is the critial severity level.
 	CRIT = "critical"

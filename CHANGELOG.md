@@ -1,3 +1,8 @@
+1.0.0-alpha.3
+=====
+
+* Update docs
+
 1.0.0-alpha.1
 =====
 
