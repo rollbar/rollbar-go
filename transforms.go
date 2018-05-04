@@ -92,7 +92,7 @@ func requestDetails(configuration configuration, r *http.Request) map[string]int
 
 		// POST / PUT params
 		"POST":    flattenValues(filterParams(configuration.scrubFields, r.Form)),
-		"user_ip": r.RemoteAddr,
+		"user_ip": filterIp(r.RemoteAddr, configuration.captureIp),
 	}
 }
 
@@ -108,6 +108,8 @@ func filterParams(pattern *regexp.Regexp, values map[string][]string) map[string
 	return values
 }
 
+// flattenValues takes a map from strings to lists of strings and performs a lift
+// on values which have length 1.
 func flattenValues(values map[string][]string) map[string]interface{} {
 	result := make(map[string]interface{})
 
@@ -120,6 +122,31 @@ func flattenValues(values map[string][]string) map[string]interface{} {
 	}
 
 	return result
+}
+
+// filterIp
+func filterIp(ip string, captureIp captureIp) string {
+	switch captureIp {
+	case CaptureIpFull:
+		return ip
+	case CaptureIpAnonymize:
+		if strings.Contains(ip, ".") {
+			parts := strings.Split(ip, ".")
+			parts[len(parts)-1] = "0/24"
+			return strings.Join(parts, ".")
+		}
+		if strings.Contains(ip, ":") {
+			if len(ip) > 12 {
+				return ip[:12] + "..."
+			}
+			return ip
+		}
+		return ""
+	case CaptureIpNone:
+		return ""
+	default:
+		return ""
+	}
 }
 
 // Build an error inner-body for the given error. If skip is provided, that
