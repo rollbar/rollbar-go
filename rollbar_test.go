@@ -87,7 +87,9 @@ func TestEverything(t *testing.T) {
 	r.RemoteAddr = "1.1.1.1:123"
 
 	RequestMessage("debug", r, "This is a debug message with a request")
+	SetCaptureIp(CaptureIpAnonymize)
 	RequestError("info", r, errors.New("Some info error with a request"))
+	r.RemoteAddr = "FE80::0202:B3FF:FE1E:8329"
 	RequestErrorWithStackSkip("info", r, errors.New("Some info error with a request"), 2)
 
 	Wait()
@@ -98,6 +100,7 @@ type someNonstandardTypeForLogFailing struct{}
 func TestEverythingGeneric(t *testing.T) {
 	SetToken(os.Getenv("TOKEN"))
 	SetEnvironment("test")
+	SetCaptureIp(CaptureIpAnonymize)
 	if Token() != os.Getenv("TOKEN") {
 		t.Error("Token should be as set")
 	}

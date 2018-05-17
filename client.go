@@ -147,6 +147,14 @@ func (c *Client) SetCheckIgnore(checkIgnore func(string) bool) {
 	c.configuration.checkIgnore = checkIgnore
 }
 
+// SetCaptureIp sets what level of IP address information to capture from requests.
+// CaptureIpFull means capture the entire address without any modification.
+// CaptureIpAnonymize means apply a pseudo-anonymization.
+// CaptureIpNone means do not capture anything.
+func (c *Client) SetCaptureIp(captureIp captureIp) {
+	c.configuration.captureIp = captureIp
+}
+
 // Token is the currently set Rollbar access token.
 func (c *Client) Token() string {
 	return c.configuration.token
@@ -204,6 +212,11 @@ func (c *Client) ScrubHeaders() *regexp.Regexp {
 // ScrubFields is the currently set regular expression to match keys in the item payload for scrubbing.
 func (c *Client) ScrubFields() *regexp.Regexp {
 	return c.configuration.scrubFields
+}
+
+// CaptureIp is the currently set level of IP address information to capture from requests.
+func (c *Client) CaptureIp() captureIp {
+	return c.configuration.captureIp
 }
 
 // -- Error reporting
@@ -392,6 +405,17 @@ type person struct {
 	email    string
 }
 
+type captureIp int
+
+const (
+	// CaptureIpFull means capture the entire address without any modification.
+	CaptureIpFull captureIp = iota
+	// CaptureIpAnonymize means apply a pseudo-anonymization.
+	CaptureIpAnonymize
+	// CaptureIpNone means do not capture anything.
+	CaptureIpNone
+)
+
 type configuration struct {
 	token        string
 	environment  string
@@ -406,6 +430,7 @@ type configuration struct {
 	scrubFields  *regexp.Regexp
 	checkIgnore  func(string) bool
 	person       person
+	captureIp    captureIp
 }
 
 func createConfiguration(token, environment, codeVersion, serverHost, serverRoot string) configuration {
@@ -426,6 +451,7 @@ func createConfiguration(token, environment, codeVersion, serverHost, serverRoot
 		fingerprint:  false,
 		checkIgnore:  func(_s string) bool { return false },
 		person:       person{},
+		captureIp:    CaptureIpFull,
 	}
 }
 

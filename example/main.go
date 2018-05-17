@@ -46,6 +46,7 @@ func main() {
 	var token = os.Getenv("TOKEN")
 	rollbar.SetToken(token)
 	rollbar.SetEnvironment("test")
+	rollbar.SetCaptureIp(rollbar.CaptureIpAnonymize)
 	http.HandleFunc("/json", helloJson)
 	http.HandleFunc("/form", helloForm)
 	err := http.ListenAndServe(":9090", nil)

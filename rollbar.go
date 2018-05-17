@@ -137,6 +137,14 @@ func SetLogger(logger ClientLogger) {
 	std.SetLogger(logger)
 }
 
+// SetCaptureIp sets what level of IP address information to capture from requests.
+// CaptureIpFull means capture the entire address without any modification.
+// CaptureIpAnonymize means apply a pseudo-anonymization.
+// CaptureIpNone means do not capture anything.
+func SetCaptureIp(captureIp captureIp) {
+	std.SetCaptureIp(captureIp)
+}
+
 // -- Getters
 
 // Token returns the currently set Rollbar access token on the managed Client instance.
@@ -189,6 +197,11 @@ func Custom() map[string]interface{} {
 // fingerprint. The default is false.
 func Fingerprint() bool {
 	return std.Fingerprint()
+}
+
+// CaptureIp is the currently set level of IP address information to capture from requests.
+func CaptureIp() captureIp {
+	return std.CaptureIp()
 }
 
 // -- Reporting
