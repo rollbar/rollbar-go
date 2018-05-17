@@ -124,7 +124,8 @@ func flattenValues(values map[string][]string) map[string]interface{} {
 	return result
 }
 
-// filterIp
+// filterIp takes an ip address string and a capture policy and returns a possibly
+// transformed ip address string.
 func filterIp(ip string, captureIp captureIp) string {
 	switch captureIp {
 	case CaptureIpFull:
@@ -132,16 +133,19 @@ func filterIp(ip string, captureIp captureIp) string {
 	case CaptureIpAnonymize:
 		if strings.Contains(ip, ".") {
 			parts := strings.Split(ip, ".")
-			parts[len(parts)-1] = "0/24"
+			parts[len(parts)-1] = "0"
 			return strings.Join(parts, ".")
 		}
 		if strings.Contains(ip, ":") {
-			if len(ip) > 12 {
-				return ip[:12] + "..."
+			parts := strings.Split(ip, ":")
+			if len(parts) > 2 {
+				parts = parts[0:3]
+				parts = append(parts, "0000:0000:0000:0000:0000")
+				return strings.Join(parts, ":")
 			}
 			return ip
 		}
-		return ""
+		return ip
 	case CaptureIpNone:
 		return ""
 	default:
