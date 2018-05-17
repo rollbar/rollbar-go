@@ -1,3 +1,9 @@
+1.0.0
+=====
+
+* Get rid of the alpha tag as the API has stabilized
+* Add the CaptureIp configuration option
+
 1.0.0-alpha.3
 =====
 
