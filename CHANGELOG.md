@@ -1,3 +1,5 @@
+The change log has moved to this repo's [GitHub Releases Page](https://github.com/rollbar/rollbar-go/releases).
+
 1.0.0
 =====
 
