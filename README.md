@@ -16,8 +16,8 @@ or allocated, we use the stack information from where the error was reported.
 # Setup Instructions and Usage
 
 1. [Sign up for a Rollbar account](https://rollbar.com/signup)
-2. Follow the [Usage](https://docs.rollbar.com/docs/go#usage) example in our [Go SDK docs]
-(https://docs.rollbar.com/docs/go) to get started for your platform.
+2. Follow the [Usage](https://docs.rollbar.com/docs/go#usage) example in our [Go SDK docs](https://docs.rollbar.com/docs/go) 
+to get started for your platform.
 
 # Documentation
 
@@ -25,7 +25,7 @@ or allocated, we use the stack information from where the error was reported.
 
 # Running Tests
 
-[Running tests docs](https://docs.rollbar.com/docs/go#section-running-tests)
+[Running tests docs on docs.rollar.com](https://docs.rollbar.com/docs/go#section-running-tests)
 
 # Release History & Changelog
 
