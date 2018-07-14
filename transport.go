@@ -1,8 +1,10 @@
 package rollbar
 
 import (
+	"fmt"
 	"io"
 	"log"
+	"os"
 )
 
 const (
@@ -10,6 +12,9 @@ const (
 	// for queueing items to send to Rollbar in the asynchronous
 	// implementation of Transport.
 	DefaultBuffer = 1000
+	// DefaultRetryAttempts is the number of times we attempt to retry sending an item when
+	// encountering temporary network errors
+	DefaultRetryAttempts = 3
 )
 
 // Transport represents an object used for communicating with the Rollbar API.
@@ -27,6 +32,11 @@ type Transport interface {
 	SetEndpoint(endpoint string)
 	// Set the logger to use instead of the standard log.Printf
 	SetLogger(logger ClientLogger)
+	// Set the number of times to retry sending an item if temporary http errors occurs before
+	// failing.
+	SetRetryAttempts(retryAttempts int)
+	// Set whether to print the payload to the set logger or to stderr upon failing to send.
+	SetPrintPayloadOnError(printPayloadOnError bool)
 }
 
 // ClientLogger is the interface used by the rollbar Client/Transport to report problems.
@@ -53,5 +63,14 @@ func rollbarError(logger ClientLogger, format string, args ...interface{}) {
 		logger.Printf(format, args...)
 	} else {
 		log.Printf(format, args...)
+	}
+}
+
+func writePayloadToStderr(logger ClientLogger, payload map[string]interface{}) {
+	format := "Rollbar item failed to send: %v\n"
+	if logger != nil {
+		logger.Printf(format, payload)
+	} else {
+		fmt.Fprintf(os.Stderr, format, payload)
 	}
 }

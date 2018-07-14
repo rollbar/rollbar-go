@@ -7,6 +7,7 @@ Basic Usage
 
   import (
     "github.com/rollbar/rollbar-go"
+    "time"
   )
 
   func main() {
@@ -16,15 +17,13 @@ Basic Usage
     rollbar.SetServerHost("web.1")                       // optional override; defaults to hostname
     rollbar.SetServerRoot("github.com/heroku/myproject") // path of project (required for GitHub integration and non-project stacktrace collapsing)
 
-    // Assuming DoSomething is defined elsewhere
-    result, err := DoSomething()
-    if err != nil {
-      rollbar.Critical(err)
-    }
-
     rollbar.Info("Message body goes here")
+    rollbar.WrapAndWait(doSomething)
+  }
 
-    rollbar.Wait()
+  func doSomething() {
+    var timer *time.Timer = nil
+    timer.Reset(10) // this will panic
   }
 
 
