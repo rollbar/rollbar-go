@@ -53,7 +53,18 @@ func NewAsyncTransport(token string, endpoint string, buffer int) *AsyncTranspor
 			if err != nil {
 				if canRetry && p.retriesLeft > 0 {
 					p.retriesLeft -= 1
-					transport.bodyChannel <- p
+					select {
+					case transport.bodyChannel <- p:
+					default:
+						// This can happen if the bodyChannel had an item added to it from another
+						// thread while we are processing such that the channel is now full. If we try
+						// to send the payload back to the channel without this select statement we
+						// could deadlock. Instead we consider this a retry failure.
+						if transport.PrintPayloadOnError {
+							writePayloadToStderr(transport.Logger, p.body)
+						}
+						transport.waitGroup.Done()
+					}
 				} else {
 					if transport.PrintPayloadOnError {
 						writePayloadToStderr(transport.Logger, p.body)
