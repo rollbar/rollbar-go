@@ -23,6 +23,8 @@ func (t *TestTransport) Wait() {
 func (t *TestTransport) SetToken(_t string)                {}
 func (t *TestTransport) SetEndpoint(_e string)             {}
 func (t *TestTransport) SetLogger(_l rollbar.ClientLogger) {}
+func (t *TestTransport) SetRetryAttempts(_r int)           {}
+func (t *TestTransport) SetPrintPayloadOnError(_p bool)    {}
 func (t *TestTransport) Send(body map[string]interface{}) error {
 	t.Body = body
 	return nil

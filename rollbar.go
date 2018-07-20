@@ -145,6 +145,22 @@ func SetCaptureIp(captureIp captureIp) {
 	std.SetCaptureIp(captureIp)
 }
 
+// SetRetryAttempts sets how many times to attempt to retry sending an item if the http transport
+// experiences temporary error conditions. By default this is equal to DefaultRetryAttempts.
+// Temporary errors include timeouts and rate limit responses.
+func SetRetryAttempts(retryAttempts int) {
+	std.SetRetryAttempts(retryAttempts)
+}
+
+// SetPrintPayloadOnError sets whether or not to output the payload to stderr if an error occurs
+// during transport to the Rollbar API. For example, if you hit your rate limit and we run out
+// of retry attempts, then if this is true we will output the item to stderr rather than the
+// item disappearing completely.
+// By default this is true.
+func SetPrintPayloadOnError(printPayloadOnError bool) {
+	std.SetPrintPayloadOnError(printPayloadOnError)
+}
+
 // -- Getters
 
 // Token returns the currently set Rollbar access token on the managed Client instance.

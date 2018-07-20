@@ -2,6 +2,7 @@ package rollbar
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -153,6 +154,21 @@ func (c *Client) SetCheckIgnore(checkIgnore func(string) bool) {
 // CaptureIpNone means do not capture anything.
 func (c *Client) SetCaptureIp(captureIp captureIp) {
 	c.configuration.captureIp = captureIp
+}
+
+// SetRetryAttempts sets how many times to attempt to retry sending an item if the http transport
+// experiences temporary error conditions. By default this is equal to DefaultRetryAttempts.
+// Temporary errors include timeouts and rate limit responses.
+func (c *Client) SetRetryAttempts(retryAttempts int) {
+	c.Transport.SetRetryAttempts(retryAttempts)
+}
+
+// SetPrintPayloadOnError sets whether or not to output the payload to the set logger or to
+// stderr if an error occurs during transport to the Rollbar API. For example, if you hit
+// your rate limit and we run out of retry attempts, then if this is true we will output the
+// item to stderr rather than the item disappearing completely.
+func (c *Client) SetPrintPayloadOnError(printPayloadOnError bool) {
+	c.Transport.SetPrintPayloadOnError(printPayloadOnError)
 }
 
 // Token is the currently set Rollbar access token.
@@ -455,29 +471,67 @@ func createConfiguration(token, environment, codeVersion, serverHost, serverRoot
 	}
 }
 
-func clientPost(token, endpoint string, body map[string]interface{}, logger ClientLogger) error {
+// clientPost returns an error which indicates the type of error that occured while attempting to
+// send the body input to the endpoint given, or nil if no error occurred. If error is not nil, the
+// boolean return parameter indicates whether the error is temporary or not. If this boolean return
+// value is true then the caller could call this function again with the same input and possibly
+// see a non-error response.
+func clientPost(token, endpoint string, body map[string]interface{}, logger ClientLogger) (error, bool) {
 	if len(token) == 0 {
 		rollbarError(logger, "empty token")
-		return nil
+		return nil, false
 	}
 
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
 		rollbarError(logger, "failed to encode payload: %s", err.Error())
-		return err
+		return err, false
 	}
 
 	resp, err := http.Post(endpoint, "application/json", bytes.NewReader(jsonBody))
 	if err != nil {
 		rollbarError(logger, "POST failed: %s", err.Error())
-		return err
+		return err, isTemporary(err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		rollbarError(logger, "received response: %s", resp.Status)
-		return ErrHTTPError(resp.StatusCode)
+		// http.StatusTooManyRequests is only defined in Go 1.6+ so we use 429 directly
+		isRateLimit := resp.StatusCode == 429
+		return ErrHTTPError(resp.StatusCode), isRateLimit
 	}
 
-	return nil
+	return nil, false
+}
+
+// isTemporary returns true if we should consider the error returned from http.Post to be temporary
+// in nature and possibly resolvable by simplying trying the request again.
+// https://github.com/grpc/grpc-go/blob/25b4a426b40c26c07c80af674b03db90b5bd4a60/transport/http2_client.go#L125
+func isTemporary(err error) bool {
+	switch err {
+	case io.EOF:
+		// Connection closures may be resolved upon retry, and are thus
+		// treated as temporary.
+		return true
+	case context.DeadlineExceeded:
+		// In Go 1.7, context.DeadlineExceeded implements Timeout(), and this
+		// special case is not needed. Until then, we need to keep this
+		// clause.
+		return true
+	}
+
+	switch err := err.(type) {
+	case interface {
+		Temporary() bool
+	}:
+		return err.Temporary()
+	case interface {
+		Timeout() bool
+	}:
+		// Timeouts may be resolved upon retry, and are thus treated as
+		// temporary.
+		return err.Timeout()
+	}
+	return false
 }
