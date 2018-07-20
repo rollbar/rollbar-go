@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -352,7 +353,8 @@ func (c *Client) Wrap(f func()) (err interface{}) {
 			if c.configuration.checkIgnore(str) {
 				return
 			}
-			c.Message(CRIT, str)
+			errValue := errors.New(str)
+			c.ErrorWithStackSkip(CRIT, errValue, 2)
 		}
 	}()
 
@@ -379,7 +381,8 @@ func (c *Client) WrapAndWait(f func()) (err interface{}) {
 			if c.configuration.checkIgnore(str) {
 				return
 			}
-			c.Message(CRIT, str)
+			errValue := errors.New(str)
+			c.ErrorWithStackSkip(CRIT, errValue, 2)
 		}
 		c.Wait()
 	}()
