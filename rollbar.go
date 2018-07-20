@@ -101,6 +101,21 @@ func SetScrubFields(fields *regexp.Regexp) {
 	std.SetScrubFields(fields)
 }
 
+// SetTransform sets the transform function called after the entire payload has been built before it
+// is sent to the API.
+// The structure of the final payload sent to the API is:
+//   {
+//       "access_token": "YOUR_ACCESS_TOKEN",
+//       "data": { ... }
+//   }
+// This function takes a map[string]interface{} which is the value of the data key in the payload
+// described above. You can modify this object in-place to make any arbitrary changes you wish to
+// make before it is finally sent. Be careful with the modifications you make as they could lead to
+// the payload being malformed from the perspective of the API.
+func SetTransform(transform func(map[string]interface{})) {
+	std.SetTransform(transform)
+}
+
 // SetCheckIgnore sets the checkIgnore function on the managed Client instance.
 // CheckIgnore is called during the recovery process of a panic that
 // occurred inside a function wrapped by Wrap or WrapAndWait.

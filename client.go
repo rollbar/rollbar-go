@@ -138,6 +138,21 @@ func (c *Client) SetScrubFields(fields *regexp.Regexp) {
 	c.configuration.scrubFields = fields
 }
 
+// SetTransform sets the transform function called after the entire payload has been built before it
+// is sent to the API.
+// The structure of the final payload sent to the API is:
+//   {
+//       "access_token": "YOUR_ACCESS_TOKEN",
+//       "data": { ... }
+//   }
+// This function takes a map[string]interface{} which is the value of the data key in the payload
+// described above. You can modify this object in-place to make any arbitrary changes you wish to
+// make before it is finally sent. Be careful with the modifications you make as they could lead to
+// the payload being malformed from the perspective of the API.
+func (c *Client) SetTransform(transform func(map[string]interface{})) {
+	c.configuration.transform = transform
+}
+
 // SetCheckIgnore sets the checkIgnore function which is called during the recovery
 // process of a panic that occurred inside a function wrapped by Wrap or WrapAndWait.
 // Return true if you wish to ignore this panic, false if you wish to
@@ -412,6 +427,8 @@ func (c *Client) requestDetails(r *http.Request) map[string]interface{} {
 }
 
 func (c *Client) push(body map[string]interface{}) error {
+	data := body["data"].(map[string]interface{})
+	c.configuration.transform(data)
 	return c.Transport.Send(body)
 }
 
@@ -445,6 +462,7 @@ type configuration struct {
 	scrubHeaders *regexp.Regexp
 	scrubFields  *regexp.Regexp
 	checkIgnore  func(string) bool
+	transform    func(map[string]interface{})
 	person       person
 	captureIp    captureIp
 }
@@ -466,6 +484,7 @@ func createConfiguration(token, environment, codeVersion, serverHost, serverRoot
 		serverRoot:   serverRoot,
 		fingerprint:  false,
 		checkIgnore:  func(_s string) bool { return false },
+		transform:    func(_d map[string]interface{}) {},
 		person:       person{},
 		captureIp:    CaptureIpFull,
 	}
