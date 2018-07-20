@@ -505,7 +505,7 @@ func clientPost(token, endpoint string, body map[string]interface{}, logger Clie
 	return nil, false
 }
 
-// isTemporary returns true if we should continue the error returned from http.Post to be temporary
+// isTemporary returns true if we should consider the error returned from http.Post to be temporary
 // in nature and possibly resolvable by simplying trying the request again.
 // https://github.com/grpc/grpc-go/blob/25b4a426b40c26c07c80af674b03db90b5bd4a60/transport/http2_client.go#L125
 func isTemporary(err error) bool {
