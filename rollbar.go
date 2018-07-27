@@ -34,6 +34,14 @@ var (
 	nilErrTitle = "<nil>"
 )
 
+// SetEnabled sets whether or not the managed Client instance is enabled.
+// If this is true then this library works as normal.
+// If this is false then no calls will be made to the network.
+// One place where this is useful is for turning off reporting in tests.
+func SetEnabled(enabled bool) {
+	std.SetEnabled(enabled)
+}
+
 // SetToken sets the token on the managed Client instance. The value is a Rollbar access token
 // with scope "post_server_item". It is required to set this value before any of the other
 // functions herein will be able to work properly.

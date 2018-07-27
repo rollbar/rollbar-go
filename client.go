@@ -53,6 +53,14 @@ func NewSync(token, environment, codeVersion, serverHost, serverRoot string) *Cl
 	}
 }
 
+// SetEnabled sets whether or not Rollbar is enabled.
+// If this is true then this library works as normal.
+// If this is false then no calls will be made to the network.
+// One place where this is useful is for turning off reporting in tests.
+func (c *Client) SetEnabled(enabled bool) {
+	c.configuration.enabled = enabled
+}
+
 // SetToken sets the token used by this client.
 // The value is a Rollbar access token with scope "post_server_item".
 // It is required to set this value before any of the other functions herein will be able to work
@@ -293,6 +301,9 @@ func (c *Client) ErrorWithStackSkip(level string, err error, skip int) {
 // severity level and a given number of stack trace frames skipped with
 // extra custom data.
 func (c *Client) ErrorWithStackSkipWithExtras(level string, err error, skip int, extras map[string]interface{}) {
+	if !c.configuration.enabled {
+		return
+	}
 	body := c.buildBody(level, err.Error(), extras)
 	addErrorToBody(c.configuration, body, err, skip)
 	c.push(body)
@@ -310,6 +321,9 @@ func (c *Client) RequestErrorWithStackSkip(level string, r *http.Request, err er
 // skipped, in addition to extra request-specific information and extra
 // custom data.
 func (c *Client) RequestErrorWithStackSkipWithExtras(level string, r *http.Request, err error, skip int, extras map[string]interface{}) {
+	if !c.configuration.enabled {
+		return
+	}
 	body := c.buildBody(level, err.Error(), extras)
 	data := addErrorToBody(c.configuration, body, err, skip)
 	data["request"] = c.requestDetails(r)
@@ -326,6 +340,9 @@ func (c *Client) Message(level string, msg string) {
 // MessageWithExtras sends a message to Rollbar with the given severity
 // level with extra custom data.
 func (c *Client) MessageWithExtras(level string, msg string, extras map[string]interface{}) {
+	if !c.configuration.enabled {
+		return
+	}
 	body := c.buildBody(level, msg, extras)
 	data := body["data"].(map[string]interface{})
 	data["body"] = messageBody(msg)
@@ -341,6 +358,9 @@ func (c *Client) RequestMessage(level string, r *http.Request, msg string) {
 // RequestMessageWithExtras sends a message to Rollbar with the given
 // severity level and request-specific information with extra custom data.
 func (c *Client) RequestMessageWithExtras(level string, r *http.Request, msg string, extras map[string]interface{}) {
+	if !c.configuration.enabled {
+		return
+	}
 	body := c.buildBody(level, msg, extras)
 	data := body["data"].(map[string]interface{})
 	data["body"] = messageBody(msg)
@@ -453,6 +473,7 @@ const (
 )
 
 type configuration struct {
+	enabled      bool
 	token        string
 	environment  string
 	platform     string
@@ -476,6 +497,7 @@ func createConfiguration(token, environment, codeVersion, serverHost, serverRoot
 		hostname, _ = os.Hostname()
 	}
 	return configuration{
+		enabled:      true,
 		token:        token,
 		environment:  environment,
 		platform:     runtime.GOOS,
