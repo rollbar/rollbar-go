@@ -255,6 +255,8 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 		t.Error("unexpected matching scrub field")
 	}
 
+	client.SetEnabled(false)
+
 	client.SetToken(token)
 	client.SetEnvironment(environment)
 	client.SetEndpoint(endpoint)
@@ -266,6 +268,8 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 	client.SetLogger(&rollbar.SilentClientLogger{})
 	client.SetScrubHeaders(scrubHeaders)
 	client.SetScrubFields(scrubFields)
+
+	client.SetEnabled(true)
 
 	errorIfNotEqual(token, client.Token(), t)
 	errorIfNotEqual(environment, client.Environment(), t)
@@ -363,6 +367,34 @@ func TestTransform(t *testing.T) {
 		data := body["data"].(map[string]interface{})
 		if data["some_custom_field"] != "hello_world" {
 			t.Error("data should have field set by transform")
+		}
+	} else {
+		t.Fail()
+	}
+}
+
+func TestEnabled(t *testing.T) {
+	client := testClient()
+	client.SetEnabled(false)
+
+	client.ErrorWithLevel(rollbar.ERR, errors.New("Bork"))
+
+	if transport, ok := client.Transport.(*TestTransport); ok {
+		body := transport.Body
+		if body != nil {
+			t.Error("Transport should not be called when enabled is false")
+		}
+	} else {
+		t.Fail()
+	}
+
+	client.SetEnabled(true)
+	client.ErrorWithLevel(rollbar.ERR, errors.New("Bork"))
+
+	if transport, ok := client.Transport.(*TestTransport); ok {
+		body := transport.Body
+		if body == nil {
+			t.Error("Transport should be called when enabled is true")
 		}
 	} else {
 		t.Fail()
