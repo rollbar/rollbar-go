@@ -346,3 +346,25 @@ func TestClearPerson(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestTransform(t *testing.T) {
+	client := testClient()
+	client.SetTransform(func(data map[string]interface{}) {
+		data["some_custom_field"] = "hello_world"
+	})
+
+	client.ErrorWithLevel(rollbar.ERR, errors.New("Bork"))
+
+	if transport, ok := client.Transport.(*TestTransport); ok {
+		body := transport.Body
+		if body["data"] == nil {
+			t.Error("body should have data")
+		}
+		data := body["data"].(map[string]interface{})
+		if data["some_custom_field"] != "hello_world" {
+			t.Error("data should have field set by transform")
+		}
+	} else {
+		t.Fail()
+	}
+}
