@@ -1,6 +1,7 @@
 package rollbar
 
 import (
+	"context"
 	"fmt"
 	"hash/adler32"
 	"net/http"
@@ -13,7 +14,7 @@ import (
 
 // Build the main JSON structure that will be sent to Rollbar with the
 // appropriate metadata.
-func buildBody(configuration configuration, level, title string, extras map[string]interface{}) map[string]interface{} {
+func buildBody(ctx context.Context, configuration configuration, level, title string, extras map[string]interface{}) map[string]interface{} {
 	timestamp := time.Now().Unix()
 
 	data := map[string]interface{}{
@@ -39,12 +40,15 @@ func buildBody(configuration configuration, level, title string, extras map[stri
 		data["custom"] = custom
 	}
 
-	person := configuration.person
-	if person.id != "" {
+	person, ok := PersonFromContext(ctx)
+	if !ok {
+		person = &configuration.person
+	}
+	if person.Id != "" {
 		data["person"] = map[string]string{
-			"id":       person.id,
-			"username": person.username,
-			"email":    person.email,
+			"id":       person.Id,
+			"username": person.Username,
+			"email":    person.Email,
 		}
 	}
 

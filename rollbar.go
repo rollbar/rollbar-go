@@ -1,6 +1,7 @@
 package rollbar
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"regexp"
@@ -338,6 +339,7 @@ func Log(level string, interfaces ...interface{}) {
 	skipSet := false
 	var extras map[string]interface{}
 	var msg string
+	ctx := context.TODO()
 	for _, ival := range interfaces {
 		switch val := ival.(type) {
 		case *http.Request:
@@ -351,6 +353,8 @@ func Log(level string, interfaces ...interface{}) {
 			msg = val
 		case map[string]interface{}:
 			extras = val
+		case context.Context:
+			ctx = val
 		default:
 			rollbarError(std.Transport.(*AsyncTransport).Logger, "Unknown input type: %T", val)
 		}
@@ -360,15 +364,15 @@ func Log(level string, interfaces ...interface{}) {
 	}
 	if err != nil {
 		if r == nil {
-			std.ErrorWithStackSkipWithExtras(level, err, skip, extras)
+			std.ErrorWithStackSkipWithExtrasAndContext(ctx, level, err, skip, extras)
 		} else {
-			std.RequestErrorWithStackSkipWithExtras(level, r, err, skip, extras)
+			std.RequestErrorWithStackSkipWithExtrasAndContext(ctx, level, r, err, skip, extras)
 		}
 	} else {
 		if r == nil {
-			std.MessageWithExtras(level, msg, extras)
+			std.MessageWithExtrasAndContext(ctx, level, msg, extras)
 		} else {
-			std.RequestMessageWithExtras(level, r, msg, extras)
+			std.RequestMessageWithExtrasAndContext(ctx, level, r, msg, extras)
 		}
 	}
 }
@@ -391,6 +395,12 @@ func ErrorWithExtras(level string, err error, extras map[string]interface{}) {
 	std.ErrorWithExtras(level, err, extras)
 }
 
+// ErrorWithExtrasAndContext asynchronously sends an error to Rollbar with the given
+// severity level with extra custom data, within the given context.
+func ErrorWithExtrasAndContext(ctx context.Context, level string, err error, extras map[string]interface{}) {
+	std.ErrorWithExtrasAndContext(ctx, level, err, extras)
+}
+
 // RequestError asynchronously sends an error to Rollbar with the given
 // severity level and request-specific information.
 func RequestError(level string, r *http.Request, err error) {
@@ -401,6 +411,12 @@ func RequestError(level string, r *http.Request, err error) {
 // severity level and request-specific information with extra custom data.
 func RequestErrorWithExtras(level string, r *http.Request, err error, extras map[string]interface{}) {
 	std.RequestErrorWithExtras(level, r, err, extras)
+}
+
+// RequestErrorWithExtrasAndContext asynchronously sends an error to Rollbar with the given
+// severity level and request-specific information with extra custom data.
+func RequestErrorWithExtrasAndContext(ctx context.Context, level string, r *http.Request, err error, extras map[string]interface{}) {
+	std.RequestErrorWithExtrasAndContext(ctx, level, r, err, extras)
 }
 
 // ErrorWithStackSkip asynchronously sends an error to Rollbar with the given
@@ -415,6 +431,14 @@ func ErrorWithStackSkipWithExtras(level string, err error, skip int, extras map[
 	std.ErrorWithStackSkipWithExtras(level, err, skip, extras)
 }
 
+// ErrorWithStackSkipWithExtrasAndContext asynchronously sends an error to Rollbar with the given
+// severity level and a given number of stack trace frames skipped with extra custom data, within
+// the given context.
+func ErrorWithStackSkipWithExtrasAndContext(ctx context.Context, level string, err error, skip int, extras map[string]interface{}) {
+	std.ErrorWithStackSkipWithExtrasAndContext(ctx, level, err, skip, extras)
+}
+
+// RequestErrorWithStackSkip asynchronously sends an error to Rollbar with the
 // RequestErrorWithStackSkip asynchronously sends an error to Rollbar with the
 // given severity level and a given number of stack trace frames skipped, in
 // addition to extra request-specific information.
@@ -427,6 +451,13 @@ func RequestErrorWithStackSkip(level string, r *http.Request, err error, skip in
 // in addition to extra request-specific information and extra custom data.
 func RequestErrorWithStackSkipWithExtras(level string, r *http.Request, err error, skip int, extras map[string]interface{}) {
 	std.RequestErrorWithStackSkipWithExtras(level, r, err, skip, extras)
+}
+
+// RequestErrorWithStackSkipWithExtrasAndContext asynchronously sends an error to Rollbar
+// with the given severity level and a given number of stack trace frames skipped,
+// in addition to extra request-specific information and extra custom data, within the given context.
+func RequestErrorWithStackSkipWithExtrasAndContext(ctx context.Context, level string, r *http.Request, err error, skip int, extras map[string]interface{}) {
+	std.RequestErrorWithStackSkipWithExtrasAndContext(ctx, level, r, err, skip, extras)
 }
 
 // -- Message reporting
@@ -443,6 +474,12 @@ func MessageWithExtras(level string, msg string, extras map[string]interface{}) 
 	std.MessageWithExtras(level, msg, extras)
 }
 
+// MessageWithExtrasAndContext asynchronously sends a message to Rollbar with the given severity
+// level with extra custom data, within the given context. Rollbar request is asynchronous.
+func MessageWithExtrasAndContext(ctx context.Context, level string, msg string, extras map[string]interface{}) {
+	std.MessageWithExtrasAndContext(ctx, level, msg, extras)
+}
+
 // RequestMessage asynchronously sends a message to Rollbar with the given
 // severity level and request-specific information.
 func RequestMessage(level string, r *http.Request, msg string) {
@@ -454,6 +491,13 @@ func RequestMessage(level string, r *http.Request, msg string) {
 // Rollbar request is asynchronous.
 func RequestMessageWithExtras(level string, r *http.Request, msg string, extras map[string]interface{}) {
 	std.RequestMessageWithExtras(level, r, msg, extras)
+}
+
+// RequestMessageWithExtrasAndContext asynchronously sends a message to Rollbar with the given severity
+// level with extra custom data in addition to extra request-specific information, within the given
+// context. Rollbar request is asynchronous.
+func RequestMessageWithExtrasAndContext(ctx context.Context, level string, r *http.Request, msg string, extras map[string]interface{}) {
+	std.RequestMessageWithExtrasAndContext(ctx, level, r, msg, extras)
 }
 
 // Wait will block until the queue of errors / messages is empty.
