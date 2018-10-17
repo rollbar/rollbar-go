@@ -256,6 +256,67 @@ func TestFlattenValues(t *testing.T) {
 	}
 }
 
+func TestFilterFlatten(t *testing.T) {
+	values := map[string][]string{
+		"password":     {"one"},
+		"ok":           {"one", "two"},
+		"access_token": {"one", "two"},
+		"thing":        {"foo", "bar"},
+		"a":            {"single"},
+		"b":            {"more", "than", "one"},
+	}
+
+	clean := filterFlatten(std.configuration.scrubFields, values, nil)
+	if clean["password"] != FILTERED {
+		t.Error("should filter password parameter")
+	}
+
+	if clean["ok"] == FILTERED {
+		t.Error("should keep ok parameter")
+	}
+
+	if len(clean["ok"].([]string)) != 2 {
+		t.Error("should not flatten ok parameter")
+	}
+
+	if clean["access_token"] != FILTERED {
+		t.Error("should filter access_token parameter")
+	}
+
+	special := map[string]struct{}{
+		"thing": struct{}{},
+	}
+
+	clean2 := filterFlatten(std.configuration.scrubFields, values, special)
+	if clean2["password"] != FILTERED {
+		t.Error("should filter password parameter")
+	}
+
+	if clean2["ok"] == FILTERED {
+		t.Error("should keep ok parameter")
+	}
+
+	if len(clean2["ok"].([]string)) != 2 {
+		t.Error("should not flatten ok parameter")
+	}
+
+	if clean2["access_token"] != FILTERED {
+		t.Error("should filter access_token parameter")
+	}
+
+	if clean2["thing"] != "foo" {
+		t.Error("should force flatten a special key")
+	}
+
+	if clean2["a"].(string) != "single" {
+		t.Error("should flatten single parameter to string")
+	}
+
+	if len(clean2["b"].([]string)) != 3 {
+		t.Error("should leave multiple parametres as []string")
+	}
+}
+
 type cs struct {
 	error
 	cause error
