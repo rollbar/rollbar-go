@@ -84,20 +84,49 @@ func addErrorToBody(configuration configuration, body map[string]interface{}, er
 
 func requestDetails(configuration configuration, r *http.Request) map[string]interface{} {
 	cleanQuery := filterParams(configuration.scrubFields, r.URL.Query())
+	specialHeaders := map[string]struct{}{
+		"Content-Type": struct{}{},
+	}
 
 	return map[string]interface{}{
 		"url":     r.URL.String(),
 		"method":  r.Method,
-		"headers": flattenValues(filterParams(configuration.scrubHeaders, r.Header)),
+		"headers": filterFlatten(configuration.scrubHeaders, r.Header, specialHeaders),
 
 		// GET params
 		"query_string": url.Values(cleanQuery).Encode(),
 		"GET":          flattenValues(cleanQuery),
 
 		// POST / PUT params
-		"POST":    flattenValues(filterParams(configuration.scrubFields, r.Form)),
+		"POST":    filterFlatten(configuration.scrubFields, r.Form, nil),
 		"user_ip": filterIp(r.RemoteAddr, configuration.captureIp),
 	}
+}
+
+// filterFlatten filters sensitive information like passwords from being sent to Rollbar, and
+// also lifts any values with length one up to be a standalone string. The optional specialKeys map
+// will force strings that exist in that map and also in values to have a single string value in the
+// resulting map by taking the first element in the list of strings if there are more than one.
+// This is essentially the same as the composition of filterParams and filterValues, plus the bit
+// extra about the special keys. The composition would range of the values twice when we really only
+// need to do it once, so I decided to combine them as the result is still quite easy to follow.
+// We keep the other two so that we can use url.Values.Encode on the filtered query params and not
+// run the filtering twice for the query.
+func filterFlatten(pattern *regexp.Regexp, values map[string][]string, specialKeys map[string]struct{}) map[string]interface{} {
+	result := make(map[string]interface{})
+
+	for k, v := range values {
+		switch _, special := specialKeys[k]; {
+		case pattern.Match([]byte(k)):
+			result[k] = FILTERED
+		case special || len(v) == 1:
+			result[k] = v[0]
+		default:
+			result[k] = v
+		}
+	}
+
+	return result
 }
 
 // filterParams filters sensitive information like passwords from being sent to
