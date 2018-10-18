@@ -111,17 +111,17 @@ func (c *Client) SetCustom(custom map[string]interface{}) {
 // any subsequent errors or messages. Only id is required to be
 // non-empty.
 func (c *Client) SetPerson(id, username, email string) {
-	c.configuration.person = person{
-		id:       id,
-		username: username,
-		email:    email,
+	c.configuration.person = Person{
+		Id:       id,
+		Username: username,
+		Email:    email,
 	}
 }
 
 // ClearPerson clears any previously set person information. See `SetPerson` for more
 // information.
 func (c *Client) ClearPerson() {
-	c.configuration.person = person{}
+	c.configuration.person = Person{}
 }
 
 // SetFingerprint sets whether or not to use a custom client-side fingerprint. The default value is
@@ -279,6 +279,12 @@ func (c *Client) ErrorWithExtras(level string, err error, extras map[string]inte
 	c.ErrorWithStackSkipWithExtras(level, err, 1, extras)
 }
 
+// ErrorWithExtrasAndContext sends an error to Rollbar with the given severity
+// level with extra custom data, within the given context.
+func (c *Client) ErrorWithExtrasAndContext(ctx context.Context, level string, err error, extras map[string]interface{}) {
+	c.ErrorWithStackSkipWithExtrasAndContext(ctx, level, err, 1, extras)
+}
+
 // RequestError sends an error to Rollbar with the given severity level
 // and request-specific information.
 func (c *Client) RequestError(level string, r *http.Request, err error) {
@@ -291,6 +297,13 @@ func (c *Client) RequestErrorWithExtras(level string, r *http.Request, err error
 	c.RequestErrorWithStackSkipWithExtras(level, r, err, 1, extras)
 }
 
+// RequestErrorWithExtrasAndContext sends an error to Rollbar with the given
+// severity level and request-specific information with extra custom data, within the given
+// context.
+func (c *Client) RequestErrorWithExtrasAndContext(ctx context.Context, level string, r *http.Request, err error, extras map[string]interface{}) {
+	c.RequestErrorWithStackSkipWithExtrasAndContext(ctx, level, r, err, 1, extras)
+}
+
 // ErrorWithStackSkip sends an error to Rollbar with the given severity
 // level and a given number of stack trace frames skipped.
 func (c *Client) ErrorWithStackSkip(level string, err error, skip int) {
@@ -301,10 +314,17 @@ func (c *Client) ErrorWithStackSkip(level string, err error, skip int) {
 // severity level and a given number of stack trace frames skipped with
 // extra custom data.
 func (c *Client) ErrorWithStackSkipWithExtras(level string, err error, skip int, extras map[string]interface{}) {
+	c.ErrorWithStackSkipWithExtrasAndContext(context.TODO(), level, err, skip, extras)
+}
+
+// ErrorWithStackSkipWithExtrasAndContext sends an error to Rollbar with the given
+// severity level and a given number of stack trace frames skipped with
+// extra custom data, within the given context.
+func (c *Client) ErrorWithStackSkipWithExtrasAndContext(ctx context.Context, level string, err error, skip int, extras map[string]interface{}) {
 	if !c.configuration.enabled {
 		return
 	}
-	body := c.buildBody(level, err.Error(), extras)
+	body := c.buildBody(ctx, level, err.Error(), extras)
 	addErrorToBody(c.configuration, body, err, skip)
 	c.push(body)
 }
@@ -321,10 +341,18 @@ func (c *Client) RequestErrorWithStackSkip(level string, r *http.Request, err er
 // skipped, in addition to extra request-specific information and extra
 // custom data.
 func (c *Client) RequestErrorWithStackSkipWithExtras(level string, r *http.Request, err error, skip int, extras map[string]interface{}) {
+	c.RequestErrorWithStackSkipWithExtrasAndContext(context.TODO(), level, r, err, skip, extras)
+}
+
+// RequestErrorWithStackSkipWithExtrasAndContext sends an error to Rollbar with
+// the given severity level and a given number of stack trace frames
+// skipped, in addition to extra request-specific information and extra
+// custom data, within the given context.
+func (c *Client) RequestErrorWithStackSkipWithExtrasAndContext(ctx context.Context, level string, r *http.Request, err error, skip int, extras map[string]interface{}) {
 	if !c.configuration.enabled {
 		return
 	}
-	body := c.buildBody(level, err.Error(), extras)
+	body := c.buildBody(ctx, level, err.Error(), extras)
 	data := addErrorToBody(c.configuration, body, err, skip)
 	data["request"] = c.requestDetails(r)
 	c.push(body)
@@ -340,10 +368,16 @@ func (c *Client) Message(level string, msg string) {
 // MessageWithExtras sends a message to Rollbar with the given severity
 // level with extra custom data.
 func (c *Client) MessageWithExtras(level string, msg string, extras map[string]interface{}) {
+	c.MessageWithExtrasAndContext(context.TODO(), level, msg, extras)
+}
+
+// MessageWithExtrasAndContext sends a message to Rollbar with the given severity
+// level with extra custom data, within the given context.
+func (c *Client) MessageWithExtrasAndContext(ctx context.Context, level string, msg string, extras map[string]interface{}) {
 	if !c.configuration.enabled {
 		return
 	}
-	body := c.buildBody(level, msg, extras)
+	body := c.buildBody(ctx, level, msg, extras)
 	data := body["data"].(map[string]interface{})
 	data["body"] = messageBody(msg)
 	c.push(body)
@@ -358,10 +392,17 @@ func (c *Client) RequestMessage(level string, r *http.Request, msg string) {
 // RequestMessageWithExtras sends a message to Rollbar with the given
 // severity level and request-specific information with extra custom data.
 func (c *Client) RequestMessageWithExtras(level string, r *http.Request, msg string, extras map[string]interface{}) {
+	c.RequestMessageWithExtrasAndContext(context.TODO(), level, r, msg, extras)
+}
+
+// RequestMessageWithExtrasAndContext sends a message to Rollbar with the given
+// severity level and request-specific information with extra custom data, within the given
+// context.
+func (c *Client) RequestMessageWithExtrasAndContext(ctx context.Context, level string, r *http.Request, msg string, extras map[string]interface{}) {
 	if !c.configuration.enabled {
 		return
 	}
-	body := c.buildBody(level, msg, extras)
+	body := c.buildBody(ctx, level, msg, extras)
 	data := body["data"].(map[string]interface{})
 	data["body"] = messageBody(msg)
 	data["request"] = c.requestDetails(r)
@@ -441,8 +482,8 @@ func (c *Client) Close() error {
 	return c.Transport.Close()
 }
 
-func (c *Client) buildBody(level, title string, extras map[string]interface{}) map[string]interface{} {
-	return buildBody(c.configuration, level, title, extras)
+func (c *Client) buildBody(ctx context.Context, level, title string, extras map[string]interface{}) map[string]interface{} {
+	return buildBody(ctx, c.configuration, level, title, extras)
 }
 
 func (c *Client) requestDetails(r *http.Request) map[string]interface{} {
@@ -455,10 +496,25 @@ func (c *Client) push(body map[string]interface{}) error {
 	return c.Transport.Send(body)
 }
 
-type person struct {
-	id       string
-	username string
-	email    string
+type Person struct {
+	Id       string
+	Username string
+	Email    string
+}
+
+type pkey int
+
+var personKey pkey
+
+// NewPersonContext returns a new Context that carries the person as a value.
+func NewPersonContext(ctx context.Context, p *Person) context.Context {
+	return context.WithValue(ctx, personKey, p)
+}
+
+// PersonFromContext returns the Person value stored in ctx, if any.
+func PersonFromContext(ctx context.Context) (*Person, bool) {
+	p, ok := ctx.Value(personKey).(*Person)
+	return p, ok
 }
 
 type captureIp int
@@ -487,7 +543,7 @@ type configuration struct {
 	scrubFields  *regexp.Regexp
 	checkIgnore  func(string) bool
 	transform    func(map[string]interface{})
-	person       person
+	person       Person
 	captureIp    captureIp
 }
 
@@ -510,7 +566,7 @@ func createConfiguration(token, environment, codeVersion, serverHost, serverRoot
 		fingerprint:  false,
 		checkIgnore:  func(_s string) bool { return false },
 		transform:    func(_d map[string]interface{}) {},
-		person:       person{},
+		person:       Person{},
 		captureIp:    CaptureIpFull,
 	}
 }

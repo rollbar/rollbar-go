@@ -1,6 +1,7 @@
 package rollbar
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -153,7 +154,7 @@ func TestBuildBody(t *testing.T) {
 		"EXTRA_CUSTOM_KEY":      "EXTRA_CUSTOM_VALUE",
 		"OVERRIDDEN_CUSTOM_KEY": "EXTRA",
 	}
-	body := interface{}(std).(*Client).buildBody(ERR, "test error", extraCustom)
+	body := interface{}(std).(*Client).buildBody(context.TODO(), ERR, "test error", extraCustom)
 
 	if body["data"] == nil {
 		t.Error("body should have data")
@@ -182,7 +183,7 @@ func TestBuildBodyNoBaseCustom(t *testing.T) {
 		"EXTRA_CUSTOM_KEY":      "EXTRA_CUSTOM_VALUE",
 		"OVERRIDDEN_CUSTOM_KEY": "EXTRA",
 	}
-	body := interface{}(std).(*Client).buildBody(ERR, "test error", extraCustom)
+	body := interface{}(std).(*Client).buildBody(context.TODO(), ERR, "test error", extraCustom)
 
 	if body["data"] == nil {
 		t.Error("body should have data")
