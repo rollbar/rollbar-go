@@ -219,6 +219,46 @@ func TestErrorRequest(t *testing.T) {
 	}
 }
 
+func TestErrorRequestHeaders(t *testing.T) {
+	r, _ := http.NewRequest("GET", "http://foo.com/somethere?param1=true", nil)
+	r.RemoteAddr = "1.1.1.1:123"
+	r.Header.Add("Content-Type", "application/json")
+	r.Header.Add("Content-Type", "application/x-json")
+	r.Header.Add("X-Foo-Bar", "baz")
+	r.Header.Add("X-Mult", "a")
+	r.Header.Add("X-Mult", "b")
+
+	object := std.requestDetails(r)
+
+	if object["url"] != "http://foo.com/somethere?param1=true" {
+		t.Errorf("wrong url, got %v", object["url"])
+	}
+
+	if object["method"] != "GET" {
+		t.Errorf("wrong method, got %v", object["method"])
+	}
+
+	if object["query_string"] != "param1=true" {
+		t.Errorf("wrong id, got %v", object["query_string"])
+	}
+
+	headers := object["headers"].(map[string]interface{})
+	if headers["Content-Type"].(string) != "application/json" {
+		t.Errorf("expected single string value for Content-Type, got %v", headers["Content-Type"])
+	}
+	if headers["X-Foo-Bar"].(string) != "baz" {
+		t.Errorf("expected single string value for X-Foo-Bar, got %v", headers["X-Foo-Bar"])
+	}
+	if len(headers["X-Mult"].([]string)) != 2 {
+		t.Errorf("expected X-Mult to have two string values, got %v", headers["X-Mult"])
+	}
+
+	multHeaders := headers["X-Mult"].([]string)
+	if multHeaders[0] != "a" || multHeaders[1] != "b" {
+		t.Errorf("expected multiple string values for X-Mult, got %v", headers["X-Mult"])
+	}
+}
+
 func TestFilterParams(t *testing.T) {
 	values := map[string][]string{
 		"password":     {"one"},
