@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"runtime"
 )
 
 const (
@@ -523,5 +524,5 @@ func WrapAndWait(f func()) interface{} {
 type CauseStacker interface {
 	error
 	Cause() error
-	Stack() Stack
+	Stack() []runtime.Frame
 }

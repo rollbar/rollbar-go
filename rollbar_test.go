@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"runtime"
 	"testing"
 )
 
@@ -361,14 +362,14 @@ func TestFilterFlatten(t *testing.T) {
 type cs struct {
 	error
 	cause error
-	stack Stack
+	stack []runtime.Frame
 }
 
 func (cs cs) Cause() error {
 	return cs.cause
 }
 
-func (cs cs) Stack() Stack {
+func (cs cs) Stack() []runtime.Frame {
 	return cs.stack
 }
 
@@ -387,33 +388,36 @@ func TestGetCauseOfCauseStacker(t *testing.T) {
 }
 
 func TestGetOrBuildStackOfStdErrWithoutParent(t *testing.T) {
-	err := cs{fmt.Errorf(""), nil, BuildStack(0)}
-	if nil == getOrBuildStack(err, nil, 0) {
+	err := cs{fmt.Errorf(""), nil, getCallersFrames(0)}
+	if nil == getOrBuildFrames(err, nil, 0) {
 		t.Error("should build stack if parent is not a CauseStacker")
 	}
 }
 
 func TestGetOrBuildStackOfStdErrWithParent(t *testing.T) {
 	cause := fmt.Errorf("cause")
-	effect := cs{fmt.Errorf("effect"), cause, BuildStack(0)}
-	if 0 != len(getOrBuildStack(cause, effect, 0)) {
+	effect := cs{fmt.Errorf("effect"), cause, getCallersFrames(0)}
+	if 0 != len(getOrBuildFrames(cause, effect, 0)) {
 		t.Error("should return empty stack of stadard error if parent is CauseStacker")
 	}
 }
 
 func TestGetOrBuildStackOfCauseStackerWithoutParent(t *testing.T) {
 	cause := fmt.Errorf("cause")
-	effect := cs{fmt.Errorf("effect"), cause, BuildStack(0)}
-	if effect.Stack()[0] != getOrBuildStack(effect, nil, 0)[0] {
+	effect := cs{fmt.Errorf("effect"), cause, getCallersFrames(0)}
+	if len(effect.Stack()) == 0 {
+		t.Fatal("stack should not be empty")
+	}
+	if effect.Stack()[0] != getOrBuildFrames(effect, nil, 0)[0] {
 		t.Error("should use stack from effect")
 	}
 }
 
 func TestGetOrBuildStackOfCauseStackerWithParent(t *testing.T) {
 	cause := fmt.Errorf("cause")
-	effect := cs{fmt.Errorf("effect"), cause, BuildStack(0)}
-	effect2 := cs{fmt.Errorf("effect2"), effect, BuildStack(0)}
-	if effect.Stack()[0] != getOrBuildStack(effect2, effect, 0)[0] {
+	effect := cs{fmt.Errorf("effect"), cause, getCallersFrames(0)}
+	effect2 := cs{fmt.Errorf("effect2"), effect, getCallersFrames(0)}
+	if effect2.Stack()[0] != getOrBuildFrames(effect2, effect, 0)[0] {
 		t.Error("should use stack from effect2")
 	}
 }
@@ -441,8 +445,8 @@ func TestErrorBodyWithoutChain(t *testing.T) {
 
 func TestErrorBodyWithChain(t *testing.T) {
 	cause := fmt.Errorf("cause")
-	effect := cs{fmt.Errorf("effect1"), cause, BuildStack(0)}
-	effect2 := cs{fmt.Errorf("effect2"), effect, BuildStack(0)}
+	effect := cs{fmt.Errorf("effect1"), cause, getCallersFrames(0)}
+	effect2 := cs{fmt.Errorf("effect2"), effect, getCallersFrames(0)}
 	errorBody, fingerprint := errorBody(configuration{fingerprint: true}, effect2, 0)
 	if nil != errorBody["trace"] {
 		t.Error("should not have trace element")
@@ -463,7 +467,8 @@ func TestErrorBodyWithChain(t *testing.T) {
 	if "cause" != traces[2]["exception"].(map[string]interface{})["message"] {
 		t.Error("chain should contain cause third")
 	}
-	if effect2.Stack().Fingerprint()+effect.Stack().Fingerprint()+"0" != fingerprint {
+
+	if buildStack(effect2.Stack()).Fingerprint()+buildStack(effect.Stack()).Fingerprint()+"0" != fingerprint {
 		t.Error("fingerprint should be the fingerprints in chain concatenated together. got: ", fingerprint)
 	}
 }
