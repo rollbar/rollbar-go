@@ -1,18 +1,19 @@
 package rollbar
 
 import (
+	"strings"
 	"testing"
 )
 
 func TestBuildStack(t *testing.T) {
 	frame := BuildStack(1)[0]
-	if frame.Filename != "github.com/rollbar/rollbar-go/stack_test.go" {
+	if !strings.HasSuffix(frame.Filename,"rollbar-go/stack_test.go") {
 		t.Errorf("got: %s", frame.Filename)
 	}
 	if frame.Method != "rollbar-go.TestBuildStack" {
 		t.Errorf("got: %s", frame.Method)
 	}
-	if frame.Line != 8 {
+	if frame.Line != 9 {
 		t.Errorf("got: %d", frame.Line)
 	}
 }
