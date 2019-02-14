@@ -3,6 +3,7 @@ package rollbar
 import (
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
 	"hash/adler32"
 	"net/http"
 	"net/url"
@@ -242,28 +243,57 @@ func buildTrace(err error, stack stack) map[string]interface{} {
 }
 
 func getCause(err error) error {
-	if cs, ok := err.(CauseStacker); ok {
+	type causer interface {
+		Cause() error
+	}
+
+	if cs, ok := err.(causer); ok {
 		return cs.Cause()
 	}
 	return nil
 }
 
-// gets stack frames from errors that provide one of their own
-// otherwise, builds a new stack trace
+// getOrBuildFrames gets stack frames from errors that provide one of their own
+// otherwise, it builds a new stack trace. It returns the stack frames if the error
+// is of a compatible type. If the error is not, but the parent error is, it assumes
+// the parent error will be processed later and therefore returns nil.
 func getOrBuildFrames(err error, parent error, skip int) []runtime.Frame {
-	if cs, ok := err.(CauseStacker); ok {
-		return cs.Stack()
-	} else if _, ok := parent.(CauseStacker); !ok {
-		return getCallersFrames(1 + skip)
+	type stackTracer interface {
+		StackTrace() errors.StackTrace
 	}
 
-	return nil
+	switch x := err.(type) {
+	case CauseStacker:
+		return x.Stack()
+	case stackTracer:
+		st := x.StackTrace()
+		pcs := make([]uintptr, len(st))
+		for i, pc := range st {
+			pcs[i] = uintptr(pc)
+		}
+		fr := runtime.CallersFrames(pcs)
+
+		return framesToSlice(fr)
+	}
+
+	switch parent.(type) {
+	case CauseStacker, stackTracer:
+		return nil
+	default:
+		return getCallersFrames(1 + skip)
+	}
 }
 
 func getCallersFrames(skip int) []runtime.Frame {
 	pc := make([]uintptr, 100)
 	runtime.Callers(2+skip, pc)
 	fr := runtime.CallersFrames(pc)
+
+	return framesToSlice(fr)
+}
+
+// framesToSlice extracts all the runtime.Frame from runtime.Frames.
+func framesToSlice(fr *runtime.Frames) []runtime.Frame {
 	frames := make([]runtime.Frame, 0)
 
 	for frame, more := fr.Next(); frame != (runtime.Frame{}); frame, more = fr.Next() {
