@@ -66,9 +66,9 @@ Due to the nature of the `error` type in Go, it can be difficult to attribute er
     type CauseStacker interface {
       error
       Cause() error
-      Stack() Stack
+      Stack() []runtime.Frame
     }
 
-One can implement this interface for custom Error types to be able to build up a chain of stack traces. In order to get stack the correct stacks, callers must call BuildStack on their own at the time that the cause is wrapped. This is the least intrusive mechanism for gathering this information due to the decisions made by the Go runtime to not track this information.
+One can implement this interface for custom Error types to be able to build up a chain of stack traces. In order to get the correct stack, callers are required to call runtime.Callers and build the runtime.Frame slice on their own at the time the cause is wrapped. This is the least intrusive mechanism for gathering this information due to the decisions made by the Go runtime to not track this information.
 */
 package rollbar

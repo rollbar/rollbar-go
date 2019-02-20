@@ -520,7 +520,8 @@ func WrapAndWait(f func()) interface{} {
 }
 
 // CauseStacker is an interface that errors can implement to create a trace_chain.
-// Callers are required to call BuildStack on their own at the time the cause is wrapped.
+// Callers are required to call runtime.Callers and build the runtime.Frame slice
+// on their own at the time the cause is wrapped.
 type CauseStacker interface {
 	error
 	Cause() error
