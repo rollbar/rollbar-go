@@ -192,7 +192,8 @@ func filterIp(ip string, captureIp captureIp) string {
 // method, the causes will be traversed until nil.
 func errorBody(configuration configuration, err error, skip int) (map[string]interface{}, string) {
 	var parent error
-	var traceChain []map[string]interface{}
+	// allocate the slice at all times since it will get marshaled into JSON later
+	traceChain := []map[string]interface{}{}
 	fingerprint := ""
 	for {
 		stack := buildStack(getOrBuildFrames(err, parent, 1 + skip))
