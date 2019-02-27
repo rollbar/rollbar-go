@@ -31,7 +31,6 @@ type frame struct {
 type stack []frame
 
 // buildStack converts []runtime.Frame into a JSON serializable slice of frames
-// optionally skipping the number of frames specified by the input skip argument.
 func buildStack(frames []runtime.Frame) stack {
 	stack := make(stack, len(frames))
 
