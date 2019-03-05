@@ -139,7 +139,7 @@ func TestEverythingGeneric(t *testing.T) {
 		"hello": "request",
 	})
 
-	Wait()
+	Close()
 }
 
 func TestBuildBody(t *testing.T) {

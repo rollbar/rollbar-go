@@ -196,7 +196,7 @@ func errorBody(configuration configuration, err error, skip int) (map[string]int
 	traceChain := []map[string]interface{}{}
 	fingerprint := ""
 	for {
-		stack := buildStack(getOrBuildFrames(err, parent, 1 + skip))
+		stack := buildStack(getOrBuildFrames(err, parent, 1+skip))
 		traceChain = append(traceChain, buildTrace(err, stack))
 		if configuration.fingerprint {
 			fingerprint = fingerprint + stack.Fingerprint()
@@ -247,7 +247,7 @@ func getOrBuildFrames(err error, parent error, skip int) []runtime.Frame {
 
 func getCallersFrames(skip int) []runtime.Frame {
 	pc := make([]uintptr, 100)
-	runtime.Callers(2 + skip, pc)
+	runtime.Callers(2+skip, pc)
 	fr := runtime.CallersFrames(pc)
 	frames := make([]runtime.Frame, 0)
 

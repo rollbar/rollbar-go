@@ -506,6 +506,12 @@ func Wait() {
 	std.Wait()
 }
 
+// Close will block until the queue of errors / messages is empty and terminate the goroutine used
+// for sending items.
+func Close() {
+	std.Close()
+}
+
 // Wrap calls f and then recovers and reports a panic to Rollbar if it occurs.
 // If an error is captured it is subsequently returned.
 func Wrap(f func()) interface{} {

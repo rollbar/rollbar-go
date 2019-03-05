@@ -8,7 +8,7 @@ import (
 func TestBuildStack(t *testing.T) {
 	frame := buildStack(getCallersFrames(0))[0]
 
-	if !strings.HasSuffix(frame.Filename,"rollbar-go/stack_test.go") {
+	if !strings.HasSuffix(frame.Filename, "rollbar-go/stack_test.go") {
 		t.Errorf("got: %s", frame.Filename)
 	}
 	if frame.Method != "rollbar-go.TestBuildStack" {
