@@ -17,8 +17,8 @@ var (
 	}
 )
 
-// Frame represents one frame in a stack trace
-type Frame struct {
+// frame represents one frame in a stack trace
+type frame struct {
 	// Filename is the name of the file for this frame
 	Filename string `json:"filename"`
 	// Method is the name of the method for this frame
@@ -27,21 +27,16 @@ type Frame struct {
 	Line int `json:"lineno"`
 }
 
-// A Stack is a slice of frames
-type Stack []Frame
+// A stack is a slice of frames
+type stack []frame
 
-// BuildStack uses the Go runtime to construct a slice of frames optionally skipping the number of
-// frames specified by the input skip argument.
-func BuildStack(skip int) Stack {
-	stack := make(Stack, 0)
+// buildStack converts []runtime.Frame into a JSON serializable slice of frames
+func buildStack(frames []runtime.Frame) stack {
+	stack := make(stack, len(frames))
 
-	for i := skip; ; i++ {
-		pc, file, line, ok := runtime.Caller(i)
-		if !ok {
-			break
-		}
-		file = shortenFilePath(file)
-		stack = append(stack, Frame{file, functionName(pc), line})
+	for i, fr := range frames {
+		file := shortenFilePath(fr.File)
+		stack[i] = frame{file, functionName(fr.Function), fr.Line}
 	}
 
 	return stack
@@ -51,7 +46,7 @@ func BuildStack(skip int) Stack {
 // callstack, including file names. That ensure that there are no false duplicates
 // but also means that after changing the code (adding/removing lines), the
 // fingerprints will change. It's a trade-off.
-func (s Stack) Fingerprint() string {
+func (s stack) Fingerprint() string {
 	hash := crc32.NewIEEE()
 	for _, frame := range s {
 		fmt.Fprintf(hash, "%s%s%d", frame.Filename, frame.Method, frame.Line)
@@ -80,12 +75,10 @@ func shortenFilePath(s string) string {
 	return s
 }
 
-func functionName(pc uintptr) string {
-	fn := runtime.FuncForPC(pc)
-	if fn == nil {
+func functionName(pcFuncName string) string {
+	if pcFuncName == "" {
 		return "???"
 	}
-	name := fn.Name()
-	end := strings.LastIndex(name, string(os.PathSeparator))
-	return name[end+1:]
+	end := strings.LastIndex(pcFuncName, string(os.PathSeparator))
+	return pcFuncName[end+1:]
 }

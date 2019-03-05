@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"reflect"
 	"regexp"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -191,10 +192,11 @@ func filterIp(ip string, captureIp captureIp) string {
 // method, the causes will be traversed until nil.
 func errorBody(configuration configuration, err error, skip int) (map[string]interface{}, string) {
 	var parent error
+	// allocate the slice at all times since it will get marshaled into JSON later
 	traceChain := []map[string]interface{}{}
 	fingerprint := ""
 	for {
-		stack := getOrBuildStack(err, parent, skip)
+		stack := buildStack(getOrBuildFrames(err, parent, 1 + skip))
 		traceChain = append(traceChain, buildTrace(err, stack))
 		if configuration.fingerprint {
 			fingerprint = fingerprint + stack.Fingerprint()
@@ -210,7 +212,7 @@ func errorBody(configuration configuration, err error, skip int) (map[string]int
 }
 
 // builds one trace element in trace_chain
-func buildTrace(err error, stack Stack) map[string]interface{} {
+func buildTrace(err error, stack stack) map[string]interface{} {
 	message := nilErrTitle
 	if err != nil {
 		message = err.Error()
@@ -231,20 +233,33 @@ func getCause(err error) error {
 	return nil
 }
 
-// gets Stack from errors that provide one of their own
-// otherwise, builds a new stack
-func getOrBuildStack(err error, parent error, skip int) Stack {
+// gets stack frames from errors that provide one of their own
+// otherwise, builds a new stack trace
+func getOrBuildFrames(err error, parent error, skip int) []runtime.Frame {
 	if cs, ok := err.(CauseStacker); ok {
-		if s := cs.Stack(); s != nil {
-			return s
-		}
-	} else {
-		if _, ok := parent.(CauseStacker); !ok {
-			return BuildStack(4 + skip)
+		return cs.Stack()
+	} else if _, ok := parent.(CauseStacker); !ok {
+		return getCallersFrames(1 + skip)
+	}
+
+	return nil
+}
+
+func getCallersFrames(skip int) []runtime.Frame {
+	pc := make([]uintptr, 100)
+	runtime.Callers(2 + skip, pc)
+	fr := runtime.CallersFrames(pc)
+	frames := make([]runtime.Frame, 0)
+
+	for frame, more := fr.Next(); frame != (runtime.Frame{}); frame, more = fr.Next() {
+		frames = append(frames, frame)
+
+		if !more {
+			break
 		}
 	}
 
-	return make(Stack, 0)
+	return frames
 }
 
 // Build a message inner-body for the given message string.

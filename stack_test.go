@@ -6,7 +6,8 @@ import (
 )
 
 func TestBuildStack(t *testing.T) {
-	frame := BuildStack(1)[0]
+	frame := buildStack(getCallersFrames(0))[0]
+
 	if !strings.HasSuffix(frame.Filename,"rollbar-go/stack_test.go") {
 		t.Errorf("got: %s", frame.Filename)
 	}
@@ -21,25 +22,25 @@ func TestBuildStack(t *testing.T) {
 func TestStackFingerprint(t *testing.T) {
 	tests := []struct {
 		Fingerprint string
-		Stack       Stack
+		Stack       stack
 	}{
 		{
 			"9344290d",
-			Stack{
-				Frame{"foo.go", "Oops", 1},
+			stack{
+				frame{"foo.go", "Oops", 1},
 			},
 		},
 		{
 			"a4d78b7",
-			Stack{
-				Frame{"foo.go", "Oops", 2},
+			stack{
+				frame{"foo.go", "Oops", 2},
 			},
 		},
 		{
 			"50e0fcb3",
-			Stack{
-				Frame{"foo.go", "Oops", 1},
-				Frame{"foo.go", "Oops", 2},
+			stack{
+				frame{"foo.go", "Oops", 1},
+				frame{"foo.go", "Oops", 2},
 			},
 		},
 	}
