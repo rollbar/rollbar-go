@@ -100,8 +100,23 @@ func requestDetails(configuration configuration, r *http.Request) map[string]int
 
 		// POST / PUT params
 		"POST":    filterFlatten(configuration.scrubFields, r.Form, nil),
-		"user_ip": filterIp(r.RemoteAddr, configuration.captureIp),
+		"user_ip": filterIp(remoteIP(r), configuration.captureIp),
 	}
+}
+
+// remoteIP attempts to extract the real remote IP address by looking first at the headers X-Real-IP
+// and X-Forwarded-For, and then falling back to RemoteAddr defined in http.Request
+func remoteIP(req *http.Request) string {
+	real_ip := req.Header.Get("X-Real-IP")
+	if real_ip != "" {
+		return real_ip
+	}
+	forwarded_ips := req.Header.Get("X-Forwarded-For")
+	if forwarded_ips != "" {
+		ips := strings.Split(forwarded_ips, ", ")
+		return ips[0]
+	}
+	return req.RemoteAddr
 }
 
 // filterFlatten filters sensitive information like passwords from being sent to Rollbar, and
@@ -196,7 +211,7 @@ func errorBody(configuration configuration, err error, skip int) (map[string]int
 	traceChain := []map[string]interface{}{}
 	fingerprint := ""
 	for {
-		stack := buildStack(getOrBuildFrames(err, parent, 1 + skip))
+		stack := buildStack(getOrBuildFrames(err, parent, 1+skip))
 		traceChain = append(traceChain, buildTrace(err, stack))
 		if configuration.fingerprint {
 			fingerprint = fingerprint + stack.Fingerprint()
@@ -247,7 +262,7 @@ func getOrBuildFrames(err error, parent error, skip int) []runtime.Frame {
 
 func getCallersFrames(skip int) []runtime.Frame {
 	pc := make([]uintptr, 100)
-	runtime.Callers(2 + skip, pc)
+	runtime.Callers(2+skip, pc)
 	fr := runtime.CallersFrames(pc)
 	frames := make([]runtime.Frame, 0)
 
