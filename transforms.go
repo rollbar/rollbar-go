@@ -107,13 +107,13 @@ func requestDetails(configuration configuration, r *http.Request) map[string]int
 // remoteIP attempts to extract the real remote IP address by looking first at the headers X-Real-IP
 // and X-Forwarded-For, and then falling back to RemoteAddr defined in http.Request
 func remoteIP(req *http.Request) string {
-	real_ip := req.Header.Get("X-Real-IP")
-	if real_ip != "" {
-		return real_ip
+	realIP := req.Header.Get("X-Real-IP")
+	if realIP != "" {
+		return realIP
 	}
-	forwarded_ips := req.Header.Get("X-Forwarded-For")
-	if forwarded_ips != "" {
-		ips := strings.Split(forwarded_ips, ", ")
+	forwardedIPs := req.Header.Get("X-Forwarded-For")
+	if forwardedIPs != "" {
+		ips := strings.Split(forwardedIPs, ", ")
 		return ips[0]
 	}
 	return req.RemoteAddr
