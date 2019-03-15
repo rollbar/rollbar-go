@@ -100,8 +100,23 @@ func requestDetails(configuration configuration, r *http.Request) map[string]int
 
 		// POST / PUT params
 		"POST":    filterFlatten(configuration.scrubFields, r.Form, nil),
-		"user_ip": filterIp(r.RemoteAddr, configuration.captureIp),
+		"user_ip": filterIp(remoteIP(r), configuration.captureIp),
 	}
+}
+
+// remoteIP attempts to extract the real remote IP address by looking first at the headers X-Real-IP
+// and X-Forwarded-For, and then falling back to RemoteAddr defined in http.Request
+func remoteIP(req *http.Request) string {
+	realIP := req.Header.Get("X-Real-IP")
+	if realIP != "" {
+		return realIP
+	}
+	forwardedIPs := req.Header.Get("X-Forwarded-For")
+	if forwardedIPs != "" {
+		ips := strings.Split(forwardedIPs, ", ")
+		return ips[0]
+	}
+	return req.RemoteAddr
 }
 
 // filterFlatten filters sensitive information like passwords from being sent to Rollbar, and

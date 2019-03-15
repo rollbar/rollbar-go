@@ -221,6 +221,33 @@ func TestErrorRequest(t *testing.T) {
 	}
 }
 
+func TestRequestForwardedIP(t *testing.T) {
+	SetCaptureIp(CaptureIpFull)
+	r, _ := http.NewRequest("GET", "http://foo.com/somethere?param1=true", nil)
+	r.RemoteAddr = "1.1.1.1:123"
+	r.Header.Add("X-Forwarded-For", "1.2.3.4, 2.3.4.5, 3.4.5.6")
+
+	object := std.requestDetails(r)
+
+	if object["user_ip"] != "1.2.3.4" {
+		t.Errorf("wrong user_ip, got %v", object["user_ip"])
+	}
+}
+
+func TestRequestMutlipleIPHeaders(t *testing.T) {
+	SetCaptureIp(CaptureIpFull)
+	r, _ := http.NewRequest("GET", "http://foo.com/somethere?param1=true", nil)
+	r.RemoteAddr = "1.1.1.1:123"
+	r.Header.Add("X-Real-Ip", "8.9.10.11")
+	r.Header.Add("X-Forwarded-For", "1.2.3.4, 2.3.4.5, 3.4.5.6")
+
+	object := std.requestDetails(r)
+
+	if object["user_ip"] != "8.9.10.11" {
+		t.Errorf("wrong user_ip, got %v", object["user_ip"])
+	}
+}
+
 func TestErrorRequestHeaders(t *testing.T) {
 	r, _ := http.NewRequest("GET", "http://foo.com/somethere?param1=true", nil)
 	r.RemoteAddr = "1.1.1.1:123"
