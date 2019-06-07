@@ -4,6 +4,8 @@ import (
 	"errors"
 	"github.com/rollbar/rollbar-go"
 	"regexp"
+	"context"
+	"reflect"
 	"testing"
 )
 
@@ -206,6 +208,88 @@ func TestWrapAndWaitNonErrorIgnore(t *testing.T) {
 		}
 	} else {
 		t.Fail()
+	}
+}
+
+func testCallLambdaHandler(handler interface{}) interface{} {
+	fn := reflect.ValueOf(handler)
+	var args []reflect.Value
+	return fn.Call(args)
+}
+
+func testLambdaHandlerWithContext(ctx context.Context) (context.Context, error) {
+	return ctx, errors.New("test")
+}
+
+func testLambdaHandlerWithMessage(message TestMessage) (TestMessage, error) {
+	return message, errors.New("test")
+}
+
+type TestMessage struct {
+	Name string
+}
+
+func TestLambdaWrapperWithError(t *testing.T) {
+	client := testClient()
+	err := errors.New("bork")
+	//ctx := context.TODO()
+	handler := client.LambdaWrapper(func() {
+		panic(err)
+	})
+	fn := reflect.ValueOf(handler)
+	var args []reflect.Value
+	fn.Call(args)
+	//testCallLambdaHandler(handler)
+
+	if transport, ok := client.Transport.(*TestTransport); ok {
+		if transport.Body == nil {
+			t.Error("Expected Body to be present")
+		}
+		if !transport.WaitCalled {
+			t.Error("Expected wait to be called")
+		}
+	} else {
+		t.Fail()
+	}
+}
+
+func TestLambdaWrapperWithContext(t *testing.T) {
+	client := testClient()
+	ctx := context.TODO()
+	handler := client.LambdaWrapper(testLambdaHandlerWithContext)
+	var args []reflect.Value
+	args = append(args, reflect.ValueOf(ctx))
+	resp := reflect.ValueOf(handler).Call(args)
+	var outCtx context.Context
+	outCtx = resp[0].Interface().(context.Context)
+	var err error
+	err = resp[1].Interface().(error)
+
+	if outCtx != ctx {
+		t.Error("Expected ctx to be present")
+	}
+	if err.Error() != "test" {
+		t.Error("Expected error to be present")
+	}
+}
+
+func TestLambdaWrapperWithMessage(t *testing.T) {
+	client := testClient()
+	message := TestMessage{Name: "foo"}
+	handler := client.LambdaWrapper(testLambdaHandlerWithMessage)
+	var args []reflect.Value
+	args = append(args, reflect.ValueOf(message))
+	resp := reflect.ValueOf(handler).Call(args)
+	var outMessage TestMessage
+	outMessage = resp[0].Interface().(TestMessage)
+	var err error
+	err = resp[1].Interface().(error)
+
+	if outMessage != message {
+		t.Error("Expected message to be present")
+	}
+	if err.Error() != "test" {
+		t.Error("Expected error to be present")
 	}
 }
 
