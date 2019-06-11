@@ -525,6 +525,13 @@ func WrapAndWait(f func()) interface{} {
 	return std.WrapAndWait(f)
 }
 
+// LambdaWrapper calls handlerFunc with arguments, and recovers and reports a
+// panic to Rollbar if it occurs. This functions as a passthrough wrapper for
+// lambda.Start(). This also waits before returning to ensure all messages completed.
+func LambdaWrapper(handlerFunc interface{}) interface{} {
+	return std.LambdaWrapper(handlerFunc)
+}
+
 // CauseStacker is an interface that errors can implement to create a trace_chain.
 // Callers are required to call runtime.Callers and build the runtime.Frame slice
 // on their own at the time the cause is wrapped.

@@ -11,6 +11,7 @@ import (
 	"os"
 	"regexp"
 	"runtime"
+	"reflect"
 )
 
 // A Client can be used to interact with Rollbar via the configured Transport.
@@ -465,6 +466,59 @@ func (c *Client) WrapAndWait(f func()) (err interface{}) {
 
 	f()
 	return
+}
+
+// LambdaWrapper calls handlerFunc with arguments, and recovers and reports a
+// panic to Rollbar if it occurs. This functions as a passthrough wrapper for
+// lambda.Start(). This also waits before returning to ensure all messages completed.
+func (c *Client) LambdaWrapper(handlerFunc interface{}) interface{} {
+	if handlerFunc == nil {
+		return lambdaErrorHandler(fmt.Errorf("handler is nil"))
+	}
+	handlerType := reflect.TypeOf(handlerFunc)
+	handlerValue := reflect.ValueOf(handlerFunc)
+
+	if handlerType.Kind() != reflect.Func {
+		return lambdaErrorHandler(fmt.Errorf("handler kind %s is not %s", handlerType.Kind(), reflect.Func))
+	}
+
+	handler := func(args []reflect.Value) []reflect.Value {
+		defer func() {
+			err := recover()
+			switch val := err.(type) {
+			case nil:
+				return
+			case error:
+				if c.configuration.checkIgnore(val.Error()) {
+					return
+				}
+				c.ErrorWithStackSkip(CRIT, val, 2)
+			default:
+				str := fmt.Sprint(val)
+				if c.configuration.checkIgnore(str) {
+					return
+				}
+				errValue := errors.New(str)
+				c.ErrorWithStackSkip(CRIT, errValue, 2)
+			}
+			c.Wait()
+		}()
+
+		ret := handlerValue.Call(args)
+		c.Wait()
+		return ret
+	}
+
+	fn := reflect.MakeFunc(handlerValue.Type(), handler).Interface()
+	return fn
+}
+
+type lambdaHandler func(context.Context, []byte) (interface{}, error)
+
+func lambdaErrorHandler(e error) lambdaHandler {
+	return func(ctx context.Context, payload []byte) (interface{}, error) {
+		return nil, e
+	}
 }
 
 // Wait will call the Wait method of the Transport. If using an asynchronous
