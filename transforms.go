@@ -2,8 +2,6 @@ package rollbar
 
 import (
 	"context"
-	"fmt"
-	"hash/adler32"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -294,9 +292,6 @@ func errorClass(err error) string {
 	class := reflect.TypeOf(err).String()
 	if class == "" {
 		return "panic"
-	} else if class == "*errors.errorString" {
-		checksum := adler32.Checksum([]byte(err.Error()))
-		return fmt.Sprintf("{%x}", checksum)
 	} else {
 		return strings.TrimPrefix(class, "*")
 	}
