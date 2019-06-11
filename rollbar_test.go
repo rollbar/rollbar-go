@@ -44,7 +44,9 @@ func testErrorStackWithSkipGeneric2(s string) {
 
 func TestErrorClass(t *testing.T) {
 	errors := map[string]error{
-		"{4b81076c}":          fmt.Errorf("something is broken"),
+		// generic error
+		"errors.errorString":          fmt.Errorf("something is broken"),
+		// custom error
 		"rollbar.CustomError": &CustomError{"terrible mistakes were made"},
 	}
 
