@@ -15,7 +15,7 @@ Basic Usage
     rollbar.SetEnvironment("production")                 // defaults to "development"
     rollbar.SetCodeVersion("v2")                         // optional Git hash/branch/tag (required for GitHub integration)
     rollbar.SetServerHost("web.1")                       // optional override; defaults to hostname
-    rollbar.SetServerRoot("github.com/heroku/myproject") // path of project (required for GitHub integration and non-project stacktrace collapsing)
+    rollbar.SetServerRoot("/")                           // local path of project (required for GitHub integration and non-project stacktrace collapsing)
 
     rollbar.Info("Message body goes here")
     rollbar.WrapAndWait(doSomething)
