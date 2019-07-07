@@ -3,7 +3,6 @@ package rollbar
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
 	"hash/adler32"
 	"net/http"
 	"net/url"
@@ -212,7 +211,7 @@ func errorBody(configuration configuration, err error, skip int) (map[string]int
 	traceChain := []map[string]interface{}{}
 	fingerprint := ""
 	for {
-		stack := buildStack(getOrBuildFrames(err, parent, 1+skip))
+		stack := buildStack(getOrBuildFrames(err, parent, 1+skip, configuration.stackTracer))
 		traceChain = append(traceChain, buildTrace(err, stack))
 		if configuration.fingerprint {
 			fingerprint = fingerprint + stack.Fingerprint()
@@ -257,31 +256,32 @@ func getCause(err error) error {
 // otherwise, it builds a new stack trace. It returns the stack frames if the error
 // is of a compatible type. If the error is not, but the parent error is, it assumes
 // the parent error will be processed later and therefore returns nil.
-func getOrBuildFrames(err error, parent error, skip int) []runtime.Frame {
-	type stackTracer interface {
-		StackTrace() errors.StackTrace
-	}
+func getOrBuildFrames(err error, parent error, skip int,
+	tracer func(error) ([]runtime.Frame, bool)) []runtime.Frame {
 
 	switch x := err.(type) {
 	case CauseStacker:
 		return x.Stack()
-	case stackTracer:
-		st := x.StackTrace()
-		pcs := make([]uintptr, len(st))
-		for i, pc := range st {
-			pcs[i] = uintptr(pc)
+	default:
+		if tracer != nil {
+			if st, ok := tracer(err); ok && st != nil {
+				return st
+			}
 		}
-		fr := runtime.CallersFrames(pcs)
-
-		return framesToSlice(fr)
 	}
 
 	switch parent.(type) {
-	case CauseStacker, stackTracer:
+	case CauseStacker:
 		return nil
 	default:
-		return getCallersFrames(1 + skip)
+		if tracer != nil {
+			if _, ok := tracer(parent); ok {
+				return nil
+			}
+		}
 	}
+
+	return getCallersFrames(1 + skip)
 }
 
 func getCallersFrames(skip int) []runtime.Frame {
