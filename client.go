@@ -165,7 +165,7 @@ func (c *Client) SetTransform(transform func(map[string]interface{})) {
 // SetStackTracer sets the stackTracer function which is called to extract the stack
 // trace from enhanced error types. Return nil if no trace information is available.
 // Return true if the error type can be handled and false otherwise.
-// This feature can be used to add support for pkg/errors stack trace extraction.
+// This feature can be used to add support for custom error type stack trace extraction.
 func (c *Client) SetStackTracer(stackTracer func(err error) ([]runtime.Frame, bool)) {
 	c.configuration.stackTracer = stackTracer
 }
