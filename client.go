@@ -162,6 +162,14 @@ func (c *Client) SetTransform(transform func(map[string]interface{})) {
 	c.configuration.transform = transform
 }
 
+// SetStackTracer sets the stackTracer function which is called to extract the stack
+// trace from enhanced error types. Return nil if no trace information is available.
+// Return true if the error type can be handled and false otherwise.
+// This feature can be used to add support for custom error type stack trace extraction.
+func (c *Client) SetStackTracer(stackTracer func(err error) ([]runtime.Frame, bool)) {
+	c.configuration.stackTracer = stackTracer
+}
+
 // SetCheckIgnore sets the checkIgnore function which is called during the recovery
 // process of a panic that occurred inside a function wrapped by Wrap or WrapAndWait.
 // Return true if you wish to ignore this panic, false if you wish to
@@ -543,6 +551,7 @@ type configuration struct {
 	scrubFields  *regexp.Regexp
 	checkIgnore  func(string) bool
 	transform    func(map[string]interface{})
+	stackTracer  func(error) ([]runtime.Frame, bool)
 	person       Person
 	captureIp    captureIp
 }

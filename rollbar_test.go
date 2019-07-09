@@ -7,10 +7,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
-	"strings"
 	"testing"
-
-	pkgerr "github.com/pkg/errors"
 )
 
 type CustomError struct {
@@ -419,7 +416,7 @@ func TestGetCauseOfCauseStacker(t *testing.T) {
 
 func TestGetOrBuildStackOfStdErrWithoutParent(t *testing.T) {
 	err := cs{fmt.Errorf(""), nil, getCallersFrames(0)}
-	if nil == getOrBuildFrames(err, nil, 0) {
+	if nil == getOrBuildFrames(err, nil, 0, nil) {
 		t.Error("should build stack if parent is not a CauseStacker")
 	}
 }
@@ -427,7 +424,7 @@ func TestGetOrBuildStackOfStdErrWithoutParent(t *testing.T) {
 func TestGetOrBuildStackOfStdErrWithParent(t *testing.T) {
 	cause := fmt.Errorf("cause")
 	effect := cs{fmt.Errorf("effect"), cause, getCallersFrames(0)}
-	if 0 != len(getOrBuildFrames(cause, effect, 0)) {
+	if 0 != len(getOrBuildFrames(cause, effect, 0, nil)) {
 		t.Error("should return empty stack of stadard error if parent is CauseStacker")
 	}
 }
@@ -438,7 +435,7 @@ func TestGetOrBuildStackOfCauseStackerWithoutParent(t *testing.T) {
 	if len(effect.Stack()) == 0 {
 		t.Fatal("stack should not be empty")
 	}
-	if effect.Stack()[0] != getOrBuildFrames(effect, nil, 0)[0] {
+	if effect.Stack()[0] != getOrBuildFrames(effect, nil, 0, nil)[0] {
 		t.Error("should use stack from effect")
 	}
 }
@@ -447,40 +444,8 @@ func TestGetOrBuildStackOfCauseStackerWithParent(t *testing.T) {
 	cause := fmt.Errorf("cause")
 	effect := cs{fmt.Errorf("effect"), cause, getCallersFrames(0)}
 	effect2 := cs{fmt.Errorf("effect2"), effect, getCallersFrames(0)}
-	if effect2.Stack()[0] != getOrBuildFrames(effect2, effect, 0)[0] {
+	if effect2.Stack()[0] != getOrBuildFrames(effect2, effect, 0, nil)[0] {
 		t.Error("should use stack from effect2")
-	}
-}
-
-func TestGetOrBuildStackOfPkgErrorsWithoutParent(t *testing.T) {
-	err := pkgerr.New("")
-	fr := getOrBuildFrames(err, nil, 0)[0]
-
-	if !strings.HasSuffix(fr.File,"rollbar-go/rollbar_test.go") {
-		t.Errorf("got: %s", fr.File)
-	}
-	if fr.Function != "github.com/rollbar/rollbar-go.TestGetOrBuildStackOfPkgErrorsWithoutParent" {
-		t.Errorf("got: %s", fr.Function)
-	}
-	if fr.Line != 429 {
-		t.Errorf("got: %d", fr.Line)
-	}
-}
-
-func TestGetOrBuildStackOfPkgErrorsWithParent(t *testing.T) {
-	cause := fmt.Errorf("cause")
-	effect := pkgerr.Wrap(cause, "effect")
-	effect2 := pkgerr.Wrap(effect, "effect2")
-	fr := getOrBuildFrames(effect2, effect, 0)[0]
-
-	if !strings.HasSuffix(fr.File,"rollbar-go/rollbar_test.go") {
-		t.Errorf("got: %s", fr.File)
-	}
-	if fr.Function != "github.com/rollbar/rollbar-go.TestGetOrBuildStackOfPkgErrorsWithParent" {
-		t.Errorf("got: %s", fr.Function)
-	}
-	if fr.Line != 446 {
-		t.Errorf("got: %d", fr.Line)
 	}
 }
 
