@@ -126,6 +126,15 @@ func SetTransform(transform func(map[string]interface{})) {
 	std.SetTransform(transform)
 }
 
+// SetStackTracer sets the stackTracer function on the managed Client instance.
+// StackTracer is called to extract the stack trace from enhanced error types.
+// Return nil if no trace information is available. Return true if the error type
+// can be handled and false otherwise.
+// This feature can be used to add support for custom error type stack trace extraction.
+func SetStackTracer(stackTracer func(err error) ([]runtime.Frame, bool)) {
+	std.SetStackTracer(stackTracer)
+}
+
 // SetCheckIgnore sets the checkIgnore function on the managed Client instance.
 // CheckIgnore is called during the recovery process of a panic that
 // occurred inside a function wrapped by Wrap or WrapAndWait.
