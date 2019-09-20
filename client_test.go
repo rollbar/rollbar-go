@@ -7,6 +7,9 @@ import (
 	"context"
 	"reflect"
 	"testing"
+	"strings"
+	rollbarErrors "github.com/rollbar/rollbar-go/errors"
+	pkgerr "github.com/pkg/errors"
 )
 
 type TestTransport struct {
@@ -452,6 +455,35 @@ func TestTransform(t *testing.T) {
 		if data["some_custom_field"] != "hello_world" {
 			t.Error("data should have field set by transform")
 		}
+		configuredOptions := configuredOptionsFromData(data)
+		if !strings.Contains(configuredOptions["transform"].(string), "TestTransform.func1") {
+			t.Error("data should have transform in diagnostic object")
+		}
+	} else {
+		t.Fail()
+	}
+}
+
+func TestStackTracer(t *testing.T) {
+	client := testClient()
+	client.SetStackTracer(rollbarErrors.StackTracer)
+
+	client.ErrorWithLevel(rollbar.ERR, pkgerr.New("Bork"))
+
+	if transport, ok := client.Transport.(*TestTransport); ok {
+		body := transport.Body
+		if body["data"] == nil {
+			t.Error("body should have data")
+		}
+		data := body["data"].(map[string]interface{})
+		framesLen := framesLenFromData(data)
+		if framesLen == 0 {
+			t.Error("data should have frames set by stackTracer")
+		}
+		configuredOptions := configuredOptionsFromData(data)
+		if !strings.Contains(configuredOptions["stackTracer"].(string), "errors.StackTracer") {
+			t.Error("data should have stackTracer in diagnostic object")
+		}
 	} else {
 		t.Fail()
 	}
@@ -483,4 +515,18 @@ func TestEnabled(t *testing.T) {
 	} else {
 		t.Fail()
 	}
+}
+
+func configuredOptionsFromData(data map[string]interface{}) map[string]interface{} {
+	notifier := data["notifier"].(map[string]interface{})
+	diagnostic := notifier["diagnostic"].(map[string]interface{})
+	configuredOptions := diagnostic["configuredOptions"].(map[string]interface{})
+	return configuredOptions
+}
+
+func framesLenFromData(data map[string]interface{}) int {
+	body := data["body"].(map[string]interface{})
+	trace_chain := body["trace_chain"].([]map[string]interface{})
+	frames := reflect.ValueOf(trace_chain[0]["frames"])
+	return frames.Len()
 }
