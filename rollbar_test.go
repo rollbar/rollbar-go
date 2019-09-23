@@ -45,7 +45,7 @@ func testErrorStackWithSkipGeneric2(s string) {
 func TestErrorClass(t *testing.T) {
 	errors := map[string]error{
 		// generic error
-		"errors.errorString":          fmt.Errorf("something is broken"),
+		"errors.errorString": fmt.Errorf("something is broken"),
 		// custom error
 		"rollbar.CustomError": &CustomError{"terrible mistakes were made"},
 	}
@@ -394,6 +394,9 @@ type cs struct {
 	stack []runtime.Frame
 }
 
+var _ Stacker = cs{}
+var _ CauseStacker = cs{}
+
 func (cs cs) Cause() error {
 	return cs.cause
 }
@@ -402,58 +405,120 @@ func (cs cs) Stack() []runtime.Frame {
 	return cs.stack
 }
 
-func TestGetCauseOfStdErr(t *testing.T) {
-	if nil != getCause(fmt.Errorf("")) {
-		t.Error("cause should be nil for standard error")
-	}
+type uw struct {
+	error
+	wrapped error
 }
 
-func TestGetCauseOfCauseStacker(t *testing.T) {
-	cause := fmt.Errorf("cause")
-	effect := cs{fmt.Errorf("effect"), cause, nil}
-	if cause != getCause(effect) {
-		t.Error("effect should return cause")
-	}
+func (uw uw) Unwrap() error {
+	return uw.wrapped
 }
 
-func TestGetOrBuildStackOfStdErrWithoutParent(t *testing.T) {
-	err := cs{fmt.Errorf(""), nil, getCallersFrames(0)}
-	if nil == getOrBuildFrames(err, nil, 0, nil) {
-		t.Error("should build stack if parent is not a CauseStacker")
-	}
+func TestDefaultUnwrapper(t *testing.T) {
+	t.Run("standard error", func(t *testing.T) {
+		if nil != DefaultUnwrapper(fmt.Errorf("")) {
+			t.Error("unwrapping a standard error should get nil")
+		}
+	})
+	t.Run("unwrap", func(t *testing.T) {
+		wrapped := fmt.Errorf("wrapped")
+		parent := uw{fmt.Errorf("parent"), wrapped}
+		if wrapped != DefaultUnwrapper(parent) {
+			t.Error("parent should return wrapped")
+		}
+	})
+	t.Run("CauseStacker", func(t *testing.T) {
+		cause := fmt.Errorf("cause")
+		effect := cs{fmt.Errorf("effect"), cause, nil}
+		if cause != DefaultUnwrapper(effect) {
+			t.Error("effect should return cause")
+		}
+	})
 }
 
-func TestGetOrBuildStackOfStdErrWithParent(t *testing.T) {
-	cause := fmt.Errorf("cause")
-	effect := cs{fmt.Errorf("effect"), cause, getCallersFrames(0)}
-	if 0 != len(getOrBuildFrames(cause, effect, 0, nil)) {
-		t.Error("should return empty stack of stadard error if parent is CauseStacker")
-	}
+func TestDefaultStackTracer(t *testing.T) {
+	t.Run("standard error", func(t *testing.T) {
+		trace, ok := DefaultStackTracer(fmt.Errorf("standard error"))
+		if trace != nil {
+			t.Error("standard errors should not return a trace")
+		}
+		if ok {
+			t.Errorf("standard errors should not be handled")
+		}
+	})
+	t.Run("Stacker", func(t *testing.T) {
+		trace := getCallersFrames(0)
+		err := cs{fmt.Errorf("cause"), nil, trace}
+		extractedTrace, ok := DefaultStackTracer(err)
+		if extractedTrace == nil {
+			t.Error("Stackers should return a trace")
+		} else if extractedTrace[0] != trace[0] {
+			t.Error("the trace from the error must be extracted")
+		}
+		if !ok {
+			t.Error("Stackers should be handled")
+		}
+	})
 }
 
-func TestGetOrBuildStackOfCauseStackerWithoutParent(t *testing.T) {
-	cause := fmt.Errorf("cause")
-	effect := cs{fmt.Errorf("effect"), cause, getCallersFrames(0)}
-	if len(effect.Stack()) == 0 {
-		t.Fatal("stack should not be empty")
-	}
-	if effect.Stack()[0] != getOrBuildFrames(effect, nil, 0, nil)[0] {
-		t.Error("should use stack from effect")
-	}
-}
+func TestGetOrBuildFrames(t *testing.T) {
+	// These tests all use the default stack tracer. The logic this is testing doesn't really
+	// depend on how the stack trace is extracted.
 
-func TestGetOrBuildStackOfCauseStackerWithParent(t *testing.T) {
-	cause := fmt.Errorf("cause")
-	effect := cs{fmt.Errorf("effect"), cause, getCallersFrames(0)}
-	effect2 := cs{fmt.Errorf("effect2"), effect, getCallersFrames(0)}
-	if effect2.Stack()[0] != getOrBuildFrames(effect2, effect, 0, nil)[0] {
-		t.Error("should use stack from effect2")
-	}
+	t.Run("standard error without parent", func(t *testing.T) {
+		err := fmt.Errorf("")
+		trace := getOrBuildFrames(err, nil, 0, DefaultStackTracer)
+		if nil == trace {
+			t.Error("should build a new stack trace if error has no stack and parent is nil")
+		}
+	})
+	t.Run("standard error with traceable parent", func(t *testing.T) {
+		cause := fmt.Errorf("cause")
+		effect := cs{fmt.Errorf("effect"), cause, getCallersFrames(0)}
+		if 0 != len(getOrBuildFrames(cause, effect, 0, DefaultStackTracer)) {
+			t.Error("should return empty stack of standard error if parent is traceable")
+		}
+	})
+	t.Run("standard error with non-traceable parent", func(t *testing.T) {
+		child := fmt.Errorf("child")
+		parent := uw{fmt.Errorf("parent"), child}
+		trace := getOrBuildFrames(child, parent, 0, DefaultStackTracer)
+		if nil == trace {
+			t.Error("should build a new stack trace if parent is not traceable")
+		}
+	})
+	t.Run("traceable error without parent", func(t *testing.T) {
+		cause := fmt.Errorf("cause")
+		effect := cs{fmt.Errorf("effect"), cause, getCallersFrames(0)}
+		if effect.Stack()[0] != getOrBuildFrames(effect, nil, 0, DefaultStackTracer)[0] {
+			t.Error("should use stack trace from effect")
+		}
+	})
+	t.Run("traceable error with traceable parent", func(t *testing.T) {
+		cause := fmt.Errorf("cause")
+		effect := cs{fmt.Errorf("effect"), cause, getCallersFrames(0)}
+		effect2 := cs{fmt.Errorf("effect2"), effect, getCallersFrames(0)}
+		if effect.Stack()[0] != getOrBuildFrames(effect, effect2, 0, DefaultStackTracer)[0] {
+			t.Error("should use stack from child, not parent")
+		}
+	})
+	t.Run("traceable error with non-traceable parent", func(t *testing.T) {
+		cause := fmt.Errorf("cause")
+		effect := cs{fmt.Errorf("effect"), cause, getCallersFrames(0)}
+		effect2 := uw{fmt.Errorf("effect2"), effect}
+		if effect.Stack()[0] != getOrBuildFrames(effect, effect2, 0, DefaultStackTracer)[0] {
+			t.Error("should use stack from child")
+		}
+	})
 }
 
 func TestErrorBodyWithoutChain(t *testing.T) {
 	err := fmt.Errorf("ERR")
-	errorBody, fingerprint := errorBody(configuration{fingerprint: true}, err, 0)
+	errorBody, fingerprint := errorBody(configuration{
+		fingerprint: true,
+		unwrapper:   DefaultUnwrapper,
+		stackTracer: DefaultStackTracer,
+	}, err, 0)
 	if nil != errorBody["trace"] {
 		t.Error("should not have trace element")
 	}
@@ -476,7 +541,11 @@ func TestErrorBodyWithChain(t *testing.T) {
 	cause := fmt.Errorf("cause")
 	effect := cs{fmt.Errorf("effect1"), cause, getCallersFrames(0)}
 	effect2 := cs{fmt.Errorf("effect2"), effect, getCallersFrames(0)}
-	errorBody, fingerprint := errorBody(configuration{fingerprint: true}, effect2, 0)
+	errorBody, fingerprint := errorBody(configuration{
+		fingerprint: true,
+		unwrapper:   DefaultUnwrapper,
+		stackTracer: DefaultStackTracer,
+	}, effect2, 0)
 	if nil != errorBody["trace"] {
 		t.Error("should not have trace element")
 	}

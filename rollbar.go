@@ -36,6 +36,35 @@ var (
 	nilErrTitle = "<nil>"
 )
 
+type UnwrapperFunc func(error) error
+type StackTracerFunc func(error) ([]runtime.Frame, bool)
+
+func DefaultUnwrapper(err error) error {
+	type causer interface {
+		Cause() error
+	}
+	type wrapper interface { // matches the new Go 1.13 Unwrap() method, copied from xerrors
+		Unwrap() error
+	}
+
+	if e, ok := err.(causer); ok {
+		return e.Cause()
+	}
+	if e, ok := err.(wrapper); ok {
+		return e.Unwrap()
+	}
+
+	return nil
+}
+
+func DefaultStackTracer(err error) ([]runtime.Frame, bool) {
+	if s, ok := err.(Stacker); ok {
+		return s.Stack(), true
+	}
+
+	return nil, false
+}
+
 // SetEnabled sets whether or not the managed Client instance is enabled.
 // If this is true then this library works as normal.
 // If this is false then no calls will be made to the network.
@@ -126,12 +155,16 @@ func SetTransform(transform func(map[string]interface{})) {
 	std.SetTransform(transform)
 }
 
+func SetUnwrapper(unwrapper UnwrapperFunc) {
+	std.SetUnwrapper(unwrapper)
+}
+
 // SetStackTracer sets the stackTracer function on the managed Client instance.
 // StackTracer is called to extract the stack trace from enhanced error types.
 // Return nil if no trace information is available. Return true if the error type
 // can be handled and false otherwise.
 // This feature can be used to add support for custom error type stack trace extraction.
-func SetStackTracer(stackTracer func(err error) ([]runtime.Frame, bool)) {
+func SetStackTracer(stackTracer StackTracerFunc) {
 	std.SetStackTracer(stackTracer)
 }
 
@@ -541,11 +574,15 @@ func LambdaWrapper(handlerFunc interface{}) interface{} {
 	return std.LambdaWrapper(handlerFunc)
 }
 
+type Stacker interface {
+	Stack() []runtime.Frame
+}
+
 // CauseStacker is an interface that errors can implement to create a trace_chain.
 // Callers are required to call runtime.Callers and build the runtime.Frame slice
 // on their own at the time the cause is wrapped.
 type CauseStacker interface {
 	error
 	Cause() error
-	Stack() []runtime.Frame
+	Stacker
 }

@@ -9,9 +9,9 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"reflect"
 	"regexp"
 	"runtime"
-	"reflect"
 )
 
 // A Client can be used to interact with Rollbar via the configured Transport.
@@ -163,11 +163,15 @@ func (c *Client) SetTransform(transform func(map[string]interface{})) {
 	c.configuration.transform = transform
 }
 
+func (c *Client) SetUnwrapper(unwrapper UnwrapperFunc) {
+	c.configuration.unwrapper = unwrapper
+}
+
 // SetStackTracer sets the stackTracer function which is called to extract the stack
 // trace from enhanced error types. Return nil if no trace information is available.
 // Return true if the error type can be handled and false otherwise.
 // This feature can be used to add support for custom error type stack trace extraction.
-func (c *Client) SetStackTracer(stackTracer func(err error) ([]runtime.Frame, bool)) {
+func (c *Client) SetStackTracer(stackTracer StackTracerFunc) {
 	c.configuration.stackTracer = stackTracer
 }
 
@@ -605,7 +609,8 @@ type configuration struct {
 	scrubFields  *regexp.Regexp
 	checkIgnore  func(string) bool
 	transform    func(map[string]interface{})
-	stackTracer  func(error) ([]runtime.Frame, bool)
+	unwrapper    UnwrapperFunc
+	stackTracer  StackTracerFunc
 	person       Person
 	captureIp    captureIp
 }
@@ -629,6 +634,8 @@ func createConfiguration(token, environment, codeVersion, serverHost, serverRoot
 		fingerprint:  false,
 		checkIgnore:  func(_s string) bool { return false },
 		transform:    func(_d map[string]interface{}) {},
+		unwrapper:    DefaultUnwrapper,
+		stackTracer:  DefaultStackTracer,
 		person:       Person{},
 		captureIp:    CaptureIpFull,
 	}
