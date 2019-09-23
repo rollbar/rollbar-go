@@ -608,13 +608,17 @@ func LambdaWrapper(handlerFunc interface{}) interface{} {
 	return std.LambdaWrapper(handlerFunc)
 }
 
+// Stacker is an interface that errors can implement to allow the extraction of stack traces.
+// To generate a stack trace, users are required to call runtime.Callers and build the runtime.Frame slice
+// at the time the error is created.
 type Stacker interface {
 	Stack() []runtime.Frame
 }
 
 // CauseStacker is an interface that errors can implement to create a trace_chain.
-// Callers are required to call runtime.Callers and build the runtime.Frame slice
-// on their own at the time the cause is wrapped.
+//
+// Deprecated: For unwrapping, use the `Unwrap() error` method specified in Go 1.13. (See https://golang.org/pkg/errors/ for more information).
+// For stack traces, use the `Stacker` interface directly.
 type CauseStacker interface {
 	error
 	Cause() error
