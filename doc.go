@@ -76,5 +76,7 @@ For stack traces, we provide the `Stacker` interface, which can be implemented o
 If you cannot implement the `Stacker` interface on your error type (which is common for third-party error libraries), you can provide a custom tracing function by calling `SetStackTracer`.
 
 See the documentation of `SetUnwrapper` and `SetStackTracer` for more information and examples.
+
+Finally, users of github.com/pkg/errors can use the utilities provided in the `errors` sub-package.
 */
 package rollbar
