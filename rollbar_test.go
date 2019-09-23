@@ -475,8 +475,8 @@ func TestGetOrBuildFrames(t *testing.T) {
 	t.Run("standard error with traceable parent", func(t *testing.T) {
 		cause := fmt.Errorf("cause")
 		effect := cs{fmt.Errorf("effect"), cause, getCallersFrames(0)}
-		if 0 != len(getOrBuildFrames(cause, effect, 0, DefaultStackTracer)) {
-			t.Error("should return empty stack of standard error if parent is traceable")
+		if nil != getOrBuildFrames(cause, effect, 0, DefaultStackTracer) {
+			t.Error("should return nil if child is not traceable but parent is")
 		}
 	})
 	t.Run("standard error with non-traceable parent", func(t *testing.T) {

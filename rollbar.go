@@ -36,9 +36,31 @@ var (
 	nilErrTitle = "<nil>"
 )
 
+// An UnwrapperFunc is used to extract wrapped errors when building an error chain. It should return
+// the wrapped error if available, or nil otherwise.
+//
+// The client will use DefaultUnwrapperFunc by default, and a user can override the default behavior
+// by calling SetUnwrapperFunc. See the documentation for DefaultUnwrapperFunc and SetUnwrapperFunc
+// for more details.
 type UnwrapperFunc func(error) error
+
+// A StackTracerFunc is used to extract stack traces when building an error chain. The first return
+// value should be the extracted stack trace, if available. The second return value should be
+// whether the function was able to extract a stack trace (even if the extracted stack trace was
+// empty or nil).
+//
+// The client will use DefaultStackTracerFunc by default, and a user can override the default
+// behavior by calling SetStackTracerFunc. See the documentation for DefaultStackTracerFunc and
+// SetStackTracerFunc for more details.
 type StackTracerFunc func(error) ([]runtime.Frame, bool)
 
+// DefaultUnwrapper is the default UnwrapperFunc used by rollbar-go clients. It can unwrap any
+// error types with the Unwrap method specified in Go 1.13, or any error type implementing the
+// legacy CauseStacker interface.
+//
+// It also implicitly supports errors from github.com/pkg/errors. However, users of pkg/errors may
+// wish to also use the stack trace extraction features provided in the
+// github.com/rollbar/rollbar-go/errors package.
 func DefaultUnwrapper(err error) error {
 	type causer interface {
 		Cause() error
@@ -57,6 +79,11 @@ func DefaultUnwrapper(err error) error {
 	return nil
 }
 
+// DefaultStackTracer is the default StackTracerFunc used by rollbar-go clients. It can extract
+// stack traces from error types implementing the Stacker interface (and by extension, the legacy
+// CauseStacker interface).
+//
+// To support stack trace extraction for other types of errors, see SetStackTracer.
 func DefaultStackTracer(err error) ([]runtime.Frame, bool) {
 	if s, ok := err.(Stacker); ok {
 		return s.Stack(), true
@@ -155,15 +182,22 @@ func SetTransform(transform func(map[string]interface{})) {
 	std.SetTransform(transform)
 }
 
+// SetUnwrapper sets the UnwrapperFunc used by the managed Client instance. The unwrapper function
+// is used to extract wrapped errors from enhanced error types. This feature can be used to add
+// support for custom error types that do not yet implement the Unwrap method specified in Go 1.13.
+// See the documentation of UnwrapperFunc for more details.
+//
+// In order to preserve the default unwrapping behavior, callers of SetUnwrapper may wish to include
+// a call to DefaultUnwrapperFunc in their custom unwrapper function. See the provided example.
 func SetUnwrapper(unwrapper UnwrapperFunc) {
 	std.SetUnwrapper(unwrapper)
 }
 
-// SetStackTracer sets the stackTracer function on the managed Client instance.
-// StackTracer is called to extract the stack trace from enhanced error types.
-// Return nil if no trace information is available. Return true if the error type
-// can be handled and false otherwise.
-// This feature can be used to add support for custom error type stack trace extraction.
+// SetStackTracer sets the StackTracerFunc used by the managed Client instance. The stack tracer
+// function is used to extract the stack trace from enhanced error types. This feature can be used
+// to add support for custom error types that do not implement the Stacker interface.
+//
+// See the documentation of StackTracerFunc for more details.
 func SetStackTracer(stackTracer StackTracerFunc) {
 	std.SetStackTracer(stackTracer)
 }
