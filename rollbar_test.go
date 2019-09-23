@@ -570,3 +570,62 @@ func TestErrorBodyWithChain(t *testing.T) {
 		t.Error("fingerprint should be the fingerprints in chain concatenated together. got: ", fingerprint)
 	}
 }
+
+func TestSetUnwrapper(t *testing.T) {
+	type myCustomError struct {
+		error
+		wrapped error
+	}
+
+	client := NewAsync("example", "test", "0.0.0", "", "")
+	child := fmt.Errorf("child")
+	parent := myCustomError{fmt.Errorf("parent"), child}
+
+	if client.configuration.unwrapper(parent) != nil {
+		t.Fatal("bad test; default unwrapper must not recognize the custom error type")
+	}
+
+	client.SetUnwrapper(func(err error) error {
+		if e, ok := err.(myCustomError); ok {
+			return e.wrapped
+		}
+
+		return nil
+	})
+
+	if client.configuration.unwrapper(parent) != child {
+		t.Error("error did not unwrap correctly")
+	}
+}
+
+func TestSetStackTracer(t *testing.T) {
+	type myCustomError struct {
+		error
+		trace []runtime.Frame
+	}
+
+	client := NewAsync("example", "test", "0.0.0", "", "")
+	err := myCustomError{fmt.Errorf("some error"), getCallersFrames(0)}
+
+	if trace, ok := client.configuration.stackTracer(err); ok || trace != nil {
+		t.Fatal("bad test; default stack tracer must not recognize the custom error type")
+	}
+
+	client.SetStackTracer(func(err error) (frames []runtime.Frame, b bool) {
+		if e, ok := err.(myCustomError); ok {
+			return e.trace, true
+		}
+
+		return nil, false
+	})
+
+	trace, ok := client.configuration.stackTracer(err)
+	if !ok {
+		t.Error("error was not handled by custom stack tracer")
+	}
+	if trace == nil {
+		t.Errorf("custom tracer failed to extract trace")
+	} else if trace[0] != err.trace[0] {
+		t.Errorf("custom tracer got the wrong trace")
+	}
+}
