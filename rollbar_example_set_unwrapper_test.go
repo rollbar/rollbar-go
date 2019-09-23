@@ -25,4 +25,3 @@ func ExampleSetUnwrapper() {
 		return nil
 	})
 }
-

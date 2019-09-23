@@ -29,4 +29,3 @@ func ExampleSetStackTracer() {
 		return nil, false
 	})
 }
-
