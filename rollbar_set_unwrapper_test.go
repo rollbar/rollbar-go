@@ -1,25 +1,28 @@
-package rollbar
+package rollbar_test
 
-type ExampleError struct {
+import "github.com/rollbar/rollbar-go"
+
+type CustomWrappingError struct {
 	error
 	wrapped error
 }
 
-func (e ExampleError) GetWrappedError() error {
+func (e CustomWrappingError) GetWrappedError() error {
 	return e.wrapped
 }
 
 func ExampleSetUnwrapper() {
-	SetUnwrapper(func(err error) error {
+	rollbar.SetUnwrapper(func(err error) error {
 		// preserve the default behavior for other types of errors
-		if unwrapped := DefaultUnwrapper(err); unwrapped != nil {
+		if unwrapped := rollbar.DefaultUnwrapper(err); unwrapped != nil {
 			return unwrapped
 		}
 
-		if ex, ok := err.(ExampleError); ok {
+		if ex, ok := err.(CustomWrappingError); ok {
 			return ex.GetWrappedError()
 		}
 
 		return nil
 	})
 }
+

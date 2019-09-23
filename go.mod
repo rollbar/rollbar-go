@@ -1,3 +1,3 @@
-module github.com/wheniwork/rollbar-go
+module github.com/rollbar/rollbar-go
 
 go 1.13
