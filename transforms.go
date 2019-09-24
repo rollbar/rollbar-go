@@ -215,7 +215,7 @@ func errorBody(configuration configuration, err error, skip int) (map[string]int
 			fingerprint = fingerprint + stack.Fingerprint()
 		}
 		parent = err
-		err = getCause(err)
+		err = configuration.unwrapper(err)
 		if err == nil {
 			break
 		}
@@ -239,44 +239,16 @@ func buildTrace(err error, stack stack) map[string]interface{} {
 	}
 }
 
-func getCause(err error) error {
-	type causer interface {
-		Cause() error
-	}
-
-	if cs, ok := err.(causer); ok {
-		return cs.Cause()
-	}
-	return nil
-}
-
 // getOrBuildFrames gets stack frames from errors that provide one of their own
 // otherwise, it builds a new stack trace. It returns the stack frames if the error
 // is of a compatible type. If the error is not, but the parent error is, it assumes
 // the parent error will be processed later and therefore returns nil.
-func getOrBuildFrames(err error, parent error, skip int,
-	tracer func(error) ([]runtime.Frame, bool)) []runtime.Frame {
-
-	switch x := err.(type) {
-	case CauseStacker:
-		return x.Stack()
-	default:
-		if tracer != nil {
-			if st, ok := tracer(err); ok && st != nil {
-				return st
-			}
-		}
+func getOrBuildFrames(err error, parent error, skip int, tracer StackTracerFunc) []runtime.Frame {
+	if st, ok := tracer(err); ok && st != nil {
+		return st
 	}
-
-	switch parent.(type) {
-	case CauseStacker:
+	if _, ok := tracer(parent); ok {
 		return nil
-	default:
-		if tracer != nil {
-			if _, ok := tracer(parent); ok {
-				return nil
-			}
-		}
 	}
 
 	return getCallersFrames(1 + skip)

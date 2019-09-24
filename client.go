@@ -9,9 +9,9 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"reflect"
 	"regexp"
 	"runtime"
-	"reflect"
 )
 
 // A Client can be used to interact with Rollbar via the configured Transport.
@@ -163,11 +163,26 @@ func (c *Client) SetTransform(transform func(map[string]interface{})) {
 	c.configuration.transform = transform
 }
 
-// SetStackTracer sets the stackTracer function which is called to extract the stack
-// trace from enhanced error types. Return nil if no trace information is available.
-// Return true if the error type can be handled and false otherwise.
-// This feature can be used to add support for custom error type stack trace extraction.
-func (c *Client) SetStackTracer(stackTracer func(err error) ([]runtime.Frame, bool)) {
+// SetUnwrapper sets the UnwrapperFunc used by the client. The unwrapper function
+// is used to extract wrapped errors from enhanced error types. This feature can be used to add
+// support for custom error types that do not yet implement the Unwrap method specified in Go 1.13.
+// See the documentation of UnwrapperFunc for more details.
+//
+// In order to preserve the default unwrapping behavior, callers of SetUnwrapper may wish to include
+// a call to DefaultUnwrapper in their custom unwrapper function. See the example on the SetUnwrapper function.
+func (c *Client) SetUnwrapper(unwrapper UnwrapperFunc) {
+	c.configuration.unwrapper = unwrapper
+}
+
+// SetStackTracer sets the StackTracerFunc used by the client. The stack tracer
+// function is used to extract the stack trace from enhanced error types. This feature can be used
+// to add support for custom error types that do not implement the Stacker interface.
+// See the documentation of StackTracerFunc for more details.
+//
+// In order to preserve the default stack tracing behavior, callers of SetStackTracer may wish
+// to include a call to DefaultStackTracer in their custom tracing function. See the example
+// on the SetStackTracer function.
+func (c *Client) SetStackTracer(stackTracer StackTracerFunc) {
 	c.configuration.stackTracer = stackTracer
 }
 
@@ -605,7 +620,8 @@ type configuration struct {
 	scrubFields  *regexp.Regexp
 	checkIgnore  func(string) bool
 	transform    func(map[string]interface{})
-	stackTracer  func(error) ([]runtime.Frame, bool)
+	unwrapper    UnwrapperFunc
+	stackTracer  StackTracerFunc
 	person       Person
 	captureIp    captureIp
 }
@@ -629,6 +645,8 @@ func createConfiguration(token, environment, codeVersion, serverHost, serverRoot
 		fingerprint:  false,
 		checkIgnore:  func(_s string) bool { return false },
 		transform:    func(_d map[string]interface{}) {},
+		unwrapper:    DefaultUnwrapper,
+		stackTracer:  DefaultStackTracer,
 		person:       Person{},
 		captureIp:    CaptureIpFull,
 	}
