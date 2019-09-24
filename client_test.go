@@ -8,8 +8,6 @@ import (
 	"reflect"
 	"testing"
 	"strings"
-	rollbarErrors "github.com/rollbar/rollbar-go/errors"
-	pkgerr "github.com/pkg/errors"
 )
 
 type TestTransport struct {
@@ -458,31 +456,6 @@ func TestTransform(t *testing.T) {
 		configuredOptions := configuredOptionsFromData(data)
 		if !strings.Contains(configuredOptions["transform"].(string), "TestTransform.func1") {
 			t.Error("data should have transform in diagnostic object")
-		}
-	} else {
-		t.Fail()
-	}
-}
-
-func TestStackTracer(t *testing.T) {
-	client := testClient()
-	client.SetStackTracer(rollbarErrors.StackTracer)
-
-	client.ErrorWithLevel(rollbar.ERR, pkgerr.New("Bork"))
-
-	if transport, ok := client.Transport.(*TestTransport); ok {
-		body := transport.Body
-		if body["data"] == nil {
-			t.Error("body should have data")
-		}
-		data := body["data"].(map[string]interface{})
-		framesLen := framesLenFromData(data)
-		if framesLen == 0 {
-			t.Error("data should have frames set by stackTracer")
-		}
-		configuredOptions := configuredOptionsFromData(data)
-		if !strings.Contains(configuredOptions["stackTracer"].(string), "errors.StackTracer") {
-			t.Error("data should have stackTracer in diagnostic object")
 		}
 	} else {
 		t.Fail()
