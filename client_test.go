@@ -499,7 +499,7 @@ func configuredOptionsFromData(data map[string]interface{}) map[string]interface
 
 func framesLenFromData(data map[string]interface{}) int {
 	body := data["body"].(map[string]interface{})
-	trace_chain := body["trace_chain"].([]map[string]interface{})
-	frames := reflect.ValueOf(trace_chain[0]["frames"])
+	traceChain := body["trace_chain"].([]map[string]interface{})
+	frames := reflect.ValueOf(traceChain[0]["frames"])
 	return frames.Len()
 }
