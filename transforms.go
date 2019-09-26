@@ -13,7 +13,9 @@ import (
 
 // Build the main JSON structure that will be sent to Rollbar with the
 // appropriate metadata.
-func buildBody(ctx context.Context, configuration configuration, level, title string, extras map[string]interface{}) map[string]interface{} {
+func buildBody(ctx context.Context, configuration configuration, diagnostic diagnostic,
+	level, title string, extras map[string]interface{}) map[string]interface{} {
+
 	timestamp := time.Now().Unix()
 
 	data := map[string]interface{}{
@@ -31,6 +33,10 @@ func buildBody(ctx context.Context, configuration configuration, level, title st
 		"notifier": map[string]interface{}{
 			"name":    NAME,
 			"version": VERSION,
+			"diagnostic": map[string]interface{}{
+				"languageVersion": diagnostic.languageVersion,
+				"configuredOptions": diagnostic.configuredOptions,
+			},
 		},
 	}
 

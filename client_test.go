@@ -7,6 +7,7 @@ import (
 	"context"
 	"reflect"
 	"testing"
+	"strings"
 )
 
 type TestTransport struct {
@@ -295,16 +296,19 @@ func TestLambdaWrapperWithMessage(t *testing.T) {
 
 func TestGettersAndSetters_Default(t *testing.T) {
 	c := testClient()
+	c.Transport = &TestTransport{}
 	testGettersAndSetters(c, t)
 }
 
 func TestGettersAndSetters_Async(t *testing.T) {
 	c := rollbar.NewAsync("", "", "", "", "")
+	c.Transport = &TestTransport{}
 	testGettersAndSetters(c, t)
 }
 
 func TestGettersAndSetters_Sync(t *testing.T) {
 	c := rollbar.NewSync("", "", "", "", "")
+	c.Transport = &TestTransport{}
 	testGettersAndSetters(c, t)
 }
 
@@ -316,8 +320,10 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 	codeVersion := "CodeVersion"
 	host := "SomeHost"
 	root := "////"
+	fingerprint := true
 	scrubHeaders := regexp.MustCompile("Foo")
 	scrubFields := regexp.MustCompile("squirrel|doggo")
+	captureIP := rollbar.CaptureIpNone
 
 	errorIfEqual(token, client.Token(), t)
 	errorIfEqual(environment, client.Environment(), t)
@@ -326,6 +332,10 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 	errorIfEqual(codeVersion, client.CodeVersion(), t)
 	errorIfEqual(host, client.ServerHost(), t)
 	errorIfEqual(root, client.ServerRoot(), t)
+	errorIfEqual(fingerprint, client.Fingerprint(), t)
+	errorIfEqual(captureIP, client.CaptureIp(), t)
+	errorIfEqual(scrubHeaders, client.ScrubHeaders(), t)
+	errorIfEqual(scrubFields, client.ScrubFields(), t)
 
 	if client.Fingerprint() {
 		t.Error("expected fingerprint to default to false")
@@ -348,10 +358,11 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 	client.SetCodeVersion(codeVersion)
 	client.SetServerHost(host)
 	client.SetServerRoot(root)
-	client.SetFingerprint(true)
+	client.SetFingerprint(fingerprint)
 	client.SetLogger(&rollbar.SilentClientLogger{})
 	client.SetScrubHeaders(scrubHeaders)
 	client.SetScrubFields(scrubFields)
+	client.SetCaptureIp(captureIP)
 
 	client.SetEnabled(true)
 
@@ -362,6 +373,10 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 	errorIfNotEqual(codeVersion, client.CodeVersion(), t)
 	errorIfNotEqual(host, client.ServerHost(), t)
 	errorIfNotEqual(root, client.ServerRoot(), t)
+	errorIfNotEqual(fingerprint, client.Fingerprint(), t)
+	errorIfNotEqual(captureIP, client.CaptureIp(), t)
+	errorIfNotEqual(scrubHeaders, client.ScrubHeaders(), t)
+	errorIfNotEqual(scrubFields, client.ScrubFields(), t)
 
 	if !client.Fingerprint() {
 		t.Error("expected fingerprint to default to false")
@@ -374,15 +389,39 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 	if !client.ScrubFields().MatchString("squirrel") {
 		t.Error("expected matching scrub field")
 	}
+
+	client.ErrorWithLevel(rollbar.ERR, errors.New("Bork"))
+
+	if transport, ok := client.Transport.(*TestTransport); ok {
+		body := transport.Body
+		if body["data"] == nil {
+			t.Error("body should have data")
+		}
+		data := body["data"].(map[string]interface{})
+		configuredOptions := configuredOptionsFromData(data)
+
+		errorIfNotEqual(environment, configuredOptions["environment"].(string), t)
+		errorIfNotEqual(endpoint, configuredOptions["endpoint"].(string), t)
+		errorIfNotEqual(platform, configuredOptions["platform"].(string), t)
+		errorIfNotEqual(codeVersion, configuredOptions["codeVersion"].(string), t)
+		errorIfNotEqual(host, configuredOptions["serverHost"].(string), t)
+		errorIfNotEqual(root, configuredOptions["serverRoot"].(string), t)
+		errorIfNotEqual(fingerprint, configuredOptions["fingerprint"].(bool), t)
+		errorIfNotEqual(scrubHeaders, configuredOptions["scrubHeaders"].(*regexp.Regexp), t)
+		errorIfNotEqual(scrubFields, configuredOptions["scrubFields"].(*regexp.Regexp), t)
+
+	} else {
+		t.Fail()
+	}
 }
 
-func errorIfEqual(a, b string, t *testing.T) {
+func errorIfEqual(a, b interface{}, t *testing.T) {
 	if a == b {
 		t.Error("Expected", a, " != ", b)
 	}
 }
 
-func errorIfNotEqual(a, b string, t *testing.T) {
+func errorIfNotEqual(a, b interface{}, t *testing.T) {
 	if a != b {
 		t.Error("Expected", a, " == ", b)
 	}
@@ -408,6 +447,13 @@ func TestSetPerson(t *testing.T) {
 		errorIfNotEqual(id, person["id"], t)
 		errorIfNotEqual(username, person["username"], t)
 		errorIfNotEqual(email, person["email"], t)
+
+		configuredOptions := configuredOptionsFromData(data)
+		configuredPerson := configuredOptions["person"].(map[string]string)
+
+		errorIfNotEqual(id, configuredPerson["Id"], t)
+		errorIfNotEqual(username, configuredPerson["Username"], t)
+		errorIfNotEqual(email, configuredPerson["Email"], t)
 	} else {
 		t.Fail()
 	}
@@ -452,6 +498,52 @@ func TestTransform(t *testing.T) {
 		if data["some_custom_field"] != "hello_world" {
 			t.Error("data should have field set by transform")
 		}
+		configuredOptions := configuredOptionsFromData(data)
+		if !strings.Contains(configuredOptions["transform"].(string), "TestTransform.func1") {
+			t.Error("data should have transform in diagnostic object")
+		}
+	} else {
+		t.Fail()
+	}
+}
+
+func TestSetUnwrapper(t *testing.T) {
+	client := testClient()
+	client.SetUnwrapper(rollbar.DefaultUnwrapper)
+
+	client.ErrorWithLevel(rollbar.ERR, errors.New("Bork"))
+
+	if transport, ok := client.Transport.(*TestTransport); ok {
+		body := transport.Body
+		if body["data"] == nil {
+			t.Error("body should have data")
+		}
+		data := body["data"].(map[string]interface{})
+		configuredOptions := configuredOptionsFromData(data)
+		if !strings.Contains(configuredOptions["unwrapper"].(string), "func1") {
+			t.Error("data should have unwrapper in diagnostic object")
+		}
+	} else {
+		t.Fail()
+	}
+}
+
+func TestSetStackTracer(t *testing.T) {
+	client := testClient()
+	client.SetStackTracer(rollbar.DefaultStackTracer)
+
+	client.ErrorWithLevel(rollbar.ERR, errors.New("Bork"))
+
+	if transport, ok := client.Transport.(*TestTransport); ok {
+		body := transport.Body
+		if body["data"] == nil {
+			t.Error("body should have data")
+		}
+		data := body["data"].(map[string]interface{})
+		configuredOptions := configuredOptionsFromData(data)
+		if !strings.Contains(configuredOptions["stackTracer"].(string), "func2") {
+			t.Error("data should have stackTracer in diagnostic object")
+		}
 	} else {
 		t.Fail()
 	}
@@ -483,4 +575,11 @@ func TestEnabled(t *testing.T) {
 	} else {
 		t.Fail()
 	}
+}
+
+func configuredOptionsFromData(data map[string]interface{}) map[string]interface{} {
+	notifier := data["notifier"].(map[string]interface{})
+	diagnostic := notifier["diagnostic"].(map[string]interface{})
+	configuredOptions := diagnostic["configuredOptions"].(map[string]interface{})
+	return configuredOptions
 }
