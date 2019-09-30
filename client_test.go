@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"testing"
 	"strings"
+	"fmt"
 )
 
 type TestTransport struct {
@@ -39,6 +40,28 @@ func testClient() *rollbar.Client {
 	return c
 }
 
+func TestLogPanic(t *testing.T) {
+	client := testClient()
+	client.LogPanic(errors.New("logged error"), false)
+	if transport, ok := client.Transport.(*TestTransport); ok {
+		if transport.WaitCalled {
+			t.Error("Wait called unexpectedly")
+		}
+		body := transport.Body
+		if body["data"] == nil {
+			t.Error("body should have data")
+		}
+		data := body["data"].(map[string]interface{})
+		dataError := errorFromData(data)
+		if dataError["message"] != "logged error" {
+			t.Error("data should have correct error message")
+		}
+	} else {
+		t.Fail()
+	}
+	client.Close()
+}
+
 func TestWrap(t *testing.T) {
 	client := testClient()
 	err := errors.New("bork")
@@ -51,6 +74,33 @@ func TestWrap(t *testing.T) {
 	if transport, ok := client.Transport.(*TestTransport); ok {
 		if transport.WaitCalled {
 			t.Error("Wait called unexpectedly")
+		}
+	} else {
+		t.Fail()
+	}
+	client.Close()
+}
+
+func TestWrapWithArgs(t *testing.T) {
+	client := testClient()
+	result := client.Wrap(func(foo string, num int) (string, int) {
+		panic(errors.New(fmt.Sprintf("%v-%v", foo, num)))
+	}, "foo", 42)
+	if fmt.Sprintf("%T", result) != "*errors.errorString" {
+		t.Error("Return value should be error type")
+	}
+	if transport, ok := client.Transport.(*TestTransport); ok {
+		if transport.WaitCalled {
+			t.Error("Wait called unexpectedly")
+		}
+		body := transport.Body
+		if body["data"] == nil {
+			t.Error("body should have data")
+		}
+		data := body["data"].(map[string]interface{})
+		dataError := errorFromData(data)
+		if dataError["message"] != "foo-42" {
+			t.Error("data should have correct error message")
 		}
 	} else {
 		t.Fail()
@@ -582,4 +632,10 @@ func configuredOptionsFromData(data map[string]interface{}) map[string]interface
 	diagnostic := notifier["diagnostic"].(map[string]interface{})
 	configuredOptions := diagnostic["configuredOptions"].(map[string]interface{})
 	return configuredOptions
+}
+
+func errorFromData(data map[string]interface{}) map[string]interface{} {
+	body := data["body"].(map[string]interface{})
+	traceChain := body["trace_chain"].([]map[string]interface{})
+	return traceChain[0]["exception"].(map[string]interface{})
 }
