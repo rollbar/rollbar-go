@@ -34,7 +34,7 @@ We provide two implementations of the `Transport` interface, `AsyncTransport` an
 
 Handling Panics
 
-Go does not provide a mechanism for handling all panics automatically, therefore we provide two functions `Wrap` and `WrapAndWait` to make working with panics easier. They both take a function and then report to Rollbar if that function panics. They use the recover mechanism to capture the panic, and therefore if you wish your process to have the normal behaviour on panic (i.e. to crash), you will need to re-panic the result of calling `Wrap`. For example,
+Go does not provide a mechanism for handling all panics automatically, therefore we provide two functions `Wrap` and `WrapAndWait` to make working with panics easier. They both take a function with arguments and then report to Rollbar if that function panics. They use the recover mechanism to capture the panic, and therefore if you wish your process to have the normal behaviour on panic (i.e. to crash), you will need to re-panic the result of calling `Wrap`. For example,
 
   package main
 
@@ -43,13 +43,14 @@ Go does not provide a mechanism for handling all panics automatically, therefore
     "github.com/rollbar/rollbar-go"
   )
 
-  func PanickyFunction() {
+  func PanickyFunction(arg string) string {
     panic(errors.New("AHHH!!!!"))
+    return arg
   }
 
   func main() {
     rollbar.SetToken("MY_TOKEN")
-    err := rollbar.Wrap(PanickyFunction)
+    err := rollbar.Wrap(PanickyFunction, "function arg1")
     if err != nil {
       // This means our function panic'd
       // Uncomment the next line to get normal
@@ -60,6 +61,20 @@ Go does not provide a mechanism for handling all panics automatically, therefore
   }
 
 The above pattern of calling `Wrap(...)` and then `Wait(...)` can be combined via `WrapAndWait(...)`. When `WrapAndWait(...)` returns if there was a panic it has already been sent to the Rollbar API. The error is still returned by this function if there is one.
+
+`Wrap` and `WrapAndWait` will accept functions with any number and type of arguments and return values. However, they do not return the function's return value, instead returning the error value. To add Rollbar panic handling to a function while preserving access to the function's return values, we provide the `LogPanic` helper designed to be used inside your deferred function.
+
+  func PanickyFunction(arg string) string {
+    defer func() {
+      err := recover()
+      rollbar.LogPanic(err, true) // bool argument sets wait behavior
+    }()
+
+    panic(errors.New("AHHH!!!!"))
+    return arg
+  }
+
+This offers virtually the same functionality as `Wrap` and `WrapAndWait` while preserving access to the function return values.
 
 Tracing Errors
 
