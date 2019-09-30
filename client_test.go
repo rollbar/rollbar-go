@@ -84,7 +84,7 @@ func TestWrap(t *testing.T) {
 func TestWrapWithArgs(t *testing.T) {
 	client := testClient()
 	result := client.Wrap(func(foo string, num int) (string, int) {
-		panic(errors.New(fmt.Sprintf("%v-%v", foo, num)))
+		panic(fmt.Errorf("%v-%v", foo, num))
 	}, "foo", 42)
 	if fmt.Sprintf("%T", result) != "*errors.errorString" {
 		t.Error("Return value should be error type")
