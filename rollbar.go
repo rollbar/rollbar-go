@@ -262,6 +262,10 @@ func SetPrintPayloadOnError(printPayloadOnError bool) {
 	std.SetPrintPayloadOnError(printPayloadOnError)
 }
 
+func SetHttpClient(httpClient *http.Client) {
+	std.SetHttpClient(httpClient)
+}
+
 // -- Getters
 
 // Token returns the currently set Rollbar access token on the managed Client instance.

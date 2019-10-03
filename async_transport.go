@@ -1,6 +1,7 @@
 package rollbar
 
 import (
+	"net/http"
 	"sync"
 )
 
@@ -27,6 +28,7 @@ type AsyncTransport struct {
 	PrintPayloadOnError bool
 	bodyChannel         chan payload
 	waitGroup           sync.WaitGroup
+	httpClient          *http.Client
 }
 
 type payload struct {
@@ -150,5 +152,17 @@ func (t *AsyncTransport) SetPrintPayloadOnError(printPayloadOnError bool) {
 }
 
 func (t *AsyncTransport) post(p payload) (error, bool) {
-	return clientPost(t.Token, t.Endpoint, p.body, t.Logger)
+	return clientPost(t.Token, t.Endpoint, p.body, t.Logger, t.getHttpClient())
+}
+
+func (t *AsyncTransport) SetHttpClient(c *http.Client) {
+	t.httpClient = c
+}
+
+func (t *AsyncTransport) getHttpClient() *http.Client {
+	if t.httpClient != nil {
+		return t.httpClient
+	}
+
+	return http.DefaultClient
 }

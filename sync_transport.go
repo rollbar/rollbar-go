@@ -1,5 +1,7 @@
 package rollbar
 
+import "net/http"
+
 // SyncTransport is a concrete implementation of the Transport type which communicates with the
 // Rollbar API synchronously.
 type SyncTransport struct {
@@ -18,6 +20,7 @@ type SyncTransport struct {
 	// PrintPayloadOnError is whether or not to output the payload to the set logger or to stderr if
 	// an error occurs during transport to the Rollbar API.
 	PrintPayloadOnError bool
+	httpClient          *http.Client
 }
 
 // NewSyncTransport builds a synchronous transport which sends data to the Rollbar API at the
@@ -40,7 +43,7 @@ func (t *SyncTransport) Send(body map[string]interface{}) error {
 }
 
 func (t *SyncTransport) doSend(body map[string]interface{}, retriesLeft int) error {
-	err, canRetry := clientPost(t.Token, t.Endpoint, body, t.Logger)
+	err, canRetry := clientPost(t.Token, t.Endpoint, body, t.Logger, t.getHttpClient())
 	if err != nil {
 		if !canRetry || retriesLeft <= 0 {
 			if t.PrintPayloadOnError {
@@ -88,4 +91,16 @@ func (t *SyncTransport) SetRetryAttempts(retryAttempts int) {
 // transport to the Rollbar API.
 func (t *SyncTransport) SetPrintPayloadOnError(printPayloadOnError bool) {
 	t.PrintPayloadOnError = printPayloadOnError
+}
+
+func (t *SyncTransport) SetHttpClient(c *http.Client) {
+	t.httpClient = c
+}
+
+func (t *SyncTransport) getHttpClient() *http.Client {
+	if t.httpClient != nil {
+		return t.httpClient
+	}
+
+	return http.DefaultClient
 }

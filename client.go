@@ -130,9 +130,9 @@ func (c *Client) SetPerson(id, username, email string) {
 	}
 
 	c.diagnostic.configuredOptions["person"] = map[string]string{
-		"Id": id,
+		"Id":       id,
 		"Username": username,
-		"Email": email,
+		"Email":    email,
 	}
 	c.configuration.person = person
 }
@@ -246,6 +246,10 @@ func (c *Client) SetRetryAttempts(retryAttempts int) {
 // item to stderr rather than the item disappearing completely.
 func (c *Client) SetPrintPayloadOnError(printPayloadOnError bool) {
 	c.Transport.SetPrintPayloadOnError(printPayloadOnError)
+}
+
+func (c *Client) SetHttpClient(httpClient *http.Client) {
+	c.Transport.SetHttpClient(httpClient)
 }
 
 // Token is the currently set Rollbar access token.
@@ -682,23 +686,23 @@ func createConfiguration(token, environment, codeVersion, serverHost, serverRoot
 }
 
 type diagnostic struct {
-	languageVersion string
+	languageVersion   string
 	configuredOptions map[string]interface{}
 }
 
 func createDiagnostic() diagnostic {
 	return diagnostic{
-		languageVersion: runtime.Version(),
+		languageVersion:   runtime.Version(),
 		configuredOptions: map[string]interface{}{},
 	}
 }
 
-// clientPost returns an error which indicates the type of error that occured while attempting to
+// clientPost returns an error which indicates the type of error that occurred while attempting to
 // send the body input to the endpoint given, or nil if no error occurred. If error is not nil, the
 // boolean return parameter indicates whether the error is temporary or not. If this boolean return
 // value is true then the caller could call this function again with the same input and possibly
 // see a non-error response.
-func clientPost(token, endpoint string, body map[string]interface{}, logger ClientLogger) (error, bool) {
+func clientPost(token, endpoint string, body map[string]interface{}, logger ClientLogger, httpClient *http.Client) (error, bool) {
 	if len(token) == 0 {
 		rollbarError(logger, "empty token")
 		return nil, false
@@ -710,7 +714,7 @@ func clientPost(token, endpoint string, body map[string]interface{}, logger Clie
 		return err, false
 	}
 
-	resp, err := http.Post(endpoint, "application/json", bytes.NewReader(jsonBody))
+	resp, err := httpClient.Post(endpoint, "application/json", bytes.NewReader(jsonBody))
 	if err != nil {
 		rollbarError(logger, "POST failed: %s", err.Error())
 		return err, isTemporary(err)
