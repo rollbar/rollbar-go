@@ -3,11 +3,13 @@ package rollbar_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/rollbar/rollbar-go"
 	"net/http"
 	"reflect"
 	"regexp"
 	"strings"
+	"testing"
 )
 
 type TestTransport struct {
