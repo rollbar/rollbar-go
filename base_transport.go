@@ -60,7 +60,7 @@ func (t *baseTransport) SetHTTPClient(c *http.Client) {
 	t.httpClient = c
 }
 
-func (t *baseTransport) getHttpClient() *http.Client {
+func (t *baseTransport) getHTTPClient() *http.Client {
 	if t.httpClient != nil {
 		return t.httpClient
 	}
