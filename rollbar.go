@@ -12,7 +12,7 @@ const (
 	// NAME is the name of this notifier sent with the payload to Rollbar.
 	NAME = "rollbar/rollbar-go"
 	// VERSION is the version of this notifier sent with the payload to Rollbar.
-	VERSION = "1.1.0"
+	VERSION = "1.2.0"
 
 	// CRIT is the critial severity level.
 	CRIT = "critical"
@@ -592,17 +592,31 @@ func Close() {
 	std.Close()
 }
 
+// LogPanic accepts an error value returned by recover() and
+// handles logging to Rollbar with stack info.
+func LogPanic(err interface{}, wait bool) {
+	std.LogPanic(err, wait)
+}
+
+// WrapWithArgs calls f with the supplied args and reports a panic to Rollbar if it occurs.
+// If wait is true, this also waits before returning to ensure the message was reported.
+// If an error is captured it is subsequently returned.
+// WrapWithArgs is compatible with any return type for f, but does not return its return value(s).
+func WrapWithArgs(f interface{}, wait bool, args ...interface{}) interface{} {
+	return std.WrapWithArgs(f, wait, args...)
+}
+
 // Wrap calls f and then recovers and reports a panic to Rollbar if it occurs.
 // If an error is captured it is subsequently returned.
-func Wrap(f func()) interface{} {
-	return std.Wrap(f)
+func Wrap(f interface{}, args ...interface{}) interface{} {
+	return std.WrapWithArgs(f, false, args...)
 }
 
 // WrapAndWait calls f, and recovers and reports a panic to Rollbar if it occurs.
 // This also waits before returning to ensure the message was reported.
 // If an error is captured it is subsequently returned.
-func WrapAndWait(f func()) interface{} {
-	return std.WrapAndWait(f)
+func WrapAndWait(f interface{}, args ...interface{}) interface{} {
+	return std.WrapWithArgs(f, true, args...)
 }
 
 // LambdaWrapper calls handlerFunc with arguments, and recovers and reports a
