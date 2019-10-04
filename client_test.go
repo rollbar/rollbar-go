@@ -1,13 +1,14 @@
 package rollbar_test
 
 import (
+	"context"
 	"errors"
 	"github.com/rollbar/rollbar-go"
-	"regexp"
-	"context"
+	"net/http"
 	"reflect"
-	"testing"
+	"regexp"
 	"strings"
+	"testing"
 )
 
 type TestTransport struct {
@@ -28,6 +29,7 @@ func (t *TestTransport) SetEndpoint(_e string)             {}
 func (t *TestTransport) SetLogger(_l rollbar.ClientLogger) {}
 func (t *TestTransport) SetRetryAttempts(_r int)           {}
 func (t *TestTransport) SetPrintPayloadOnError(_p bool)    {}
+func (t *TestTransport) SetHTTPClient(_c *http.Client)     {}
 func (t *TestTransport) Send(body map[string]interface{}) error {
 	t.Body = body
 	return nil
