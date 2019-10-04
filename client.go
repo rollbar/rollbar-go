@@ -464,60 +464,77 @@ func (c *Client) RequestMessageWithExtrasAndContext(ctx context.Context, level s
 
 // -- Panics
 
-// Wrap calls f and then recovers and reports a panic to Rollbar if it occurs.
-// If an error is captured it is subsequently returned
-func (c *Client) Wrap(f func()) (err interface{}) {
-	defer func() {
-		err = recover()
-		switch val := err.(type) {
-		case nil:
+// LogPanic accepts an error value returned by recover() and
+// handles logging to Rollbar with stack info.
+func (c *Client) LogPanic(err interface{}, wait bool) {
+	switch val := err.(type) {
+	case nil:
+		return
+	case error:
+		if c.configuration.checkIgnore(val.Error()) {
 			return
-		case error:
-			if c.configuration.checkIgnore(val.Error()) {
-				return
-			}
-			c.ErrorWithStackSkip(CRIT, val, 2)
-		default:
-			str := fmt.Sprint(val)
-			if c.configuration.checkIgnore(str) {
-				return
-			}
-			errValue := errors.New(str)
-			c.ErrorWithStackSkip(CRIT, errValue, 2)
 		}
-	}()
+		c.ErrorWithStackSkip(CRIT, val, 2)
+	default:
+		str := fmt.Sprint(val)
+		if c.configuration.checkIgnore(str) {
+			return
+		}
+		errValue := errors.New(str)
+		c.ErrorWithStackSkip(CRIT, errValue, 2)
+	}
+	if wait {
+		c.Wait()
+	}
+}
 
-	f()
+// WrapWithArgs calls f with the supplied args and reports a panic to Rollbar if it occurs.
+// If wait is true, this also waits before returning to ensure the message was reported.
+// If an error is captured it is subsequently returned.
+// WrapWithArgs is compatible with any return type for f, but does not return its return value(s).
+func (c *Client) WrapWithArgs(f interface{}, wait bool, inArgs ...interface{}) (err interface{}) {
+	if f == nil {
+		err = fmt.Errorf("function is nil")
+		return
+	}
+	funcType := reflect.TypeOf(f)
+	funcValue := reflect.ValueOf(f)
+
+	if funcType.Kind() != reflect.Func {
+		err = fmt.Errorf("function kind %s is not %s", funcType.Kind(), reflect.Func)
+		return
+	}
+
+	argValues := make([]reflect.Value, len(inArgs))
+	for i, v := range inArgs {
+		argValues[i] = reflect.ValueOf(v)
+	}
+
+	handler := func(args []reflect.Value) []reflect.Value {
+		defer func() {
+			err = recover()
+			c.LogPanic(err, wait)
+		}()
+
+		return funcValue.Call(args)
+	}
+
+	handler(argValues)
+
 	return
+}
+
+// Wrap calls f and then recovers and reports a panic to Rollbar if it occurs.
+// If an error is captured it is subsequently returned.
+func (c *Client) Wrap(f interface{}, args ...interface{}) (err interface{}) {
+	return c.WrapWithArgs(f, false, args...)
 }
 
 // WrapAndWait calls f, and recovers and reports a panic to Rollbar if it occurs.
 // This also waits before returning to ensure the message was reported
 // If an error is captured it is subsequently returned.
-func (c *Client) WrapAndWait(f func()) (err interface{}) {
-	defer func() {
-		err = recover()
-		switch val := err.(type) {
-		case nil:
-			return
-		case error:
-			if c.configuration.checkIgnore(val.Error()) {
-				return
-			}
-			c.ErrorWithStackSkip(CRIT, val, 2)
-		default:
-			str := fmt.Sprint(val)
-			if c.configuration.checkIgnore(str) {
-				return
-			}
-			errValue := errors.New(str)
-			c.ErrorWithStackSkip(CRIT, errValue, 2)
-		}
-		c.Wait()
-	}()
-
-	f()
-	return
+func (c *Client) WrapAndWait(f interface{}, args ...interface{}) (err interface{}) {
+	return c.WrapWithArgs(f, true, args...)
 }
 
 // LambdaWrapper calls handlerFunc with arguments, and recovers and reports a
@@ -537,23 +554,7 @@ func (c *Client) LambdaWrapper(handlerFunc interface{}) interface{} {
 	handler := func(args []reflect.Value) []reflect.Value {
 		defer func() {
 			err := recover()
-			switch val := err.(type) {
-			case nil:
-				return
-			case error:
-				if c.configuration.checkIgnore(val.Error()) {
-					return
-				}
-				c.ErrorWithStackSkip(CRIT, val, 2)
-			default:
-				str := fmt.Sprint(val)
-				if c.configuration.checkIgnore(str) {
-					return
-				}
-				errValue := errors.New(str)
-				c.ErrorWithStackSkip(CRIT, errValue, 2)
-			}
-			c.Wait()
+			c.LogPanic(err, true)
 		}()
 
 		ret := handlerValue.Call(args)
