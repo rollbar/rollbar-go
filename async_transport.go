@@ -1,34 +1,18 @@
 package rollbar
 
 import (
-	"net/http"
 	"sync"
 )
 
 // AsyncTransport is a concrete implementation of the Transport type which communicates with the
 // Rollbar API asynchronously using a buffered channel.
 type AsyncTransport struct {
-	// Rollbar access token used by this transport for communication with the Rollbar API.
-	Token string
-	// Endpoint to post items to.
-	Endpoint string
-	// Logger used to report errors when sending data to Rollbar, e.g.
-	// when the Rollbar API returns 409 Too Many Requests response.
-	// If not set, the client will use the standard log.Printf by default.
-	Logger ClientLogger
+	baseTransport
 	// Buffer is the size of the channel used for queueing asynchronous payloads for sending to
 	// Rollbar.
-	Buffer int
-	// RetryAttempts is how often to attempt to resend an item when a temporary network error occurs
-	// This defaults to DefaultRetryAttempts
-	// Set this value to 0 if you do not want retries to happen
-	RetryAttempts int
-	// PrintPayloadOnError is whether or not to output the payload to the set logger or to stderr
-	// if an error occurs during transport to the Rollbar API.
-	PrintPayloadOnError bool
-	bodyChannel         chan payload
-	waitGroup           sync.WaitGroup
-	httpClient          *http.Client
+	Buffer      int
+	bodyChannel chan payload
+	waitGroup   sync.WaitGroup
 }
 
 type payload struct {
@@ -41,17 +25,19 @@ type payload struct {
 // buffer argument.
 func NewAsyncTransport(token string, endpoint string, buffer int) *AsyncTransport {
 	transport := &AsyncTransport{
-		Token:               token,
-		Endpoint:            endpoint,
-		Buffer:              buffer,
-		RetryAttempts:       DefaultRetryAttempts,
-		PrintPayloadOnError: true,
-		bodyChannel:         make(chan payload, buffer),
+		baseTransport: baseTransport{
+			Token:               token,
+			Endpoint:            endpoint,
+			RetryAttempts:       DefaultRetryAttempts,
+			PrintPayloadOnError: true,
+		},
+		bodyChannel: make(chan payload, buffer),
+		Buffer:      buffer,
 	}
 
 	go func() {
 		for p := range transport.bodyChannel {
-			err, canRetry := transport.post(p)
+			err, canRetry := transport.post(p.body)
 			if err != nil {
 				if canRetry && p.retriesLeft > 0 {
 					p.retriesLeft -= 1
@@ -112,57 +98,4 @@ func (t *AsyncTransport) Close() error {
 	close(t.bodyChannel)
 	t.Wait()
 	return nil
-}
-
-// SetToken updates the token to use for future API requests.
-// Any request that is currently in the queue will use this
-// updated token value. If you want to change the token without
-// affecting the items currently in the queue, use Wait first
-// to flush the queue.
-func (t *AsyncTransport) SetToken(token string) {
-	t.Token = token
-}
-
-// SetEndpoint updates the API endpoint to send items to.
-// Any request that is currently in the queue will use this
-// updated endpoint value. If you want to change the endpoint without
-// affecting the items currently in the queue, use Wait first
-// to flush the queue.
-func (t *AsyncTransport) SetEndpoint(endpoint string) {
-	t.Endpoint = endpoint
-}
-
-// SetLogger updates the logger that this transport uses for reporting errors that occur while
-// processing items.
-func (t *AsyncTransport) SetLogger(logger ClientLogger) {
-	t.Logger = logger
-}
-
-// SetRetryAttempts is how often to attempt to resend an item when a temporary network error occurs
-// This defaults to DefaultRetryAttempts
-// Set this value to 0 if you do not want retries to happen
-func (t *AsyncTransport) SetRetryAttempts(retryAttempts int) {
-	t.RetryAttempts = retryAttempts
-}
-
-// SetPrintPayloadOnError is whether or not to output the payload to stderr if an error occurs during
-// transport to the Rollbar API.
-func (t *AsyncTransport) SetPrintPayloadOnError(printPayloadOnError bool) {
-	t.PrintPayloadOnError = printPayloadOnError
-}
-
-func (t *AsyncTransport) post(p payload) (error, bool) {
-	return clientPost(t.Token, t.Endpoint, p.body, t.Logger, t.getHttpClient())
-}
-
-func (t *AsyncTransport) SetHttpClient(c *http.Client) {
-	t.httpClient = c
-}
-
-func (t *AsyncTransport) getHttpClient() *http.Client {
-	if t.httpClient != nil {
-		return t.httpClient
-	}
-
-	return http.DefaultClient
 }

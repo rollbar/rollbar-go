@@ -1,9 +1,7 @@
 package rollbar
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -248,8 +246,8 @@ func (c *Client) SetPrintPayloadOnError(printPayloadOnError bool) {
 	c.Transport.SetPrintPayloadOnError(printPayloadOnError)
 }
 
-func (c *Client) SetHttpClient(httpClient *http.Client) {
-	c.Transport.SetHttpClient(httpClient)
+func (c *Client) SetHTTPClient(httpClient *http.Client) {
+	c.Transport.SetHTTPClient(httpClient)
 }
 
 // Token is the currently set Rollbar access token.
@@ -695,40 +693,6 @@ func createDiagnostic() diagnostic {
 		languageVersion:   runtime.Version(),
 		configuredOptions: map[string]interface{}{},
 	}
-}
-
-// clientPost returns an error which indicates the type of error that occurred while attempting to
-// send the body input to the endpoint given, or nil if no error occurred. If error is not nil, the
-// boolean return parameter indicates whether the error is temporary or not. If this boolean return
-// value is true then the caller could call this function again with the same input and possibly
-// see a non-error response.
-func clientPost(token, endpoint string, body map[string]interface{}, logger ClientLogger, httpClient *http.Client) (error, bool) {
-	if len(token) == 0 {
-		rollbarError(logger, "empty token")
-		return nil, false
-	}
-
-	jsonBody, err := json.Marshal(body)
-	if err != nil {
-		rollbarError(logger, "failed to encode payload: %s", err.Error())
-		return err, false
-	}
-
-	resp, err := httpClient.Post(endpoint, "application/json", bytes.NewReader(jsonBody))
-	if err != nil {
-		rollbarError(logger, "POST failed: %s", err.Error())
-		return err, isTemporary(err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		rollbarError(logger, "received response: %s", resp.Status)
-		// http.StatusTooManyRequests is only defined in Go 1.6+ so we use 429 directly
-		isRateLimit := resp.StatusCode == 429
-		return ErrHTTPError(resp.StatusCode), isRateLimit
-	}
-
-	return nil, false
 }
 
 // isTemporary returns true if we should consider the error returned from http.Post to be temporary

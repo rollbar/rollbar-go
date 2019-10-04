@@ -39,7 +39,7 @@ type Transport interface {
 	// Set whether to print the payload to the set logger or to stderr upon failing to send.
 	SetPrintPayloadOnError(printPayloadOnError bool)
 	// Set custom http client instead of http.DefaultClient
-	SetHttpClient(httpClient *http.Client)
+	SetHTTPClient(httpClient *http.Client)
 }
 
 // ClientLogger is the interface used by the rollbar Client/Transport to report problems.

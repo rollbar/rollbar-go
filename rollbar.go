@@ -263,7 +263,7 @@ func SetPrintPayloadOnError(printPayloadOnError bool) {
 }
 
 func SetHttpClient(httpClient *http.Client) {
-	std.SetHttpClient(httpClient)
+	std.SetHTTPClient(httpClient)
 }
 
 // -- Getters
