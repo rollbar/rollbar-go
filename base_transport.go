@@ -3,6 +3,8 @@ package rollbar
 import (
 	"bytes"
 	"encoding/json"
+	"io"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -88,7 +90,9 @@ func (t *baseTransport) post(body map[string]interface{}) (error, bool) {
 		rollbarError(t.Logger, "POST failed: %s", err.Error())
 		return err, isTemporary(err)
 	}
-	defer resp.Body.Close()
+
+	io.Copy(ioutil.Discard, resp.Body)
+	resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		rollbarError(t.Logger, "received response: %s", resp.Status)
