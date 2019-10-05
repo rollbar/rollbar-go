@@ -24,7 +24,8 @@ type baseTransport struct {
 	// PrintPayloadOnError is whether or not to output the payload to the set logger or to stderr if
 	// an error occurs during transport to the Rollbar API.
 	PrintPayloadOnError bool
-	httpClient          *http.Client
+	// custom http client (http.DefaultClient used by default)
+	httpClient *http.Client
 }
 
 // SetToken updates the token to use for future API requests.
@@ -56,10 +57,12 @@ func (t *baseTransport) SetPrintPayloadOnError(printPayloadOnError bool) {
 	t.PrintPayloadOnError = printPayloadOnError
 }
 
+// SetHTTPClient sets custom http client. http.DefaultClient is used by default
 func (t *baseTransport) SetHTTPClient(c *http.Client) {
 	t.httpClient = c
 }
 
+// getHTTPClient returns either custom client (if set) or http.DefaultClient
 func (t *baseTransport) getHTTPClient() *http.Client {
 	if t.httpClient != nil {
 		return t.httpClient
