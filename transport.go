@@ -38,7 +38,7 @@ type Transport interface {
 	SetRetryAttempts(retryAttempts int)
 	// Set whether to print the payload to the set logger or to stderr upon failing to send.
 	SetPrintPayloadOnError(printPayloadOnError bool)
-	// Set custom http client instead of http.DefaultClient
+	// Sets custom http client. http.DefaultClient is used by default
 	SetHTTPClient(httpClient *http.Client)
 }
 

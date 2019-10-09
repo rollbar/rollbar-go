@@ -246,6 +246,7 @@ func (c *Client) SetPrintPayloadOnError(printPayloadOnError bool) {
 	c.Transport.SetPrintPayloadOnError(printPayloadOnError)
 }
 
+// SetHTTPClient sets custom http client. http.DefaultClient is used by default
 func (c *Client) SetHTTPClient(httpClient *http.Client) {
 	c.Transport.SetHTTPClient(httpClient)
 }

@@ -262,7 +262,8 @@ func SetPrintPayloadOnError(printPayloadOnError bool) {
 	std.SetPrintPayloadOnError(printPayloadOnError)
 }
 
-func SetHttpClient(httpClient *http.Client) {
+// SetHTTPClient sets custom http client. http.DefaultClient is used by default
+func SetHTTPClient(httpClient *http.Client) {
 	std.SetHTTPClient(httpClient)
 }
 
