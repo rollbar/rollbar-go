@@ -76,22 +76,22 @@ func (t *baseTransport) getHTTPClient() *http.Client {
 // boolean return parameter indicates whether the error is temporary or not. If this boolean return
 // value is true then the caller could call this function again with the same input and possibly
 // see a non-error response.
-func (t *baseTransport) post(body map[string]interface{}) (error, bool) {
+func (t *baseTransport) post(body map[string]interface{}) (bool, error) {
 	if len(t.Token) == 0 {
 		rollbarError(t.Logger, "empty token")
-		return nil, false
+		return false, nil
 	}
 
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
 		rollbarError(t.Logger, "failed to encode payload: %s", err.Error())
-		return err, false
+		return false, err
 	}
 
-	resp, err := t.httpClient.Post(t.Endpoint, "application/json", bytes.NewReader(jsonBody))
+	resp, err := t.getHTTPClient().Post(t.Endpoint, "application/json", bytes.NewReader(jsonBody))
 	if err != nil {
 		rollbarError(t.Logger, "POST failed: %s", err.Error())
-		return err, isTemporary(err)
+		return isTemporary(err), err
 	}
 
 	io.Copy(ioutil.Discard, resp.Body)
@@ -101,8 +101,8 @@ func (t *baseTransport) post(body map[string]interface{}) (error, bool) {
 		rollbarError(t.Logger, "received response: %s", resp.Status)
 		// http.StatusTooManyRequests is only defined in Go 1.6+ so we use 429 directly
 		isRateLimit := resp.StatusCode == 429
-		return ErrHTTPError(resp.StatusCode), isRateLimit
+		return isRateLimit, ErrHTTPError(resp.StatusCode)
 	}
 
-	return nil, false
+	return false, nil
 }

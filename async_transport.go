@@ -37,7 +37,7 @@ func NewAsyncTransport(token string, endpoint string, buffer int) *AsyncTranspor
 
 	go func() {
 		for p := range transport.bodyChannel {
-			err, canRetry := transport.post(p.body)
+			canRetry, err := transport.post(p.body)
 			if err != nil {
 				if canRetry && p.retriesLeft > 0 {
 					p.retriesLeft -= 1

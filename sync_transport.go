@@ -28,7 +28,7 @@ func (t *SyncTransport) Send(body map[string]interface{}) error {
 }
 
 func (t *SyncTransport) doSend(body map[string]interface{}, retriesLeft int) error {
-	err, canRetry := t.post(body)
+	canRetry, err := t.post(body)
 	if err != nil {
 		if !canRetry || retriesLeft <= 0 {
 			if t.PrintPayloadOnError {
