@@ -554,7 +554,10 @@ func (c *Client) LambdaWrapper(handlerFunc interface{}) interface{} {
 	handler := func(args []reflect.Value) []reflect.Value {
 		defer func() {
 			err := recover()
-			c.LogPanic(err, true)
+			if err != nil {
+				c.LogPanic(err, true)
+				panic(err)
+			}
 		}()
 
 		ret := handlerValue.Call(args)
