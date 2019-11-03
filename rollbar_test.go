@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"runtime"
+	"strings"
 	"testing"
 )
 
@@ -627,5 +629,49 @@ func TestSetStackTracer(t *testing.T) {
 		t.Errorf("custom tracer failed to extract trace")
 	} else if trace[0] != err.trace[0] {
 		t.Errorf("custom tracer got the wrong trace")
+	}
+}
+
+type roundTripFunc func(r *http.Request) (*http.Response, error)
+
+func (s roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) {
+	return s(r)
+}
+
+func TestSetHttpClient(t *testing.T) {
+	used := false
+	c := &http.Client{
+		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+			used = true
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       ioutil.NopCloser(strings.NewReader("")),
+			}, nil
+		}),
+	}
+
+	client := NewAsync("example", "test", "0.0.0", "", "")
+	client.SetHTTPClient(c)
+
+	err := client.Transport.Send(map[string]interface{}{})
+	client.Wait()
+	if err != nil {
+		t.Fatal("failed to send body:", err.Error())
+	}
+
+	if !used {
+		t.Fatal("custom http client had not been invoked")
+	}
+
+	used = false
+	client = NewSync("example", "test", "0.0.0", "", "")
+	client.SetHTTPClient(c)
+
+	if err := client.Transport.Send(map[string]interface{}{}); err != nil {
+		t.Fatal("failed to send body:", err.Error())
+	}
+
+	if !used {
+		t.Fatal("custom http client had not been invoked")
 	}
 }

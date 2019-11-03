@@ -262,6 +262,11 @@ func SetPrintPayloadOnError(printPayloadOnError bool) {
 	std.SetPrintPayloadOnError(printPayloadOnError)
 }
 
+// SetHTTPClient sets custom http client. http.DefaultClient is used by default
+func SetHTTPClient(httpClient *http.Client) {
+	std.SetHTTPClient(httpClient)
+}
+
 // -- Getters
 
 // Token returns the currently set Rollbar access token on the managed Client instance.
