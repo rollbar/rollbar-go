@@ -285,6 +285,30 @@ type TestMessage struct {
 func TestLambdaWrapperWithError(t *testing.T) {
 	client := testClient()
 	err := errors.New("bork")
+
+	defer func() {
+		recoveredError := recover()
+
+		if recoveredError != err {
+			if recoveredError == nil {
+				t.Error("Expected wrapper to bubble up the custom panic error")
+			} else {
+				t.Errorf("Unexpected panic %s", recoveredError)
+			}
+		}
+
+		if transport, ok := client.Transport.(*TestTransport); ok {
+			if transport.Body == nil {
+				t.Error("Expected Body to be present")
+			}
+			if !transport.WaitCalled {
+				t.Error("Expected wait to be called")
+			}
+		} else {
+			t.Fail()
+		}
+	}()
+
 	//ctx := context.TODO()
 	handler := client.LambdaWrapper(func() {
 		panic(err)
@@ -293,17 +317,41 @@ func TestLambdaWrapperWithError(t *testing.T) {
 	var args []reflect.Value
 	fn.Call(args)
 	//testCallLambdaHandler(handler)
+}
 
-	if transport, ok := client.Transport.(*TestTransport); ok {
-		if transport.Body == nil {
-			t.Error("Expected Body to be present")
+func TestLambdaWrapperWithErrorAndMultipleReturnValues(t *testing.T) {
+	client := testClient()
+	err := errors.New("bork")
+
+	defer func() {
+		recoveredError := recover()
+
+		if recoveredError != err {
+			if recoveredError == nil {
+				t.Error("Expected wrapper to bubble up the custom panic error")
+			} else {
+				t.Errorf("Unexpected panic %s", recoveredError)
+			}
 		}
-		if !transport.WaitCalled {
-			t.Error("Expected wait to be called")
+
+		if transport, ok := client.Transport.(*TestTransport); ok {
+			if transport.Body == nil {
+				t.Error("Expected Body to be present")
+			}
+			if !transport.WaitCalled {
+				t.Error("Expected wait to be called")
+			}
+		} else {
+			t.Fail()
 		}
-	} else {
-		t.Fail()
-	}
+	}()
+
+	handler := client.LambdaWrapper(func() (string, error) {
+		panic(err)
+	})
+	fn := reflect.ValueOf(handler)
+	var args []reflect.Value
+	fn.Call(args)
 }
 
 func TestLambdaWrapperWithContext(t *testing.T) {
