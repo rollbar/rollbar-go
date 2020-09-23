@@ -93,13 +93,25 @@ var DefaultStackTracer StackTracerFunc = func(err error) ([]runtime.Frame, bool)
 
 // Disables a custom client-side fingerprint. The default value is
 // false.
-func DisableInternalFingerprinting() {
+func DisableClientsideFingerprintGeneration() {
 	std.SetFingerprint(false)
 }
 
 // Enables a custom client-side fingerprint. The default value is
 // false.
-func EnableInternalFingerprinting() {
+func EnableClientsideFingerprint() {
+	std.SetFingerprint(true)
+}
+
+// Disables a custom client-side fingerprint. The default value is
+// false.
+func DisableClientsideFingerprint() {
+	std.SetFingerprint(false)
+}
+
+// Enables a custom client-side fingerprint. The default value is
+// false.
+func EnableClientsideFingerprintGeneration() {
 	std.SetFingerprint(true)
 }
 

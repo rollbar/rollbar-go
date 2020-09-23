@@ -151,6 +151,37 @@ func (c *Client) SetFingerprint(fingerprint bool) {
 	c.configuration.fingerprint = fingerprint
 }
 
+// Enables custom client-side fingerprint. The default value is false.
+func (c *Client) EnableClientsideFingerprintGeneration() {
+	c.diagnostic.configuredOptions["fingerprint"] = true
+	c.configuration.fingerprint = true
+}
+
+// Disables custom client-side fingerprint. The default value is false.
+func (c *Client) DisableClientsideFingerprintGeneration() {
+	c.diagnostic.configuredOptions["fingerprint"] = false
+	c.configuration.fingerprint = false
+}
+
+// Enables custom client-side fingerprint. The default value is false. (Alias of above method).
+func (c *Client) EnableClientsideFingerprint() {
+	c.diagnostic.configuredOptions["fingerprint"] = true
+	c.configuration.fingerprint = true
+}
+
+// Disables custom client-side fingerprint. The default value is false. (Alias of above method).
+func (c *Client) DisableClientsideFingerprint() {
+	c.diagnostic.configuredOptions["fingerprint"] = false
+	c.configuration.fingerprint = false
+}
+
+// Enables using a custom client-side fingerprint. The default value is
+// false.
+func (c *Client) EnableClientFingerprint(fingerprint bool) {
+	c.diagnostic.configuredOptions["fingerprint"] = fingerprint
+	c.configuration.fingerprint = fingerprint
+}
+
 // SetLogger sets the logger on the underlying transport. By default log.Printf is used.
 func (c *Client) SetLogger(logger ClientLogger) {
 	c.Transport.SetLogger(logger)
