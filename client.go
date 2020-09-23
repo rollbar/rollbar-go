@@ -175,13 +175,6 @@ func (c *Client) DisableClientsideFingerprint() {
 	c.configuration.fingerprint = false
 }
 
-// Enables using a custom client-side fingerprint. The default value is
-// false.
-func (c *Client) EnableClientFingerprint(fingerprint bool) {
-	c.diagnostic.configuredOptions["fingerprint"] = fingerprint
-	c.configuration.fingerprint = fingerprint
-}
-
 // SetLogger sets the logger on the underlying transport. By default log.Printf is used.
 func (c *Client) SetLogger(logger ClientLogger) {
 	c.Transport.SetLogger(logger)
