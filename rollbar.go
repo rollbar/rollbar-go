@@ -90,6 +90,15 @@ var DefaultStackTracer StackTracerFunc = func(err error) ([]runtime.Frame, bool)
 	return nil, false
 }
 
+
+// SetEnabled sets whether or not the managed Client instance is enabled.
+// If this is true then this library works as normal.
+// If this is false then no calls will be made to the network.
+// One place where this is useful is for turning off reporting in tests.
+func DisableInternalFingerprinting() {
+	std.SetFingerprint(false)
+}
+
 // SetEnabled sets whether or not the managed Client instance is enabled.
 // If this is true then this library works as normal.
 // If this is false then no calls will be made to the network.
