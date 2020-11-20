@@ -35,7 +35,7 @@ func buildBody(ctx context.Context, configuration configuration, diagnostic diag
 			"version": VERSION,
 			"diagnostic": map[string]interface{}{
 				"languageVersion": diagnostic.languageVersion,
-				"configuredOptions": diagnostic.configuredOptions,
+				"configuredOptions": buildConfiguredOptions(configuration),
 			},
 		},
 	}
@@ -75,6 +75,30 @@ func buildCustom(custom map[string]interface{}, extras map[string]interface{}) m
 		m[k] = v
 	}
 	return m
+}
+
+func buildConfiguredOptions(configuration configuration) map[string]interface{} {
+	return map[string]interface{}{
+		"environment":  configuration.environment,
+		"endpoint":     configuration.endpoint,
+		"platform":     configuration.platform,
+		"codeVersion":  configuration.codeVersion,
+		"serverHost":   configuration.serverHost,
+		"serverRoot":   configuration.serverRoot,
+		"fingerprint":  configuration.fingerprint,
+		"scrubHeaders": configuration.scrubHeaders,
+		"scrubFields":  configuration.scrubFields,
+		"transform":    functionToString(configuration.transform),
+		"unwrapper":    functionToString(configuration.unwrapper),
+		"stackTracer":  functionToString(configuration.stackTracer),
+		"checkIgnore":  functionToString(configuration.checkIgnore),
+		"captureIp":    configuration.captureIp,
+		"person": map[string]string{
+			"Id":       configuration.person.Id,
+			"Username": configuration.person.Username,
+			"Email":    configuration.person.Email,
+		},
+	}
 }
 
 func addErrorToBody(configuration configuration, body map[string]interface{}, err error, skip int) map[string]interface{} {
@@ -303,4 +327,8 @@ func errorClass(err error) string {
 	} else {
 		return strings.TrimPrefix(class, "*")
 	}
+}
+
+func functionToString(function interface{}) string {
+	return runtime.FuncForPC(reflect.ValueOf(function).Pointer()).Name()
 }
