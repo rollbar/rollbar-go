@@ -1,5 +1,5 @@
 # rollbar-go
-[![Build Status](https://travis-ci.org/rollbar/rollbar-go.svg?branch=master)](https://travis-ci.org/rollbar/rollbar-go)
+![Build Status](https://github.com/rollbar/rollbar-go/workflows/Rollbar-go%20CI/badge.svg?branch=master)
 
 [Rollbar](https://rollbar.com) is a real-time exception reporting service for Go
 and other languages. The Rollbar service will alert you of problems with your code
@@ -16,7 +16,7 @@ or allocated, we use the stack information from where the error was reported.
 # Setup Instructions and Usage
 
 1. [Sign up for a Rollbar account](https://rollbar.com/signup)
-2. Follow the [Usage](https://docs.rollbar.com/docs/go#usage) example in our [Go SDK docs](https://docs.rollbar.com/docs/go) 
+2. Follow the [Usage](https://docs.rollbar.com/docs/go#usage) example in our [Go SDK docs](https://docs.rollbar.com/docs/go)
 to get started for your platform.
 
 # Documentation
