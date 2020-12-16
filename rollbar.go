@@ -90,6 +90,27 @@ var DefaultStackTracer StackTracerFunc = func(err error) ([]runtime.Frame, bool)
 	return nil, false
 }
 
+// Enables a custom client-side fingerprint. The default value is false.
+func EnableClientsideFingerprintGeneration() {
+	std.SetFingerprint(true)
+}
+
+// Disables a custom client-side fingerprint. The default value is false.
+func DisableClientsideFingerprintGeneration() {
+	std.SetFingerprint(false)
+}
+
+// Enables a custom client-side fingerprint. The default value is false. (Alias of above method).
+func EnableClientsideFingerprint() {
+	std.SetFingerprint(true)
+}
+
+// Disables a custom client-side fingerprint. The default value is false. (Alias of above method).
+func DisableClientsideFingerprint() {
+	std.SetFingerprint(false)
+}
+
+
 // SetEnabled sets whether or not the managed Client instance is enabled.
 // If this is true then this library works as normal.
 // If this is false then no calls will be made to the network.
