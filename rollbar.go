@@ -90,6 +90,22 @@ var DefaultStackTracer StackTracerFunc = func(err error) ([]runtime.Frame, bool)
 	return nil, false
 }
 
+// GetTelemetryHTTPClientTransport enables a user to set Transport on http client:
+// example: client := &http.Client{Transport: rollbar.GetTelemetryHTTPClientTransport()}
+func GetTelemetryHTTPClientTransport() http.RoundTripper {
+	return std.Telemetry
+}
+
+// SetTelemetry sets the telemetry
+func SetTelemetry(t *Telemetry) {
+	std.SetTelemetry(t)
+}
+
+// CaptureTelemetryEvent sets the user-specified telemetry event
+func CaptureTelemetryEvent(eventType, eventlevel string, eventData map[string]interface{}) {
+	std.CaptureTelemetryEvent(eventType, eventlevel, eventData)
+}
+
 // SetEnabled sets whether or not the managed Client instance is enabled.
 // If this is true then this library works as normal.
 // If this is false then no calls will be made to the network.
