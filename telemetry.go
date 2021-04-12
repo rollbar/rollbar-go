@@ -167,11 +167,12 @@ func NewTelemetry(options ...OptionFunc) *Telemetry {
 	for _, opt := range options {
 		opt(res)
 	}
-	if res.Network.enbaleDefaultClient {
-		http.DefaultClient.Transport = res
-	}
+
 	if res.Network.ScrubHeaders == nil { // set/define only once
 		res.Network.ScrubHeaders = regexp.MustCompile("Authorization")
+	}
+	if res.Network.enbaleDefaultClient {
+		http.DefaultClient.Transport = res
 	}
 	return res
 }
