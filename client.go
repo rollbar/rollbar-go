@@ -74,8 +74,8 @@ func (c *Client) CaptureTelemetryEvent(eventType, eventlevel string, eventData m
 }
 
 // SetTelemetry sets the telemetry
-func (c *Client) SetTelemetry(t *Telemetry) {
-	c.Telemetry = t
+func (c *Client) SetTelemetry(options ...OptionFunc) {
+	c.Telemetry = NewTelemetry(options...)
 }
 
 // SetEnabled sets whether or not Rollbar is enabled.
@@ -168,6 +168,7 @@ func (c *Client) SetLogger(logger ClientLogger) {
 // The default value is regexp.MustCompile("Authorization")
 func (c *Client) SetScrubHeaders(headers *regexp.Regexp) {
 	c.configuration.scrubHeaders = headers
+	c.Telemetry.Network.ScrubHeaders = headers
 }
 
 // SetScrubFields sets the regular expression to match keys in the item payload for scrubbing.

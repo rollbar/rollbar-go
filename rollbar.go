@@ -90,15 +90,15 @@ var DefaultStackTracer StackTracerFunc = func(err error) ([]runtime.Frame, bool)
 	return nil, false
 }
 
-// GetTelemetryHTTPClientTransport enables a user to set Transport on http client:
-// example: client := &http.Client{Transport: rollbar.GetTelemetryHTTPClientTransport()}
-func GetTelemetryHTTPClientTransport() http.RoundTripper {
-	return std.Telemetry
+// SetHTTPClientForTelemetry sets the http client for telemetry.
+// client is passed by the reference and it's sets the Transport on the client.
+func SetHTTPClientForTelemetry(httpClient *http.Client) {
+	httpClient.Transport = std.Telemetry
 }
 
 // SetTelemetry sets the telemetry
-func SetTelemetry(t *Telemetry) {
-	std.SetTelemetry(t)
+func SetTelemetry(options ...OptionFunc) {
+	std.SetTelemetry(options...)
 }
 
 // CaptureTelemetryEvent sets the user-specified telemetry event
