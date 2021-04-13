@@ -22,7 +22,7 @@ type Telemetry struct {
 		Proxied      http.RoundTripper
 		ScrubHeaders *regexp.Regexp
 
-		enbaleDefaultClient bool
+		enableDefaultClient bool
 		disableReqHeaders   bool
 		disableResHeaders   bool
 	}
@@ -125,7 +125,7 @@ func EnableNetworkTelemetry(t http.RoundTripper) OptionFunc {
 // EnableNetworkTelemetryForDefaultClient sets the http.DefaultClient for telemetry
 func EnableNetworkTelemetryForDefaultClient() OptionFunc {
 	return func(f *Telemetry) {
-		f.Network.enbaleDefaultClient = true
+		f.Network.enableDefaultClient = true
 	}
 }
 
@@ -171,7 +171,7 @@ func NewTelemetry(options ...OptionFunc) *Telemetry {
 	if res.Network.ScrubHeaders == nil { // set/define only once
 		res.Network.ScrubHeaders = regexp.MustCompile("Authorization")
 	}
-	if res.Network.enbaleDefaultClient {
+	if res.Network.enableDefaultClient {
 		http.DefaultClient.Transport = res
 	}
 	return res

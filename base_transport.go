@@ -68,7 +68,7 @@ func (t *baseTransport) getHTTPClient() *http.Client {
 		return t.httpClient
 	}
 
-	return &http.Client{}
+	return http.DefaultClient
 }
 
 // post returns an error which indicates the type of error that occurred while attempting to
