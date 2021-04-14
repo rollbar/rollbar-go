@@ -23,8 +23,8 @@ type Telemetry struct {
 		ScrubHeaders *regexp.Regexp
 
 		enableDefaultClient bool
-		disableReqHeaders   bool
-		disableResHeaders   bool
+		enableReqHeaders    bool
+		enableResHeaders    bool
 	}
 	Queue *Queue
 }
@@ -73,7 +73,7 @@ func (t *Telemetry) populateTransporterBody(req *http.Request, res *http.Respons
 			data["level"] = "error"
 		}
 
-		if !t.Network.disableResHeaders {
+		if t.Network.enableResHeaders {
 			var dataHeaders = map[string][]string{}
 			for k, v := range res.Header {
 				dataHeaders[k] = v
@@ -88,7 +88,7 @@ func (t *Telemetry) populateTransporterBody(req *http.Request, res *http.Respons
 	dataBody["method"] = req.Method
 	dataBody["subtype"] = "http"
 
-	if !t.Network.disableReqHeaders {
+	if t.Network.enableReqHeaders {
 		var dataHeaders = map[string][]string{}
 		for k, v := range req.Header {
 			dataHeaders[k] = v
@@ -112,13 +112,11 @@ func (t *Telemetry) GetQueueItems() []interface{} {
 type OptionFunc func(*Telemetry)
 
 // EnableNetworkTelemetry enables the network telemetry.
-// if no custom http Transport is needed, then nil can be passed
-func EnableNetworkTelemetry(t http.RoundTripper) OptionFunc {
+// it wraps up the client for telemetry
+func EnableNetworkTelemetry(httpClient *http.Client) OptionFunc {
 	return func(f *Telemetry) {
-		f.Network.Proxied = http.DefaultTransport
-		if t != nil {
-			f.Network.Proxied = t
-		}
+		f.Network.Proxied = httpClient.Transport
+		httpClient.Transport = f
 	}
 }
 
@@ -129,17 +127,17 @@ func EnableNetworkTelemetryForDefaultClient() OptionFunc {
 	}
 }
 
-// DisableNetworkTelemetryRequestHeaders disables telemetry request headers
-func DisableNetworkTelemetryRequestHeaders() OptionFunc {
+// EnableNetworkTelemetryRequestHeaders enables telemetry request headers
+func EnableNetworkTelemetryRequestHeaders() OptionFunc {
 	return func(f *Telemetry) {
-		f.Network.disableReqHeaders = true
+		f.Network.enableReqHeaders = true
 	}
 }
 
-// DisableNetworkTelemetryResponseHeaders disables telemetry response headers
-func DisableNetworkTelemetryResponseHeaders() OptionFunc {
+// EnableNetworkTelemetryResponseHeaders enables telemetry response headers
+func EnableNetworkTelemetryResponseHeaders() OptionFunc {
 	return func(f *Telemetry) {
-		f.Network.disableResHeaders = true
+		f.Network.enableResHeaders = true
 	}
 }
 
@@ -172,6 +170,9 @@ func NewTelemetry(options ...OptionFunc) *Telemetry {
 		res.Network.ScrubHeaders = regexp.MustCompile("Authorization")
 	}
 	if res.Network.enableDefaultClient {
+		if res.Network.Proxied == nil {
+			res.Network.Proxied = http.DefaultTransport
+		}
 		http.DefaultClient.Transport = res
 	}
 	return res

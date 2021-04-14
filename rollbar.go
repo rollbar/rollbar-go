@@ -90,12 +90,6 @@ var DefaultStackTracer StackTracerFunc = func(err error) ([]runtime.Frame, bool)
 	return nil, false
 }
 
-// SetHTTPClientForTelemetry sets the http client for telemetry.
-// client is passed by the reference and it's sets the Transport on the client.
-func SetHTTPClientForTelemetry(httpClient *http.Client) {
-	httpClient.Transport = std.Telemetry
-}
-
 // SetTelemetry sets the telemetry
 func SetTelemetry(options ...OptionFunc) {
 	std.SetTelemetry(options...)
