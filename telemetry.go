@@ -22,9 +22,8 @@ type Telemetry struct {
 		Proxied      http.RoundTripper
 		ScrubHeaders *regexp.Regexp
 
-		enableDefaultClient bool
-		enableReqHeaders    bool
-		enableResHeaders    bool
+		enableReqHeaders bool
+		enableResHeaders bool
 	}
 	Queue *Queue
 }
@@ -82,7 +81,6 @@ func (t *Telemetry) populateTransporterBody(req *http.Request, res *http.Respons
 			response := map[string]interface{}{"headers": filteredDataHeaders}
 			dataBody["response"] = response
 		}
-
 	}
 	dataBody["url"] = req.URL.Scheme + "://" + req.Host + req.URL.Path
 	dataBody["method"] = req.Method
@@ -111,19 +109,13 @@ func (t *Telemetry) GetQueueItems() []interface{} {
 // OptionFunc is the pointer to the optional parameter function
 type OptionFunc func(*Telemetry)
 
-// EnableNetworkTelemetry enables the network telemetry.
+// EnableNetworkTelemetry enables the network telemetry
 // it wraps up the client for telemetry
+// http.DefaultClient can also be passed by the reference
 func EnableNetworkTelemetry(httpClient *http.Client) OptionFunc {
 	return func(f *Telemetry) {
 		f.Network.Proxied = httpClient.Transport
 		httpClient.Transport = f
-	}
-}
-
-// EnableNetworkTelemetryForDefaultClient sets the http.DefaultClient for telemetry
-func EnableNetworkTelemetryForDefaultClient() OptionFunc {
-	return func(f *Telemetry) {
-		f.Network.enableDefaultClient = true
 	}
 }
 
@@ -169,11 +161,6 @@ func NewTelemetry(options ...OptionFunc) *Telemetry {
 	if res.Network.ScrubHeaders == nil { // set/define only once
 		res.Network.ScrubHeaders = regexp.MustCompile("Authorization")
 	}
-	if res.Network.enableDefaultClient {
-		if res.Network.Proxied == nil {
-			res.Network.Proxied = http.DefaultTransport
-		}
-		http.DefaultClient.Transport = res
-	}
+
 	return res
 }
