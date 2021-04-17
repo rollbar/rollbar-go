@@ -100,7 +100,10 @@ func TestRoundTrip(t *testing.T) {
 	items := telemetry.GetQueueItems()
 	assert.NotNil(t, items)
 
-	item := items[0]
+	item := items[0].(map[string]interface{})
+	delete(item, "timestamp_ms")
+
 	expectedData := telemetry.populateTransporterBody(req, res)
+	delete(expectedData, "timestamp_ms")
 	assert.Equal(t, item, expectedData)
 }
