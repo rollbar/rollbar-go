@@ -114,7 +114,11 @@ type OptionFunc func(*Telemetry)
 // http.DefaultClient can also be passed by the reference
 func EnableNetworkTelemetry(httpClient *http.Client) OptionFunc {
 	return func(f *Telemetry) {
-		f.Network.Proxied = httpClient.Transport
+		if httpClient.Transport == nil {
+			f.Network.Proxied = http.DefaultTransport
+		} else {
+			f.Network.Proxied = httpClient.Transport
+		}
 		httpClient.Transport = f
 	}
 }
