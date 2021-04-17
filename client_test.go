@@ -436,7 +436,7 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 	errorIfEqual(fingerprint, client.Fingerprint(), t)
 	errorIfEqual(captureIP, client.CaptureIp(), t)
 	errorIfEqual(scrubHeaders, client.ScrubHeaders(), t)
-	errorIfNotEqual(scrubHeaders, client.Telemetry.Network.ScrubHeaders, t)
+	errorIfEqual(scrubHeaders, client.Telemetry.Network.ScrubHeaders, t)
 	errorIfEqual(scrubFields, client.ScrubFields(), t)
 
 	if client.Fingerprint() {
