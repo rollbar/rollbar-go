@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/rollbar/rollbar-go"
 	"net/http"
 	"reflect"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/rollbar/rollbar-go"
 )
 
 type TestTransport struct {
@@ -435,6 +436,7 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 	errorIfEqual(fingerprint, client.Fingerprint(), t)
 	errorIfEqual(captureIP, client.CaptureIp(), t)
 	errorIfEqual(scrubHeaders, client.ScrubHeaders(), t)
+	errorIfNotEqual(scrubHeaders, client.Telemetry.Network.ScrubHeaders, t)
 	errorIfEqual(scrubFields, client.ScrubFields(), t)
 
 	if client.Fingerprint() {
@@ -476,6 +478,7 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 	errorIfNotEqual(fingerprint, client.Fingerprint(), t)
 	errorIfNotEqual(captureIP, client.CaptureIp(), t)
 	errorIfNotEqual(scrubHeaders, client.ScrubHeaders(), t)
+	errorIfNotEqual(scrubHeaders, client.Telemetry.Network.ScrubHeaders, t)
 	errorIfNotEqual(scrubFields, client.ScrubFields(), t)
 
 	if !client.Fingerprint() {
