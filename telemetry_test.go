@@ -107,3 +107,22 @@ func TestRoundTrip(t *testing.T) {
 	delete(expectedData, "timestamp_ms")
 	assert.Equal(t, item, expectedData)
 }
+
+func TestWrite(t *testing.T) {
+	telemetry := NewTelemetry(nil, EnableLoggerTelemetry())
+	message := "some message"
+	count, err := telemetry.Write([]byte(message))
+
+	assert.Nil(t, err)
+	assert.Equal(t, count, len(message))
+
+	items := telemetry.GetQueueItems()
+	assert.NotNil(t, items)
+
+	item := items[0].(map[string]interface{})
+	delete(item, "timestamp_ms")
+
+	expectedData := telemetry.populateLoggerBody([]byte(message))
+	delete(expectedData, "timestamp_ms")
+	assert.Equal(t, item, expectedData)
+}
