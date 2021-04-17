@@ -42,7 +42,7 @@ func NewAsync(token, environment, codeVersion, serverHost, serverRoot string) *C
 	diagnostic := createDiagnostic()
 	return &Client{
 		Transport:     transport,
-		Telemetry:     NewTelemetry(),
+		Telemetry:     NewTelemetry(nil),
 		configuration: configuration,
 		diagnostic:    diagnostic,
 	}
@@ -55,7 +55,7 @@ func NewSync(token, environment, codeVersion, serverHost, serverRoot string) *Cl
 	diagnostic := createDiagnostic()
 	return &Client{
 		Transport:     transport,
-		Telemetry:     NewTelemetry(),
+		Telemetry:     NewTelemetry(nil),
 		configuration: configuration,
 		diagnostic:    diagnostic,
 	}
@@ -75,7 +75,7 @@ func (c *Client) CaptureTelemetryEvent(eventType, eventlevel string, eventData m
 
 // SetTelemetry sets the telemetry
 func (c *Client) SetTelemetry(options ...OptionFunc) {
-	c.Telemetry = NewTelemetry(options...)
+	c.Telemetry = NewTelemetry(c.configuration.scrubHeaders, options...)
 }
 
 // SetEnabled sets whether or not Rollbar is enabled.

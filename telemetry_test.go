@@ -14,7 +14,7 @@ import (
 )
 
 func TestNewTelemetryDefault(t *testing.T) {
-	telemetry := NewTelemetry()
+	telemetry := NewTelemetry(nil)
 	assert.NotNil(t, telemetry)
 	expectedTelemetry := &Telemetry{Queue: NewQueue(TelemetryQueueSize)}
 	expectedTelemetry.Network.ScrubHeaders = regexp.MustCompile("Authorization")
@@ -25,7 +25,7 @@ func TestNewTelemetryDefault(t *testing.T) {
 
 func TestNewTelemetryWithOptions(t *testing.T) {
 	client := http.Client{}
-	telemetry := NewTelemetry(SetCustomQueueSize(100), EnableNetworkTelemetry(&client),
+	telemetry := NewTelemetry(nil, SetCustomQueueSize(100), EnableNetworkTelemetry(&client),
 		EnableNetworkTelemetryRequestHeaders(), EnableNetworkTelemetryResponseHeaders(), EnableLoggerTelemetry())
 	expectedTelemetry := &Telemetry{Queue: telemetry.Queue}
 	expectedTelemetry.Network.ScrubHeaders = regexp.MustCompile("Authorization")
@@ -42,7 +42,7 @@ func TestPopulateBody(t *testing.T) {
 	req.Header.Set("Some_name", "some_value")
 	rec := httptest.NewRecorder()
 
-	telemetry := NewTelemetry()
+	telemetry := NewTelemetry(nil)
 	EnableNetworkTelemetryRequestHeaders()(telemetry)
 	EnableNetworkTelemetryResponseHeaders()(telemetry)
 	data := telemetry.populateTransporterBody(req, rec.Result())
@@ -62,7 +62,7 @@ func TestPopulateBody(t *testing.T) {
 func TestPopulateLoggerBody(t *testing.T) {
 
 	message := "some message"
-	telemetry := NewTelemetry()
+	telemetry := NewTelemetry(nil)
 
 	data := telemetry.populateLoggerBody([]byte(message))
 
@@ -86,7 +86,7 @@ func TestRoundTrip(t *testing.T) {
 	defer ts.Close()
 
 	client := http.Client{}
-	telemetry := NewTelemetry(EnableNetworkTelemetry(&client))
+	telemetry := NewTelemetry(nil, EnableNetworkTelemetry(&client))
 
 	req := httptest.NewRequest("GET", ts.URL+"/good", nil)
 	res, err := telemetry.RoundTrip(req)

@@ -152,8 +152,8 @@ func EnableLoggerTelemetry() OptionFunc {
 	}
 }
 
-// NewTelemetry initializes telemetry object
-func NewTelemetry(options ...OptionFunc) *Telemetry {
+// NewTelemetry initializes telemetry object with scrubheader
+func NewTelemetry(scrubHeaders *regexp.Regexp, options ...OptionFunc) *Telemetry {
 	res := &Telemetry{
 		Queue: NewQueue(TelemetryQueueSize),
 	}
@@ -162,8 +162,10 @@ func NewTelemetry(options ...OptionFunc) *Telemetry {
 		opt(res)
 	}
 
-	if res.Network.ScrubHeaders == nil { // set/define only once
+	if scrubHeaders == nil {
 		res.Network.ScrubHeaders = regexp.MustCompile("Authorization")
+	} else {
+		res.Network.ScrubHeaders = scrubHeaders
 	}
 
 	return res
