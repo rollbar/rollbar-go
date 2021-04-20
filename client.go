@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"regexp"
 	"runtime"
+	"time"
 )
 
 // A Client can be used to interact with Rollbar via the configured Transport.
@@ -23,6 +24,7 @@ type Client struct {
 	// Transport used to send data to the Rollbar API. By default an asynchronous
 	// implementation of the Transport interface is used.
 	Transport     Transport
+	Telemetry     *Telemetry
 	configuration configuration
 	diagnostic    diagnostic
 }
@@ -40,6 +42,7 @@ func NewAsync(token, environment, codeVersion, serverHost, serverRoot string) *C
 	diagnostic := createDiagnostic()
 	return &Client{
 		Transport:     transport,
+		Telemetry:     NewTelemetry(nil),
 		configuration: configuration,
 		diagnostic:    diagnostic,
 	}
@@ -52,9 +55,27 @@ func NewSync(token, environment, codeVersion, serverHost, serverRoot string) *Cl
 	diagnostic := createDiagnostic()
 	return &Client{
 		Transport:     transport,
+		Telemetry:     NewTelemetry(nil),
 		configuration: configuration,
 		diagnostic:    diagnostic,
 	}
+}
+
+// CaptureTelemetryEvent sets the user-specified telemetry event
+func (c *Client) CaptureTelemetryEvent(eventType, eventlevel string, eventData map[string]interface{}) {
+	data := map[string]interface{}{}
+	data["body"] = eventData
+	data["type"] = eventType
+	data["level"] = eventlevel
+	data["source"] = "client"
+	data["timestamp_ms"] = time.Now().UnixNano() / int64(time.Millisecond)
+
+	c.Telemetry.Queue.Push(data)
+}
+
+// SetTelemetry sets the telemetry
+func (c *Client) SetTelemetry(options ...OptionFunc) {
+	c.Telemetry = NewTelemetry(c.configuration.scrubHeaders, options...)
 }
 
 // SetEnabled sets whether or not Rollbar is enabled.
@@ -147,6 +168,7 @@ func (c *Client) SetLogger(logger ClientLogger) {
 // The default value is regexp.MustCompile("Authorization")
 func (c *Client) SetScrubHeaders(headers *regexp.Regexp) {
 	c.configuration.scrubHeaders = headers
+	c.Telemetry.Network.ScrubHeaders = headers
 }
 
 // SetScrubFields sets the regular expression to match keys in the item payload for scrubbing.
@@ -361,7 +383,8 @@ func (c *Client) ErrorWithStackSkipWithExtrasAndContext(ctx context.Context, lev
 		return
 	}
 	body := c.buildBody(ctx, level, err.Error(), extras)
-	addErrorToBody(c.configuration, body, err, skip)
+	telemetry := c.Telemetry.GetQueueItems()
+	addErrorToBody(c.configuration, body, err, skip, telemetry)
 	c.push(body)
 }
 
@@ -389,7 +412,8 @@ func (c *Client) RequestErrorWithStackSkipWithExtrasAndContext(ctx context.Conte
 		return
 	}
 	body := c.buildBody(ctx, level, err.Error(), extras)
-	data := addErrorToBody(c.configuration, body, err, skip)
+	telemetry := c.Telemetry.GetQueueItems()
+	data := addErrorToBody(c.configuration, body, err, skip, telemetry)
 	data["request"] = c.requestDetails(r)
 	c.push(body)
 }
@@ -415,7 +439,10 @@ func (c *Client) MessageWithExtrasAndContext(ctx context.Context, level string, 
 	}
 	body := c.buildBody(ctx, level, msg, extras)
 	data := body["data"].(map[string]interface{})
-	data["body"] = messageBody(msg)
+	dataBody := messageBody(msg)
+	telemetry := c.Telemetry.GetQueueItems()
+	dataBody["telemetry"] = telemetry
+	data["body"] = dataBody
 	c.push(body)
 }
 
@@ -440,7 +467,10 @@ func (c *Client) RequestMessageWithExtrasAndContext(ctx context.Context, level s
 	}
 	body := c.buildBody(ctx, level, msg, extras)
 	data := body["data"].(map[string]interface{})
-	data["body"] = messageBody(msg)
+	dataBody := messageBody(msg)
+	telemetry := c.Telemetry.GetQueueItems()
+	dataBody["telemetry"] = telemetry
+	data["body"] = dataBody
 	data["request"] = c.requestDetails(r)
 	c.push(body)
 }
@@ -669,12 +699,12 @@ func createConfiguration(token, environment, codeVersion, serverHost, serverRoot
 }
 
 type diagnostic struct {
-	languageVersion   string
+	languageVersion string
 }
 
 func createDiagnostic() diagnostic {
 	return diagnostic{
-		languageVersion:   runtime.Version(),
+		languageVersion: runtime.Version(),
 	}
 }
 

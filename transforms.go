@@ -34,7 +34,7 @@ func buildBody(ctx context.Context, configuration configuration, diagnostic diag
 			"name":    NAME,
 			"version": VERSION,
 			"diagnostic": map[string]interface{}{
-				"languageVersion": diagnostic.languageVersion,
+				"languageVersion":   diagnostic.languageVersion,
 				"configuredOptions": buildConfiguredOptions(configuration),
 			},
 		},
@@ -101,10 +101,12 @@ func buildConfiguredOptions(configuration configuration) map[string]interface{} 
 	}
 }
 
-func addErrorToBody(configuration configuration, body map[string]interface{}, err error, skip int) map[string]interface{} {
+func addErrorToBody(configuration configuration, body map[string]interface{}, err error, skip int, telemetry []interface{}) map[string]interface{} {
 	data := body["data"].(map[string]interface{})
 	errBody, fingerprint := errorBody(configuration, err, skip)
-	data["body"] = errBody
+	dataBody := errBody
+	dataBody["telemetry"] = telemetry
+	data["body"] = dataBody
 	if configuration.fingerprint {
 		data["fingerprint"] = fingerprint
 	}

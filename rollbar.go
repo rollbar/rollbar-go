@@ -90,6 +90,16 @@ var DefaultStackTracer StackTracerFunc = func(err error) ([]runtime.Frame, bool)
 	return nil, false
 }
 
+// SetTelemetry sets the telemetry
+func SetTelemetry(options ...OptionFunc) {
+	std.SetTelemetry(options...)
+}
+
+// CaptureTelemetryEvent sets the user-specified telemetry event
+func CaptureTelemetryEvent(eventType, eventlevel string, eventData map[string]interface{}) {
+	std.CaptureTelemetryEvent(eventType, eventlevel, eventData)
+}
+
 // SetEnabled sets whether or not the managed Client instance is enabled.
 // If this is true then this library works as normal.
 // If this is false then no calls will be made to the network.
