@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/rollbar/rollbar-go"
 	"net/http"
 	"reflect"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/rollbar/rollbar-go"
 )
 
 type TestTransport struct {
@@ -285,6 +286,30 @@ type TestMessage struct {
 func TestLambdaWrapperWithError(t *testing.T) {
 	client := testClient()
 	err := errors.New("bork")
+
+	defer func() {
+		recoveredError := recover()
+
+		if recoveredError != err {
+			if recoveredError == nil {
+				t.Error("Expected wrapper to bubble up the custom panic error")
+			} else {
+				t.Errorf("Unexpected panic %s", recoveredError)
+			}
+		}
+
+		if transport, ok := client.Transport.(*TestTransport); ok {
+			if transport.Body == nil {
+				t.Error("Expected Body to be present")
+			}
+			if !transport.WaitCalled {
+				t.Error("Expected wait to be called")
+			}
+		} else {
+			t.Fail()
+		}
+	}()
+
 	//ctx := context.TODO()
 	handler := client.LambdaWrapper(func() {
 		panic(err)
@@ -293,17 +318,41 @@ func TestLambdaWrapperWithError(t *testing.T) {
 	var args []reflect.Value
 	fn.Call(args)
 	//testCallLambdaHandler(handler)
+}
 
-	if transport, ok := client.Transport.(*TestTransport); ok {
-		if transport.Body == nil {
-			t.Error("Expected Body to be present")
+func TestLambdaWrapperWithErrorAndMultipleReturnValues(t *testing.T) {
+	client := testClient()
+	err := errors.New("bork")
+
+	defer func() {
+		recoveredError := recover()
+
+		if recoveredError != err {
+			if recoveredError == nil {
+				t.Error("Expected wrapper to bubble up the custom panic error")
+			} else {
+				t.Errorf("Unexpected panic %s", recoveredError)
+			}
 		}
-		if !transport.WaitCalled {
-			t.Error("Expected wait to be called")
+
+		if transport, ok := client.Transport.(*TestTransport); ok {
+			if transport.Body == nil {
+				t.Error("Expected Body to be present")
+			}
+			if !transport.WaitCalled {
+				t.Error("Expected wait to be called")
+			}
+		} else {
+			t.Fail()
 		}
-	} else {
-		t.Fail()
-	}
+	}()
+
+	handler := client.LambdaWrapper(func() (string, error) {
+		panic(err)
+	})
+	fn := reflect.ValueOf(handler)
+	var args []reflect.Value
+	fn.Call(args)
 }
 
 func TestLambdaWrapperWithContext(t *testing.T) {
@@ -387,6 +436,7 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 	errorIfEqual(fingerprint, client.Fingerprint(), t)
 	errorIfEqual(captureIP, client.CaptureIp(), t)
 	errorIfEqual(scrubHeaders, client.ScrubHeaders(), t)
+	errorIfEqual(scrubHeaders, client.Telemetry.Network.ScrubHeaders, t)
 	errorIfEqual(scrubFields, client.ScrubFields(), t)
 
 	if client.Fingerprint() {
@@ -415,6 +465,7 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 	client.SetScrubHeaders(scrubHeaders)
 	client.SetScrubFields(scrubFields)
 	client.SetCaptureIp(captureIP)
+	client.SetTelemetry()
 
 	client.SetEnabled(true)
 
@@ -428,6 +479,7 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 	errorIfNotEqual(fingerprint, client.Fingerprint(), t)
 	errorIfNotEqual(captureIP, client.CaptureIp(), t)
 	errorIfNotEqual(scrubHeaders, client.ScrubHeaders(), t)
+	errorIfNotEqual(scrubHeaders, client.Telemetry.Network.ScrubHeaders, t)
 	errorIfNotEqual(scrubFields, client.ScrubFields(), t)
 
 	if !client.Fingerprint() {
@@ -626,6 +678,23 @@ func TestEnabled(t *testing.T) {
 		}
 	} else {
 		t.Fail()
+	}
+}
+
+func TestCaptureTelemetryEvent(t *testing.T) {
+	client := testClient()
+	data := map[string]interface{}{"message": "some message"}
+	client.CaptureTelemetryEvent("eventType", "eventLevel", data)
+	items := client.Telemetry.GetQueueItems()
+	if len(items) < 1 {
+		t.Error("Queue should not be empty")
+	}
+	item := items[0].(map[string]interface{})
+	delete(item, "timestamp_ms")
+	expectedData := map[string]interface{}{"body": data, "type": "eventType", "level": "eventLevel", "source": "client"}
+	eq := reflect.DeepEqual(item, expectedData)
+	if !eq {
+		t.Error("Maps are different")
 	}
 }
 

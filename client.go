@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"regexp"
 	"runtime"
+	"time"
 )
 
 // A Client can be used to interact with Rollbar via the configured Transport.
@@ -23,6 +24,7 @@ type Client struct {
 	// Transport used to send data to the Rollbar API. By default an asynchronous
 	// implementation of the Transport interface is used.
 	Transport     Transport
+	Telemetry     *Telemetry
 	configuration configuration
 	diagnostic    diagnostic
 }
@@ -40,6 +42,7 @@ func NewAsync(token, environment, codeVersion, serverHost, serverRoot string) *C
 	diagnostic := createDiagnostic()
 	return &Client{
 		Transport:     transport,
+		Telemetry:     NewTelemetry(nil),
 		configuration: configuration,
 		diagnostic:    diagnostic,
 	}
@@ -52,9 +55,27 @@ func NewSync(token, environment, codeVersion, serverHost, serverRoot string) *Cl
 	diagnostic := createDiagnostic()
 	return &Client{
 		Transport:     transport,
+		Telemetry:     NewTelemetry(nil),
 		configuration: configuration,
 		diagnostic:    diagnostic,
 	}
+}
+
+// CaptureTelemetryEvent sets the user-specified telemetry event
+func (c *Client) CaptureTelemetryEvent(eventType, eventlevel string, eventData map[string]interface{}) {
+	data := map[string]interface{}{}
+	data["body"] = eventData
+	data["type"] = eventType
+	data["level"] = eventlevel
+	data["source"] = "client"
+	data["timestamp_ms"] = time.Now().UnixNano() / int64(time.Millisecond)
+
+	c.Telemetry.Queue.Push(data)
+}
+
+// SetTelemetry sets the telemetry
+func (c *Client) SetTelemetry(options ...OptionFunc) {
+	c.Telemetry = NewTelemetry(c.configuration.scrubHeaders, options...)
 }
 
 // SetEnabled sets whether or not Rollbar is enabled.
@@ -76,39 +97,33 @@ func (c *Client) SetToken(token string) {
 
 // SetEnvironment sets the environment under which all errors and messages will be submitted.
 func (c *Client) SetEnvironment(environment string) {
-	c.diagnostic.configuredOptions["environment"] = environment
 	c.configuration.environment = environment
 }
 
 // SetEndpoint sets the endpoint to post items to. This also configures the underlying Transport.
 func (c *Client) SetEndpoint(endpoint string) {
-	c.diagnostic.configuredOptions["endpoint"] = endpoint
 	c.configuration.endpoint = endpoint
 	c.Transport.SetEndpoint(endpoint)
 }
 
 // SetPlatform sets the platform to be reported for all items.
 func (c *Client) SetPlatform(platform string) {
-	c.diagnostic.configuredOptions["platform"] = platform
 	c.configuration.platform = platform
 }
 
 // SetCodeVersion sets the string describing the running code version on the server.
 func (c *Client) SetCodeVersion(codeVersion string) {
-	c.diagnostic.configuredOptions["codeVersion"] = codeVersion
 	c.configuration.codeVersion = codeVersion
 }
 
 // SetServerHost sets the hostname sent with each item. This value will be indexed.
 func (c *Client) SetServerHost(serverHost string) {
-	c.diagnostic.configuredOptions["serverHost"] = serverHost
 	c.configuration.serverHost = serverHost
 }
 
 // SetServerRoot sets the path to the application code root, not including the final slash.
 // This is used to collapse non-project code when displaying tracebacks.
 func (c *Client) SetServerRoot(serverRoot string) {
-	c.diagnostic.configuredOptions["serverRoot"] = serverRoot
 	c.configuration.serverRoot = serverRoot
 }
 
@@ -127,11 +142,6 @@ func (c *Client) SetPerson(id, username, email string) {
 		Email:    email,
 	}
 
-	c.diagnostic.configuredOptions["person"] = map[string]string{
-		"Id":       id,
-		"Username": username,
-		"Email":    email,
-	}
 	c.configuration.person = person
 }
 
@@ -140,14 +150,12 @@ func (c *Client) SetPerson(id, username, email string) {
 func (c *Client) ClearPerson() {
 	person := Person{}
 
-	c.diagnostic.configuredOptions["person"] = map[string]string{}
 	c.configuration.person = person
 }
 
 // SetFingerprint sets whether or not to use a custom client-side fingerprint. The default value is
 // false.
 func (c *Client) SetFingerprint(fingerprint bool) {
-	c.diagnostic.configuredOptions["fingerprint"] = fingerprint
 	c.configuration.fingerprint = fingerprint
 }
 
@@ -159,14 +167,13 @@ func (c *Client) SetLogger(logger ClientLogger) {
 // SetScrubHeaders sets the regular expression used to match headers for scrubbing.
 // The default value is regexp.MustCompile("Authorization")
 func (c *Client) SetScrubHeaders(headers *regexp.Regexp) {
-	c.diagnostic.configuredOptions["scrubHeaders"] = headers
 	c.configuration.scrubHeaders = headers
+	c.Telemetry.Network.ScrubHeaders = headers
 }
 
 // SetScrubFields sets the regular expression to match keys in the item payload for scrubbing.
 // The default vlaue is regexp.MustCompile("password|secret|token"),
 func (c *Client) SetScrubFields(fields *regexp.Regexp) {
-	c.diagnostic.configuredOptions["scrubFields"] = fields
 	c.configuration.scrubFields = fields
 }
 
@@ -182,7 +189,6 @@ func (c *Client) SetScrubFields(fields *regexp.Regexp) {
 // make before it is finally sent. Be careful with the modifications you make as they could lead to
 // the payload being malformed from the perspective of the API.
 func (c *Client) SetTransform(transform func(map[string]interface{})) {
-	c.diagnostic.configuredOptions["transform"] = functionToString(transform)
 	c.configuration.transform = transform
 }
 
@@ -194,7 +200,6 @@ func (c *Client) SetTransform(transform func(map[string]interface{})) {
 // In order to preserve the default unwrapping behavior, callers of SetUnwrapper may wish to include
 // a call to DefaultUnwrapper in their custom unwrapper function. See the example on the SetUnwrapper function.
 func (c *Client) SetUnwrapper(unwrapper UnwrapperFunc) {
-	c.diagnostic.configuredOptions["unwrapper"] = functionToString(unwrapper)
 	c.configuration.unwrapper = unwrapper
 }
 
@@ -207,7 +212,6 @@ func (c *Client) SetUnwrapper(unwrapper UnwrapperFunc) {
 // to include a call to DefaultStackTracer in their custom tracing function. See the example
 // on the SetStackTracer function.
 func (c *Client) SetStackTracer(stackTracer StackTracerFunc) {
-	c.diagnostic.configuredOptions["stackTracer"] = functionToString(stackTracer)
 	c.configuration.stackTracer = stackTracer
 }
 
@@ -218,7 +222,6 @@ func (c *Client) SetStackTracer(stackTracer StackTracerFunc) {
 // this function is called with the result of calling Error(), otherwise
 // the string representation of the value is passed to this function.
 func (c *Client) SetCheckIgnore(checkIgnore func(string) bool) {
-	c.diagnostic.configuredOptions["checkIgnore"] = functionToString(checkIgnore)
 	c.configuration.checkIgnore = checkIgnore
 }
 
@@ -227,7 +230,6 @@ func (c *Client) SetCheckIgnore(checkIgnore func(string) bool) {
 // CaptureIpAnonymize means apply a pseudo-anonymization.
 // CaptureIpNone means do not capture anything.
 func (c *Client) SetCaptureIp(captureIp captureIp) {
-	c.diagnostic.configuredOptions["captureIp"] = captureIp
 	c.configuration.captureIp = captureIp
 }
 
@@ -381,7 +383,8 @@ func (c *Client) ErrorWithStackSkipWithExtrasAndContext(ctx context.Context, lev
 		return
 	}
 	body := c.buildBody(ctx, level, err.Error(), extras)
-	addErrorToBody(c.configuration, body, err, skip)
+	telemetry := c.Telemetry.GetQueueItems()
+	addErrorToBody(c.configuration, body, err, skip, telemetry)
 	c.push(body)
 }
 
@@ -409,7 +412,8 @@ func (c *Client) RequestErrorWithStackSkipWithExtrasAndContext(ctx context.Conte
 		return
 	}
 	body := c.buildBody(ctx, level, err.Error(), extras)
-	data := addErrorToBody(c.configuration, body, err, skip)
+	telemetry := c.Telemetry.GetQueueItems()
+	data := addErrorToBody(c.configuration, body, err, skip, telemetry)
 	data["request"] = c.requestDetails(r)
 	c.push(body)
 }
@@ -435,7 +439,10 @@ func (c *Client) MessageWithExtrasAndContext(ctx context.Context, level string, 
 	}
 	body := c.buildBody(ctx, level, msg, extras)
 	data := body["data"].(map[string]interface{})
-	data["body"] = messageBody(msg)
+	dataBody := messageBody(msg)
+	telemetry := c.Telemetry.GetQueueItems()
+	dataBody["telemetry"] = telemetry
+	data["body"] = dataBody
 	c.push(body)
 }
 
@@ -460,7 +467,10 @@ func (c *Client) RequestMessageWithExtrasAndContext(ctx context.Context, level s
 	}
 	body := c.buildBody(ctx, level, msg, extras)
 	data := body["data"].(map[string]interface{})
-	data["body"] = messageBody(msg)
+	dataBody := messageBody(msg)
+	telemetry := c.Telemetry.GetQueueItems()
+	dataBody["telemetry"] = telemetry
+	data["body"] = dataBody
 	data["request"] = c.requestDetails(r)
 	c.push(body)
 }
@@ -557,7 +567,10 @@ func (c *Client) LambdaWrapper(handlerFunc interface{}) interface{} {
 	handler := func(args []reflect.Value) []reflect.Value {
 		defer func() {
 			err := recover()
-			c.LogPanic(err, true)
+			if err != nil {
+				c.LogPanic(err, true)
+				panic(err)
+			}
 		}()
 
 		ret := handlerValue.Call(args)
@@ -686,14 +699,12 @@ func createConfiguration(token, environment, codeVersion, serverHost, serverRoot
 }
 
 type diagnostic struct {
-	languageVersion   string
-	configuredOptions map[string]interface{}
+	languageVersion string
 }
 
 func createDiagnostic() diagnostic {
 	return diagnostic{
-		languageVersion:   runtime.Version(),
-		configuredOptions: map[string]interface{}{},
+		languageVersion: runtime.Version(),
 	}
 }
 
@@ -726,8 +737,4 @@ func isTemporary(err error) bool {
 		return err.Timeout()
 	}
 	return false
-}
-
-func functionToString(function interface{}) string {
-	return runtime.FuncForPC(reflect.ValueOf(function).Pointer()).Name()
 }
