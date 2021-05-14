@@ -13,6 +13,8 @@ type AsyncTransport struct {
 	Buffer      int
 	bodyChannel chan payload
 	waitGroup   sync.WaitGroup
+	lock        sync.RWMutex
+	closed      bool
 }
 
 type payload struct {
@@ -41,18 +43,27 @@ func NewAsyncTransport(token string, endpoint string, buffer int) *AsyncTranspor
 			if err != nil {
 				if canRetry && p.retriesLeft > 0 {
 					p.retriesLeft -= 1
-					select {
-					case transport.bodyChannel <- p:
-					default:
-						// This can happen if the bodyChannel had an item added to it from another
-						// thread while we are processing such that the channel is now full. If we try
-						// to send the payload back to the channel without this select statement we
-						// could deadlock. Instead we consider this a retry failure.
+					transport.lock.RLock()
+					if transport.closed {
 						if transport.PrintPayloadOnError {
 							writePayloadToStderr(transport.Logger, p.body)
 						}
 						transport.waitGroup.Done()
+					} else {
+						select {
+						case transport.bodyChannel <- p:
+						default:
+							// This can happen if the bodyChannel had an item added to it from another
+							// thread while we are processing such that the channel is now full. If we try
+							// to send the payload back to the channel without this select statement we
+							// could deadlock. Instead we consider this a retry failure.
+							if transport.PrintPayloadOnError {
+								writePayloadToStderr(transport.Logger, p.body)
+							}
+							transport.waitGroup.Done()
+						}
 					}
+					transport.lock.RUnlock()
 				} else {
 					if transport.PrintPayloadOnError {
 						writePayloadToStderr(transport.Logger, p.body)
@@ -70,7 +81,10 @@ func NewAsyncTransport(token string, endpoint string, buffer int) *AsyncTranspor
 // Send the body to Rollbar if the channel is not currently full.
 // Returns ErrBufferFull if the underlying channel is full.
 func (t *AsyncTransport) Send(body map[string]interface{}) error {
-	if len(t.bodyChannel) < t.Buffer {
+	t.lock.RLock()
+	defer t.lock.RUnlock()
+
+	if !t.closed && len(t.bodyChannel) < t.Buffer {
 		t.waitGroup.Add(1)
 		p := payload{
 			body:        body,
@@ -95,7 +109,10 @@ func (t *AsyncTransport) Wait() {
 
 // Close is an alias for Wait for the asynchronous transport
 func (t *AsyncTransport) Close() error {
+	t.lock.Lock()
+	t.closed = true
 	close(t.bodyChannel)
+	t.lock.Unlock()
 	t.Wait()
 	return nil
 }
