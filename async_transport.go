@@ -43,7 +43,7 @@ func NewAsyncTransport(token string, endpoint string, buffer int) *AsyncTranspor
 	go func() {
 		for p := range transport.bodyChannel {
 			elapsedTime := time.Now().Sub(transport.startTime).Seconds()
-			if elapsedTime < 0 || elapsedTime >= 6 {
+			if elapsedTime < 0 || elapsedTime >= 60 {
 				transport.startTime = time.Now()
 				transport.perMinCounter = 0
 			}

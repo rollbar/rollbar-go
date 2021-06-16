@@ -37,7 +37,7 @@ func (t *SyncTransport) Send(body map[string]interface{}) error {
 
 func (t *SyncTransport) doSend(body map[string]interface{}, retriesLeft int) error {
 	elapsedTime := time.Now().Sub(t.startTime).Seconds()
-	if elapsedTime < 0 || elapsedTime >= 6 {
+	if elapsedTime < 0 || elapsedTime >= 60 {
 		t.startTime = time.Now()
 		t.perMinCounter = 0
 	}
