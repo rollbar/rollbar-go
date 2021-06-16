@@ -240,6 +240,11 @@ func (c *Client) SetRetryAttempts(retryAttempts int) {
 	c.Transport.SetRetryAttempts(retryAttempts)
 }
 
+// SetItemsPerMinute sets the max number of items to send in a given minute
+func (c *Client) SetItemsPerMinute(itemsPerMinute int) {
+	c.Transport.SetItemsPerMinute(itemsPerMinute)
+}
+
 // SetPrintPayloadOnError sets whether or not to output the payload to the set logger or to
 // stderr if an error occurs during transport to the Rollbar API. For example, if you hit
 // your rate limit and we run out of retry attempts, then if this is true we will output the

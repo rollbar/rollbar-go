@@ -1,7 +1,9 @@
 package rollbar
 
 import (
+	"fmt"
 	"sync"
+	"time"
 )
 
 // AsyncTransport is a concrete implementation of the Transport type which communicates with the
@@ -10,9 +12,11 @@ type AsyncTransport struct {
 	baseTransport
 	// Buffer is the size of the channel used for queueing asynchronous payloads for sending to
 	// Rollbar.
-	Buffer      int
-	bodyChannel chan payload
-	waitGroup   sync.WaitGroup
+	Buffer        int
+	bodyChannel   chan payload
+	waitGroup     sync.WaitGroup
+	startTime     time.Time
+	perMinCounter int
 }
 
 type payload struct {
@@ -30,6 +34,7 @@ func NewAsyncTransport(token string, endpoint string, buffer int) *AsyncTranspor
 			Endpoint:            endpoint,
 			RetryAttempts:       DefaultRetryAttempts,
 			PrintPayloadOnError: true,
+			ItemsPerMinute:      0,
 		},
 		bodyChannel: make(chan payload, buffer),
 		Buffer:      buffer,
@@ -37,34 +42,52 @@ func NewAsyncTransport(token string, endpoint string, buffer int) *AsyncTranspor
 
 	go func() {
 		for p := range transport.bodyChannel {
-			canRetry, err := transport.post(p.body)
-			if err != nil {
-				if canRetry && p.retriesLeft > 0 {
-					p.retriesLeft -= 1
-					select {
-					case transport.bodyChannel <- p:
-					default:
-						// This can happen if the bodyChannel had an item added to it from another
-						// thread while we are processing such that the channel is now full. If we try
-						// to send the payload back to the channel without this select statement we
-						// could deadlock. Instead we consider this a retry failure.
+			elapsedTime := time.Now().Sub(transport.startTime).Seconds()
+			if elapsedTime < 0 || elapsedTime >= 6 {
+				transport.startTime = time.Now()
+				transport.perMinCounter = 0
+			}
+			if transport.shouldSend() {
+				canRetry, err := transport.post(p.body)
+				if err != nil {
+					if canRetry && p.retriesLeft > 0 {
+						p.retriesLeft -= 1
+						select {
+						case transport.bodyChannel <- p:
+						default:
+							// This can happen if the bodyChannel had an item added to it from another
+							// thread while we are processing such that the channel is now full. If we try
+							// to send the payload back to the channel without this select statement we
+							// could deadlock. Instead we consider this a retry failure.
+							if transport.PrintPayloadOnError {
+								writePayloadToStderr(transport.Logger, p.body)
+							}
+							transport.waitGroup.Done()
+						}
+					} else {
 						if transport.PrintPayloadOnError {
 							writePayloadToStderr(transport.Logger, p.body)
 						}
 						transport.waitGroup.Done()
 					}
 				} else {
-					if transport.PrintPayloadOnError {
-						writePayloadToStderr(transport.Logger, p.body)
-					}
 					transport.waitGroup.Done()
+					transport.perMinCounter++
 				}
-			} else {
-				transport.waitGroup.Done()
 			}
 		}
 	}()
 	return transport
+}
+
+func (t *AsyncTransport) shouldSend() bool {
+	if t.ItemsPerMinute > 0 && t.perMinCounter >= t.ItemsPerMinute {
+		rollbarError(t.Logger, fmt.Sprintf("item per minute limit reached: %d occurences,"+
+			"ignoring errors until timeout", t.perMinCounter))
+		t.waitGroup.Done()
+		return false
+	}
+	return true
 }
 
 // Send the body to Rollbar if the channel is not currently full.
