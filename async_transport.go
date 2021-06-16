@@ -82,7 +82,7 @@ func NewAsyncTransport(token string, endpoint string, buffer int) *AsyncTranspor
 
 func (t *AsyncTransport) shouldSend() bool {
 	if t.ItemsPerMinute > 0 && t.perMinCounter >= t.ItemsPerMinute {
-		rollbarError(t.Logger, fmt.Sprintf("item per minute limit reached: %d occurences,"+
+		rollbarError(t.Logger, fmt.Sprintf("item per minute limit reached: %d occurences, "+
 			"ignoring errors until timeout", t.perMinCounter))
 		t.waitGroup.Done()
 		return false

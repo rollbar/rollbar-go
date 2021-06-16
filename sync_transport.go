@@ -60,7 +60,7 @@ func (t *SyncTransport) doSend(body map[string]interface{}, retriesLeft int) err
 
 func (t *SyncTransport) shouldSend() bool {
 	if t.ItemsPerMinute > 0 && t.perMinCounter >= t.ItemsPerMinute {
-		rollbarError(t.Logger, fmt.Sprintf("item per minute limit reached: %d occurences,"+
+		rollbarError(t.Logger, fmt.Sprintf("item per minute limit reached: %d occurences, "+
 			"ignoring errors until timeout", t.perMinCounter))
 		return false
 	}
