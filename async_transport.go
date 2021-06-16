@@ -1,7 +1,6 @@
 package rollbar
 
 import (
-	"fmt"
 	"sync"
 	"time"
 )
@@ -74,20 +73,12 @@ func NewAsyncTransport(token string, endpoint string, buffer int) *AsyncTranspor
 					transport.waitGroup.Done()
 					transport.perMinCounter++
 				}
+			} else {
+				transport.waitGroup.Done()
 			}
 		}
 	}()
 	return transport
-}
-
-func (t *AsyncTransport) shouldSend() bool {
-	if t.ItemsPerMinute > 0 && t.perMinCounter >= t.ItemsPerMinute {
-		rollbarError(t.Logger, fmt.Sprintf("item per minute limit reached: %d occurences, "+
-			"ignoring errors until timeout", t.perMinCounter))
-		t.waitGroup.Done()
-		return false
-	}
-	return true
 }
 
 // Send the body to Rollbar if the channel is not currently full.

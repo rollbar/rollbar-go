@@ -1,7 +1,6 @@
 package rollbar
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -56,15 +55,6 @@ func (t *SyncTransport) doSend(body map[string]interface{}, retriesLeft int) err
 		}
 	}
 	return nil
-}
-
-func (t *SyncTransport) shouldSend() bool {
-	if t.ItemsPerMinute > 0 && t.perMinCounter >= t.ItemsPerMinute {
-		rollbarError(t.Logger, fmt.Sprintf("item per minute limit reached: %d occurences, "+
-			"ignoring errors until timeout", t.perMinCounter))
-		return false
-	}
-	return true
 }
 
 // Wait is a no-op for the synchronous transport.

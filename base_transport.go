@@ -3,6 +3,7 @@ package rollbar
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -116,4 +117,13 @@ func (t *baseTransport) post(body map[string]interface{}) (bool, error) {
 	}
 
 	return false, nil
+}
+
+func (t *baseTransport) shouldSend() bool {
+	if t.ItemsPerMinute > 0 && t.perMinCounter >= t.ItemsPerMinute {
+		rollbarError(t.Logger, fmt.Sprintf("item per minute limit reached: %d occurences, "+
+			"ignoring errors until timeout", t.perMinCounter))
+		return false
+	}
+	return true
 }
