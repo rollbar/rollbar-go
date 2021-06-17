@@ -1,13 +1,12 @@
-package rollbar_test
+package rollbar
 
 import (
-	"github.com/rollbar/rollbar-go"
 	"testing"
 )
 
 func TestAsyncTransportSend(t *testing.T) {
-	transport := rollbar.NewAsyncTransport("", "", 1)
-	transport.SetLogger(&rollbar.SilentClientLogger{})
+	transport := NewAsyncTransport("", "", 1)
+	transport.SetLogger(&SilentClientLogger{})
 	body := map[string]interface{}{
 		"hello": "world",
 	}
@@ -19,8 +18,8 @@ func TestAsyncTransportSend(t *testing.T) {
 }
 
 func TestAsyncTransportSendFull(t *testing.T) {
-	transport := rollbar.NewAsyncTransport("", "", 1)
-	transport.SetLogger(&rollbar.SilentClientLogger{})
+	transport := NewAsyncTransport("", "", 1)
+	transport.SetLogger(&SilentClientLogger{})
 	body := map[string]interface{}{
 		"hello": "world",
 	}
@@ -31,11 +30,14 @@ func TestAsyncTransportSendFull(t *testing.T) {
 		t.Error("Expected to receive ErrBufferFull")
 	}
 	transport.Wait()
+	if transport.perMinCounter != 1 {
+		t.Error("shouldSend check failed")
+	}
 }
 
 func TestAsyncTransportClose(t *testing.T) {
-	transport := rollbar.NewAsyncTransport("", "", 1)
-	transport.SetLogger(&rollbar.SilentClientLogger{})
+	transport := NewAsyncTransport("", "", 1)
+	transport.SetLogger(&SilentClientLogger{})
 	result := transport.Close()
 	if result != nil {
 		t.Error("Close returned an unexpected error:", result)
@@ -43,8 +45,8 @@ func TestAsyncTransportClose(t *testing.T) {
 }
 
 func TestAsyncTransportSetToken(t *testing.T) {
-	transport := rollbar.NewAsyncTransport("", "", 1)
-	transport.SetLogger(&rollbar.SilentClientLogger{})
+	transport := NewAsyncTransport("", "", 1)
+	transport.SetLogger(&SilentClientLogger{})
 	token := "abc"
 	transport.SetToken(token)
 	if transport.Token != token {
@@ -53,11 +55,34 @@ func TestAsyncTransportSetToken(t *testing.T) {
 }
 
 func TestAsyncTransportSetEndpoint(t *testing.T) {
-	transport := rollbar.NewAsyncTransport("", "", 1)
-	transport.SetLogger(&rollbar.SilentClientLogger{})
+	transport := NewAsyncTransport("", "", 1)
+	transport.SetLogger(&SilentClientLogger{})
 	endpoint := "https://fake.com"
 	transport.SetEndpoint(endpoint)
 	if transport.Endpoint != endpoint {
 		t.Error("SetEndpoint failed")
+	}
+}
+
+func TestAsyncTransportNotSend(t *testing.T) {
+	transport := NewAsyncTransport("", "", 2)
+	transport.SetLogger(&SilentClientLogger{})
+	transport.SetItemsPerMinute(1)
+	if transport.ItemsPerMinute != 1 {
+		t.Error("SetItemsPerMinute failed")
+	}
+
+	body := map[string]interface{}{
+		"hello": "world",
+	}
+
+	transport.Send(body)
+	result := transport.Send(body)
+	if result != nil {
+		t.Error("Send returned an unexpected error:", result)
+	}
+	transport.Wait()
+	if transport.perMinCounter != 1 {
+		t.Error("shouldSend check failed")
 	}
 }

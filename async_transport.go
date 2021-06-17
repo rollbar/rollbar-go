@@ -11,11 +11,9 @@ type AsyncTransport struct {
 	baseTransport
 	// Buffer is the size of the channel used for queueing asynchronous payloads for sending to
 	// Rollbar.
-	Buffer        int
-	bodyChannel   chan payload
-	waitGroup     sync.WaitGroup
-	startTime     time.Time
-	perMinCounter int
+	Buffer      int
+	bodyChannel chan payload
+	waitGroup   sync.WaitGroup
 }
 
 type payload struct {

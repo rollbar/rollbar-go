@@ -242,6 +242,7 @@ func (c *Client) SetRetryAttempts(retryAttempts int) {
 
 // SetItemsPerMinute sets the max number of items to send in a given minute
 func (c *Client) SetItemsPerMinute(itemsPerMinute int) {
+	c.configuration.itemsPerMinute = itemsPerMinute
 	c.Transport.SetItemsPerMinute(itemsPerMinute)
 }
 
@@ -261,6 +262,11 @@ func (c *Client) SetHTTPClient(httpClient *http.Client) {
 // Token is the currently set Rollbar access token.
 func (c *Client) Token() string {
 	return c.configuration.token
+}
+
+// ItemsPerMinute is the currently set Rollbar items per minute
+func (c *Client) ItemsPerMinute() int {
+	return c.configuration.itemsPerMinute
 }
 
 // Environment is the currently set environment underwhich all errors and
@@ -657,24 +663,25 @@ const (
 )
 
 type configuration struct {
-	enabled      bool
-	token        string
-	environment  string
-	platform     string
-	codeVersion  string
-	serverHost   string
-	serverRoot   string
-	endpoint     string
-	custom       map[string]interface{}
-	fingerprint  bool
-	scrubHeaders *regexp.Regexp
-	scrubFields  *regexp.Regexp
-	checkIgnore  func(string) bool
-	transform    func(map[string]interface{})
-	unwrapper    UnwrapperFunc
-	stackTracer  StackTracerFunc
-	person       Person
-	captureIp    captureIp
+	enabled        bool
+	token          string
+	environment    string
+	platform       string
+	codeVersion    string
+	serverHost     string
+	serverRoot     string
+	endpoint       string
+	custom         map[string]interface{}
+	fingerprint    bool
+	scrubHeaders   *regexp.Regexp
+	scrubFields    *regexp.Regexp
+	checkIgnore    func(string) bool
+	transform      func(map[string]interface{})
+	unwrapper      UnwrapperFunc
+	stackTracer    StackTracerFunc
+	person         Person
+	captureIp      captureIp
+	itemsPerMinute int
 }
 
 func createConfiguration(token, environment, codeVersion, serverHost, serverRoot string) configuration {
@@ -683,23 +690,24 @@ func createConfiguration(token, environment, codeVersion, serverHost, serverRoot
 		hostname, _ = os.Hostname()
 	}
 	return configuration{
-		enabled:      true,
-		token:        token,
-		environment:  environment,
-		platform:     runtime.GOOS,
-		endpoint:     "https://api.rollbar.com/api/1/item/",
-		scrubHeaders: regexp.MustCompile("Authorization"),
-		scrubFields:  regexp.MustCompile("password|secret|token"),
-		codeVersion:  codeVersion,
-		serverHost:   hostname,
-		serverRoot:   serverRoot,
-		fingerprint:  false,
-		checkIgnore:  func(_s string) bool { return false },
-		transform:    func(_d map[string]interface{}) {},
-		unwrapper:    DefaultUnwrapper,
-		stackTracer:  DefaultStackTracer,
-		person:       Person{},
-		captureIp:    CaptureIpFull,
+		enabled:        true,
+		token:          token,
+		environment:    environment,
+		platform:       runtime.GOOS,
+		endpoint:       "https://api.rollbar.com/api/1/item/",
+		scrubHeaders:   regexp.MustCompile("Authorization"),
+		scrubFields:    regexp.MustCompile("password|secret|token"),
+		codeVersion:    codeVersion,
+		serverHost:     hostname,
+		serverRoot:     serverRoot,
+		fingerprint:    false,
+		checkIgnore:    func(_s string) bool { return false },
+		transform:      func(_d map[string]interface{}) {},
+		unwrapper:      DefaultUnwrapper,
+		stackTracer:    DefaultStackTracer,
+		person:         Person{},
+		captureIp:      CaptureIpFull,
+		itemsPerMinute: 0,
 	}
 }
 

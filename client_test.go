@@ -426,6 +426,7 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 	scrubHeaders := regexp.MustCompile("Foo")
 	scrubFields := regexp.MustCompile("squirrel|doggo")
 	captureIP := rollbar.CaptureIpNone
+	itemsPerMinute := 10
 
 	errorIfEqual(token, client.Token(), t)
 	errorIfEqual(environment, client.Environment(), t)
@@ -439,6 +440,7 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 	errorIfEqual(scrubHeaders, client.ScrubHeaders(), t)
 	errorIfEqual(scrubHeaders, client.Telemetry.Network.ScrubHeaders, t)
 	errorIfEqual(scrubFields, client.ScrubFields(), t)
+	errorIfEqual(itemsPerMinute, client.ItemsPerMinute(), t)
 
 	if client.Fingerprint() {
 		t.Error("expected fingerprint to default to false")
@@ -469,6 +471,7 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 	client.SetTelemetry()
 
 	client.SetEnabled(true)
+	client.SetItemsPerMinute(itemsPerMinute)
 
 	errorIfNotEqual(token, client.Token(), t)
 	errorIfNotEqual(environment, client.Environment(), t)
@@ -482,6 +485,7 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 	errorIfNotEqual(scrubHeaders, client.ScrubHeaders(), t)
 	errorIfNotEqual(scrubHeaders, client.Telemetry.Network.ScrubHeaders, t)
 	errorIfNotEqual(scrubFields, client.ScrubFields(), t)
+	errorIfNotEqual(itemsPerMinute, client.ItemsPerMinute(), t)
 
 	if !client.Fingerprint() {
 		t.Error("expected fingerprint to default to false")
@@ -514,6 +518,7 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 		errorIfNotEqual(fingerprint, configuredOptions["fingerprint"].(bool), t)
 		errorIfNotEqual(scrubHeaders, configuredOptions["scrubHeaders"].(*regexp.Regexp), t)
 		errorIfNotEqual(scrubFields, configuredOptions["scrubFields"].(*regexp.Regexp), t)
+		errorIfNotEqual(scrubFields, configuredOptions["itemsPerMinute"].(int), t)
 
 	} else {
 		t.Fail()
