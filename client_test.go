@@ -518,6 +518,7 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 		errorIfNotEqual(fingerprint, configuredOptions["fingerprint"].(bool), t)
 		errorIfNotEqual(scrubHeaders, configuredOptions["scrubHeaders"].(*regexp.Regexp), t)
 		errorIfNotEqual(scrubFields, configuredOptions["scrubFields"].(*regexp.Regexp), t)
+		errorIfNotEqual(itemsPerMinute, configuredOptions["itemsPerMinute"].(int), t)
 	} else {
 		t.Fail()
 	}
