@@ -40,6 +40,8 @@ type Transport interface {
 	SetPrintPayloadOnError(printPayloadOnError bool)
 	// Sets custom http client. http.DefaultClient is used by default
 	SetHTTPClient(httpClient *http.Client)
+	// SetItemsPerMinute sets the max number of items to send in a given minute
+	SetItemsPerMinute(itemsPerMinute int)
 }
 
 // ClientLogger is the interface used by the rollbar Client/Transport to report problems.

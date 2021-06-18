@@ -1,5 +1,9 @@
 package rollbar
 
+import (
+	"time"
+)
+
 // SyncTransport is a concrete implementation of the Transport type which communicates with the
 // Rollbar API synchronously.
 type SyncTransport struct {
@@ -15,6 +19,9 @@ func NewSyncTransport(token, endpoint string) *SyncTransport {
 			Endpoint:            endpoint,
 			RetryAttempts:       DefaultRetryAttempts,
 			PrintPayloadOnError: true,
+			ItemsPerMinute:      0,
+			perMinCounter:       0,
+			startTime:           time.Now(),
 		},
 	}
 }
@@ -28,15 +35,24 @@ func (t *SyncTransport) Send(body map[string]interface{}) error {
 }
 
 func (t *SyncTransport) doSend(body map[string]interface{}, retriesLeft int) error {
-	canRetry, err := t.post(body)
-	if err != nil {
-		if !canRetry || retriesLeft <= 0 {
-			if t.PrintPayloadOnError {
-				writePayloadToStderr(t.Logger, body)
+	elapsedTime := time.Now().Sub(t.startTime).Seconds()
+	if elapsedTime < 0 || elapsedTime >= 60 {
+		t.startTime = time.Now()
+		t.perMinCounter = 0
+	}
+	if t.shouldSend() {
+		canRetry, err := t.post(body)
+		if err != nil {
+			if !canRetry || retriesLeft <= 0 {
+				if t.PrintPayloadOnError {
+					writePayloadToStderr(t.Logger, body)
+				}
+				return err
 			}
-			return err
+			return t.doSend(body, retriesLeft-1)
+		} else {
+			t.perMinCounter++
 		}
-		return t.doSend(body, retriesLeft-1)
 	}
 	return nil
 }

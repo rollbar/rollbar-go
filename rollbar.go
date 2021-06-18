@@ -128,6 +128,11 @@ func SetEndpoint(endpoint string) {
 	std.SetEndpoint(endpoint)
 }
 
+// SetItemsPerMinute sets the max number of items to send in a given minute
+func SetItemsPerMinute(itemsPerMinute int) {
+	std.SetItemsPerMinute(itemsPerMinute)
+}
+
 // SetPlatform sets the platform on the managed Client instance.
 // The platform is reported for all Rollbar items. The default is
 // the running operating system (darwin, freebsd, linux, etc.) but it can

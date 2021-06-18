@@ -3,9 +3,11 @@ package rollbar
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 type baseTransport struct {
@@ -24,8 +26,13 @@ type baseTransport struct {
 	// PrintPayloadOnError is whether or not to output the payload to the set logger or to stderr if
 	// an error occurs during transport to the Rollbar API.
 	PrintPayloadOnError bool
+	// ItemsPerMinute has the max number of items to send in a given minute
+	ItemsPerMinute int
 	// custom http client (http.DefaultClient used by default)
 	httpClient *http.Client
+
+	perMinCounter int
+	startTime     time.Time
 }
 
 // SetToken updates the token to use for future API requests.
@@ -36,6 +43,11 @@ func (t *baseTransport) SetToken(token string) {
 // SetEndpoint updates the API endpoint to send items to.
 func (t *baseTransport) SetEndpoint(endpoint string) {
 	t.Endpoint = endpoint
+}
+
+// SetItemsPerMinute sets the max number of items to send in a given minute
+func (t *baseTransport) SetItemsPerMinute(itemsPerMinute int) {
+	t.ItemsPerMinute = itemsPerMinute
 }
 
 // SetLogger updates the logger that this transport uses for reporting errors that occur while
@@ -105,4 +117,13 @@ func (t *baseTransport) post(body map[string]interface{}) (bool, error) {
 	}
 
 	return false, nil
+}
+
+func (t *baseTransport) shouldSend() bool {
+	if t.ItemsPerMinute > 0 && t.perMinCounter >= t.ItemsPerMinute {
+		rollbarError(t.Logger, fmt.Sprintf("item per minute limit reached: %d occurences, "+
+			"ignoring errors until timeout", t.perMinCounter))
+		return false
+	}
+	return true
 }
