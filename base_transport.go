@@ -83,6 +83,16 @@ func (t *baseTransport) getHTTPClient() *http.Client {
 	return http.DefaultClient
 }
 
+func (t *baseTransport) clientPost(body io.Reader) (resp *http.Response, err error) {
+	req, err := http.NewRequest("POST", t.Endpoint, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Rollbar-Access-Token", t.Token)
+	return t.getHTTPClient().Do(req)
+}
+
 // post returns an error which indicates the type of error that occurred while attempting to
 // send the body input to the endpoint given, or nil if no error occurred. If error is not nil, the
 // boolean return parameter indicates whether the error is temporary or not. If this boolean return
@@ -100,7 +110,7 @@ func (t *baseTransport) post(body map[string]interface{}) (bool, error) {
 		return false, err
 	}
 
-	resp, err := t.getHTTPClient().Post(t.Endpoint, "application/json", bytes.NewReader(jsonBody))
+	resp, err := t.clientPost(bytes.NewReader(jsonBody))
 	if err != nil {
 		rollbarError(t.Logger, "POST failed: %s", err.Error())
 		return isTemporary(err), err
