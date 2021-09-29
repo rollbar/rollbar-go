@@ -58,8 +58,7 @@ func buildBody(ctx context.Context, configuration configuration, diagnostic diag
 	}
 
 	return map[string]interface{}{
-		"access_token": configuration.token,
-		"data":         data,
+		"data": data,
 	}
 }
 
