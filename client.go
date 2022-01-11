@@ -634,6 +634,7 @@ type Person struct {
 	Id       string
 	Username string
 	Email    string
+	Extra    map[string]string
 }
 
 type pkey int
