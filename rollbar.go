@@ -538,7 +538,6 @@ func ErrorWithStackSkipWithExtrasAndContext(ctx context.Context, level string, e
 }
 
 // RequestErrorWithStackSkip asynchronously sends an error to Rollbar with the
-// RequestErrorWithStackSkip asynchronously sends an error to Rollbar with the
 // given severity level and a given number of stack trace frames skipped, in
 // addition to extra request-specific information.
 func RequestErrorWithStackSkip(level string, r *http.Request, err error, skip int) {
