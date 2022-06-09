@@ -146,7 +146,9 @@ func remoteIP(req *http.Request) string {
 		ips := strings.Split(forwardedIPs, ", ")
 		return ips[0]
 	}
-	return req.RemoteAddr
+	remoteAddr := req.RemoteAddr
+	spltRemoteAddr := strings.Split(remoteAddr, ":")
+	return spltRemoteAddr[0]
 }
 
 // filterFlatten filters sensitive information like passwords from being sent to Rollbar, and

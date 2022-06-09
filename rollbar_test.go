@@ -223,6 +223,9 @@ func TestErrorRequest(t *testing.T) {
 	if object["query_string"] != "param1=true" {
 		t.Errorf("wrong id, got %v", object["query_string"])
 	}
+	if object["user_ip"] != "1.1.1.1" {
+		t.Errorf("wrong user_ip, got %v", object["user_ip"])
+	}
 }
 
 func TestRequestForwardedIP(t *testing.T) {
