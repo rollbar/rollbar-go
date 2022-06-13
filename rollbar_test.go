@@ -209,7 +209,7 @@ func TestBuildBodyNoBaseCustom(t *testing.T) {
 func TestErrorRequest(t *testing.T) {
 	r, _ := http.NewRequest("GET", "http://foo.com/somethere?param1=true", nil)
 	r.RemoteAddr = "1.1.1.1:123"
-
+	SetCaptureIp(CaptureIpFull)
 	object := std.requestDetails(r)
 
 	if object["url"] != "http://foo.com/somethere?param1=true" {
