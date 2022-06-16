@@ -100,7 +100,7 @@ func CaptureTelemetryEvent(eventType, eventlevel string, eventData map[string]in
 	std.CaptureTelemetryEvent(eventType, eventlevel, eventData)
 }
 
-// SetEnabled sets whether or not the managed Client instance is enabled.
+// SetEnabled sets whether or not the managed client instance is enabled.
 // If this is true then this library works as normal.
 // If this is false then no calls will be made to the network.
 // One place where this is useful is for turning off reporting in tests.
@@ -108,20 +108,20 @@ func SetEnabled(enabled bool) {
 	std.SetEnabled(enabled)
 }
 
-// SetToken sets the token on the managed Client instance. The value is a Rollbar access token
+// SetToken sets the token on the managed client instance. The value is a Rollbar access token
 // with scope "post_server_item". It is required to set this value before any of the other
 // functions herein will be able to work properly.
 func SetToken(token string) {
 	std.SetToken(token)
 }
 
-// SetEnvironment sets the environment on the managed Client instance.
+// SetEnvironment sets the environment on the managed client instance.
 // All errors and messages will be submitted under this environment.
 func SetEnvironment(environment string) {
 	std.SetEnvironment(environment)
 }
 
-// SetEndpoint sets the endpoint on the managed Client instance.
+// SetEndpoint sets the endpoint on the managed client instance.
 // The endpoint to post items to.
 // The default value is https://api.rollbar.com/api/1/item/
 func SetEndpoint(endpoint string) {
@@ -133,7 +133,7 @@ func SetItemsPerMinute(itemsPerMinute int) {
 	std.SetItemsPerMinute(itemsPerMinute)
 }
 
-// SetPlatform sets the platform on the managed Client instance.
+// SetPlatform sets the platform on the managed client instance.
 // The platform is reported for all Rollbar items. The default is
 // the running operating system (darwin, freebsd, linux, etc.) but it can
 // also be application specific (client, heroku, etc.).
@@ -141,39 +141,39 @@ func SetPlatform(platform string) {
 	std.SetPlatform(platform)
 }
 
-// SetCodeVersion sets the code version on the managed Client instance.
+// SetCodeVersion sets the code version on the managed client instance.
 // The code version is a string describing the running code version on the server.
 func SetCodeVersion(codeVersion string) {
 	std.SetCodeVersion(codeVersion)
 }
 
-// SetServerHost sets the host value on the managed Client instance.
+// SetServerHost sets the host value on the managed client instance.
 // Server host is the hostname sent with all Rollbar items. The value will be indexed.
 func SetServerHost(serverHost string) {
 	std.SetServerHost(serverHost)
 }
 
-// SetServerRoot sets the code root value on the managed Client instance.
+// SetServerRoot sets the code root value on the managed client instance.
 // Path to the application code root, not including the final slash.
 // Used to collapse non-project code when displaying tracebacks.
 func SetServerRoot(serverRoot string) {
 	std.SetServerRoot(serverRoot)
 }
 
-// SetCustom sets custom data on the managed Client instance.
+// SetCustom sets custom data on the managed client instance.
 // The data set is any arbitrary metadata you want to send with every subsequently sent item.
 func SetCustom(custom map[string]interface{}) {
 	std.SetCustom(custom)
 }
 
-// SetScrubHeaders sets the headers to scrub on the managed Client instance.
+// SetScrubHeaders sets the headers to scrub on the managed client instance.
 // The value is a regular expression used to match headers for scrubbing.
 // The default value is regexp.MustCompile("Authorization").
 func SetScrubHeaders(headers *regexp.Regexp) {
 	std.SetScrubHeaders(headers)
 }
 
-// SetScrubFields sets the fields to scrub on the managed Client instance.
+// SetScrubFields sets the fields to scrub on the managed client instance.
 // The value is a regular expression to match keys in the item payload for scrubbing.
 // The default vlaue is regexp.MustCompile("password|secret|token").
 func SetScrubFields(fields *regexp.Regexp) {
@@ -195,7 +195,7 @@ func SetTransform(transform func(map[string]interface{})) {
 	std.SetTransform(transform)
 }
 
-// SetUnwrapper sets the UnwrapperFunc used by the managed Client instance. The unwrapper function
+// SetUnwrapper sets the UnwrapperFunc used by the managed client instance. The unwrapper function
 // is used to extract wrapped errors from enhanced error types. This feature can be used to add
 // support for custom error types that do not yet implement the Unwrap method specified in Go 1.13.
 // See the documentation of UnwrapperFunc for more details.
@@ -206,7 +206,7 @@ func SetUnwrapper(unwrapper UnwrapperFunc) {
 	std.SetUnwrapper(unwrapper)
 }
 
-// SetStackTracer sets the StackTracerFunc used by the managed Client instance. The stack tracer
+// SetStackTracer sets the StackTracerFunc used by the managed client instance. The stack tracer
 // function is used to extract the stack trace from enhanced error types. This feature can be used
 // to add support for custom error types that do not implement the Stacker interface.
 // See the documentation of StackTracerFunc for more details.
@@ -217,7 +217,7 @@ func SetStackTracer(stackTracer StackTracerFunc) {
 	std.SetStackTracer(stackTracer)
 }
 
-// SetCheckIgnore sets the checkIgnore function on the managed Client instance.
+// SetCheckIgnore sets the checkIgnore function on the managed client instance.
 // CheckIgnore is called during the recovery process of a panic that
 // occurred inside a function wrapped by Wrap or WrapAndWait.
 // Return true if you wish to ignore this panic, false if you wish to
@@ -240,7 +240,7 @@ func ClearPerson() {
 	std.ClearPerson()
 }
 
-// SetFingerprint sets whether or not to use custom client-side fingerprinting on the managed Client
+// SetFingerprint sets whether or not to use custom client-side fingerprinting on the managed client
 // instance. This custom fingerprinting is based on a CRC32 checksum. The alternative is to let
 // the server compute a fingerprint for each item. The default is false.
 func SetFingerprint(fingerprint bool) {
@@ -248,7 +248,7 @@ func SetFingerprint(fingerprint bool) {
 }
 
 // SetLogger sets an alternative logger to be used by the underlying transport layer on the managed
-// Client instance.
+// client instance.
 func SetLogger(logger ClientLogger) {
 	std.SetLogger(logger)
 }
@@ -284,17 +284,17 @@ func SetHTTPClient(httpClient *http.Client) {
 
 // -- Getters
 
-// Token returns the currently set Rollbar access token on the managed Client instance.
+// Token returns the currently set Rollbar access token on the managed client instance.
 func Token() string {
 	return std.Token()
 }
 
-// Environment is the environment currently set on the managed Client instance.
+// Environment is the environment currently set on the managed client instance.
 func Environment() string {
 	return std.Environment()
 }
 
-// Endpoint is the currently configured endpoint to send items on the managed Client instance.
+// Endpoint is the currently configured endpoint to send items on the managed client instance.
 func Endpoint() string {
 	return std.Endpoint()
 }
@@ -307,30 +307,30 @@ func Platform() string {
 }
 
 // CodeVersion is the string describing the running code version on the server that is currently set
-// on the managed Client instance.
+// on the managed client instance.
 func CodeVersion() string {
 	return std.CodeVersion()
 }
 
-// ServerHost is the currently set hostname on the managed Client instance. The value will be
+// ServerHost is the currently set hostname on the managed client instance. The value will be
 // indexed.
 func ServerHost() string {
 	return std.ServerHost()
 }
 
-// ServerRoot is the currently set path to the code root set on the managed Client instance.
+// ServerRoot is the currently set path to the code root set on the managed client instance.
 // This should be a path to the application code root, not including the final slash.
 // It is used to collapse non-project code when displaying tracebacks.
 func ServerRoot() string {
 	return std.ServerRoot()
 }
 
-// Custom is the currently set extra metadata on the managed Client instance.
+// Custom is the currently set extra metadata on the managed client instance.
 func Custom() map[string]interface{} {
 	return std.Custom()
 }
 
-// Fingerprint is whether or not the current managed Client instance uses a custom client-side
+// Fingerprint is whether or not the current managed client instance uses a custom client-side
 // fingerprint. The default is false.
 func Fingerprint() bool {
 	return std.Fingerprint()
@@ -537,6 +537,7 @@ func ErrorWithStackSkipWithExtrasAndContext(ctx context.Context, level string, e
 	std.ErrorWithStackSkipWithExtrasAndContext(ctx, level, err, skip, extras)
 }
 
+// RequestErrorWithStackSkip asynchronously sends an error to Rollbar with the
 // RequestErrorWithStackSkip asynchronously sends an error to Rollbar with the
 // given severity level and a given number of stack trace frames skipped, in
 // addition to extra request-specific information.
