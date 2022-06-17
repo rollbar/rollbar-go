@@ -231,8 +231,8 @@ func SetCheckIgnore(checkIgnore func(string) bool) {
 // SetPerson information for identifying a user associated with
 // any subsequent errors or messages. Only id is required to be
 // non-empty.
-func SetPerson(id, username, email string, opts personOption) {
-	std.SetPerson(id, username, email, opts)
+func SetPerson(id, username, email string, opts ...personOption) {
+	std.SetPerson(id, username, email, opts...)
 }
 
 // ClearPerson clears any previously set person information. See `SetPerson` for more information.

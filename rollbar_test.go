@@ -62,6 +62,7 @@ func TestErrorClass(t *testing.T) {
 func TestEverything(t *testing.T) {
 	SetToken(os.Getenv("TOKEN"))
 	SetEnvironment("test")
+	SetPerson("1", "user", "email")
 	if Token() != os.Getenv("TOKEN") {
 		t.Error("Token should be as set")
 	}
@@ -106,6 +107,7 @@ type someNonstandardTypeForLogFailing struct{}
 func TestEverythingGeneric(t *testing.T) {
 	SetToken(os.Getenv("TOKEN"))
 	SetEnvironment("test")
+	SetPerson("1", "user", "email", WithPersonExtra(map[string]string{"v": "k"}))
 	SetCaptureIp(CaptureIpAnonymize)
 	if Token() != os.Getenv("TOKEN") {
 		t.Error("Token should be as set")
