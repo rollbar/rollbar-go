@@ -2,6 +2,7 @@ package rollbar_test
 
 import (
 	"errors"
+
 	"github.com/rollbar/rollbar-go"
 )
 

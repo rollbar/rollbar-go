@@ -1,4 +1,4 @@
-package rollbar_test
+package rollbar
 
 import (
 	"context"
@@ -9,8 +9,6 @@ import (
 	"regexp"
 	"strings"
 	"testing"
-
-	"github.com/rollbar/rollbar-go"
 )
 
 type TestTransport struct {
@@ -26,20 +24,20 @@ func (t *TestTransport) Wait() {
 	t.WaitCalled = true
 }
 
-func (t *TestTransport) SetToken(_t string)                {}
-func (t *TestTransport) SetEndpoint(_e string)             {}
-func (t *TestTransport) SetLogger(_l rollbar.ClientLogger) {}
-func (t *TestTransport) SetRetryAttempts(_r int)           {}
-func (t *TestTransport) SetPrintPayloadOnError(_p bool)    {}
-func (t *TestTransport) SetHTTPClient(_c *http.Client)     {}
-func (t *TestTransport) SetItemsPerMinute(_r int)          {}
+func (t *TestTransport) SetToken(_t string)             {}
+func (t *TestTransport) SetEndpoint(_e string)          {}
+func (t *TestTransport) SetLogger(_l ClientLogger)      {}
+func (t *TestTransport) SetRetryAttempts(_r int)        {}
+func (t *TestTransport) SetPrintPayloadOnError(_p bool) {}
+func (t *TestTransport) SetHTTPClient(_c *http.Client)  {}
+func (t *TestTransport) SetItemsPerMinute(_r int)       {}
 func (t *TestTransport) Send(body map[string]interface{}) error {
 	t.Body = body
 	return nil
 }
 
-func testClient() *rollbar.Client {
-	c := rollbar.New("", "test", "", "", "")
+func testClient() *client {
+	c := New("", "test", "", "", "")
 	c.Transport = &TestTransport{}
 	return c
 }
@@ -403,18 +401,18 @@ func TestGettersAndSetters_Default(t *testing.T) {
 }
 
 func TestGettersAndSetters_Async(t *testing.T) {
-	c := rollbar.NewAsync("", "", "", "", "")
+	c := NewAsync("", "", "", "", "")
 	c.Transport = &TestTransport{}
 	testGettersAndSetters(c, t)
 }
 
 func TestGettersAndSetters_Sync(t *testing.T) {
-	c := rollbar.NewSync("", "", "", "", "")
+	c := NewSync("", "", "", "", "")
 	c.Transport = &TestTransport{}
 	testGettersAndSetters(c, t)
 }
 
-func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
+func testGettersAndSetters(client *client, t *testing.T) {
 	token := "abc123"
 	environment := "TestEnvironment"
 	endpoint := "SomeEndpoint"
@@ -425,7 +423,7 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 	fingerprint := true
 	scrubHeaders := regexp.MustCompile("Foo")
 	scrubFields := regexp.MustCompile("squirrel|doggo")
-	captureIP := rollbar.CaptureIpNone
+	captureIP := CaptureIpNone
 	itemsPerMinute := 10
 
 	errorIfEqual(token, client.Token(), t)
@@ -464,7 +462,7 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 	client.SetServerHost(host)
 	client.SetServerRoot(root)
 	client.SetFingerprint(fingerprint)
-	client.SetLogger(&rollbar.SilentClientLogger{})
+	client.SetLogger(&SilentClientLogger{})
 	client.SetScrubHeaders(scrubHeaders)
 	client.SetScrubFields(scrubFields)
 	client.SetCaptureIp(captureIP)
@@ -499,7 +497,7 @@ func testGettersAndSetters(client *rollbar.Client, t *testing.T) {
 		t.Error("expected matching scrub field")
 	}
 
-	client.ErrorWithLevel(rollbar.ERR, errors.New("Bork"))
+	client.ErrorWithLevel(ERR, errors.New("Bork"))
 
 	if transport, ok := client.Transport.(*TestTransport); ok {
 		body := transport.Body
@@ -540,10 +538,10 @@ func TestSetPerson(t *testing.T) {
 	client := testClient()
 	id, username, email := "42", "bork", "bork@foobar.com"
 
-	client.SetPerson(id, username, email, rollbar.WithPersonExtra(map[string]string{
+	client.SetPerson(id, username, email, WithPersonExtra(map[string]string{
 		"person_extra1": "value1", "person_extra2": "value2", "id": "43"}))
 
-	client.ErrorWithLevel(rollbar.ERR, errors.New("Person Bork"))
+	client.ErrorWithLevel(ERR, errors.New("Person Bork"))
 
 	if transport, ok := client.Transport.(*TestTransport); ok {
 		body := transport.Body
@@ -578,7 +576,7 @@ func TestClearPerson(t *testing.T) {
 
 	client.SetPerson(id, username, email)
 	client.ClearPerson()
-	client.ErrorWithLevel(rollbar.ERR, errors.New("Person Bork"))
+	client.ErrorWithLevel(ERR, errors.New("Person Bork"))
 
 	if transport, ok := client.Transport.(*TestTransport); ok {
 		body := transport.Body
@@ -600,7 +598,7 @@ func TestTransform(t *testing.T) {
 		data["some_custom_field"] = "hello_world"
 	})
 
-	client.ErrorWithLevel(rollbar.ERR, errors.New("Bork"))
+	client.ErrorWithLevel(ERR, errors.New("Bork"))
 
 	if transport, ok := client.Transport.(*TestTransport); ok {
 		body := transport.Body
@@ -620,11 +618,11 @@ func TestTransform(t *testing.T) {
 	}
 }
 
-func TestSetUnwrapper(t *testing.T) {
+func TestSetUnwrapperClient(t *testing.T) {
 	client := testClient()
-	client.SetUnwrapper(rollbar.DefaultUnwrapper)
+	client.SetUnwrapper(DefaultUnwrapper)
 
-	client.ErrorWithLevel(rollbar.ERR, errors.New("Bork"))
+	client.ErrorWithLevel(ERR, errors.New("Bork"))
 
 	if transport, ok := client.Transport.(*TestTransport); ok {
 		body := transport.Body
@@ -641,11 +639,11 @@ func TestSetUnwrapper(t *testing.T) {
 	}
 }
 
-func TestSetStackTracer(t *testing.T) {
+func TestSetStackTracerClient(t *testing.T) {
 	client := testClient()
-	client.SetStackTracer(rollbar.DefaultStackTracer)
+	client.SetStackTracer(DefaultStackTracer)
 
-	client.ErrorWithLevel(rollbar.ERR, errors.New("Bork"))
+	client.ErrorWithLevel(ERR, errors.New("Bork"))
 
 	if transport, ok := client.Transport.(*TestTransport); ok {
 		body := transport.Body
@@ -666,7 +664,7 @@ func TestEnabled(t *testing.T) {
 	client := testClient()
 	client.SetEnabled(false)
 
-	client.ErrorWithLevel(rollbar.ERR, errors.New("Bork"))
+	client.ErrorWithLevel(ERR, errors.New("Bork"))
 
 	if transport, ok := client.Transport.(*TestTransport); ok {
 		body := transport.Body
@@ -678,7 +676,7 @@ func TestEnabled(t *testing.T) {
 	}
 
 	client.SetEnabled(true)
-	client.ErrorWithLevel(rollbar.ERR, errors.New("Bork"))
+	client.ErrorWithLevel(ERR, errors.New("Bork"))
 
 	if transport, ok := client.Transport.(*TestTransport); ok {
 		body := transport.Body
