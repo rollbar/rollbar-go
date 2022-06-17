@@ -135,11 +135,23 @@ func (c *Client) SetCustom(custom map[string]interface{}) {
 // SetPerson information for identifying a user associated with
 // any subsequent errors or messages. Only id is required to be
 // non-empty.
-func (c *Client) SetPerson(id, username, email string) {
+type personOption func(*Person)
+
+func WithPersonExtra(extra map[string]string) personOption {
+	return func(p *Person) {
+		p.Extra = extra
+	}
+}
+func (c *Client) SetPerson(id, username, email string, opts ...personOption) {
 	person := Person{
 		Id:       id,
 		Username: username,
 		Email:    email,
+	}
+	for _, opt := range opts {
+		// Call the option giving the instantiated
+		// *Person as the argument
+		opt(&person)
 	}
 
 	c.configuration.person = person
@@ -634,6 +646,7 @@ type Person struct {
 	Id       string
 	Username string
 	Email    string
+	Extra    map[string]string
 }
 
 type pkey int
