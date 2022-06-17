@@ -19,7 +19,7 @@ import (
 // However, if you want to customize the underlying transport layer, or you need to have
 // independent instances of a Client, then you can use the constructors provided for this
 // type.
-type Client struct {
+type client struct {
 	io.Closer
 	// Transport used to send data to the Rollbar API. By default an asynchronous
 	// implementation of the Transport interface is used.
@@ -31,16 +31,16 @@ type Client struct {
 
 // New returns the default implementation of a Client.
 // This uses the AsyncTransport.
-func New(token, environment, codeVersion, serverHost, serverRoot string) *Client {
+func New(token, environment, codeVersion, serverHost, serverRoot string) *client {
 	return NewAsync(token, environment, codeVersion, serverHost, serverRoot)
 }
 
 // NewAsync builds a Client with the asynchronous implementation of the transport interface.
-func NewAsync(token, environment, codeVersion, serverHost, serverRoot string) *Client {
+func NewAsync(token, environment, codeVersion, serverHost, serverRoot string) *client {
 	configuration := createConfiguration(token, environment, codeVersion, serverHost, serverRoot)
 	transport := NewTransport(token, configuration.endpoint)
 	diagnostic := createDiagnostic()
-	return &Client{
+	return &client{
 		Transport:     transport,
 		Telemetry:     NewTelemetry(nil),
 		configuration: configuration,
@@ -49,11 +49,11 @@ func NewAsync(token, environment, codeVersion, serverHost, serverRoot string) *C
 }
 
 // NewSync builds a Client with the synchronous implementation of the transport interface.
-func NewSync(token, environment, codeVersion, serverHost, serverRoot string) *Client {
+func NewSync(token, environment, codeVersion, serverHost, serverRoot string) *client {
 	configuration := createConfiguration(token, environment, codeVersion, serverHost, serverRoot)
 	transport := NewSyncTransport(token, configuration.endpoint)
 	diagnostic := createDiagnostic()
-	return &Client{
+	return &client{
 		Transport:     transport,
 		Telemetry:     NewTelemetry(nil),
 		configuration: configuration,
@@ -62,7 +62,7 @@ func NewSync(token, environment, codeVersion, serverHost, serverRoot string) *Cl
 }
 
 // CaptureTelemetryEvent sets the user-specified telemetry event
-func (c *Client) CaptureTelemetryEvent(eventType, eventlevel string, eventData map[string]interface{}) {
+func (c *client) CaptureTelemetryEvent(eventType, eventlevel string, eventData map[string]interface{}) {
 	data := map[string]interface{}{}
 	data["body"] = eventData
 	data["type"] = eventType
@@ -74,7 +74,7 @@ func (c *Client) CaptureTelemetryEvent(eventType, eventlevel string, eventData m
 }
 
 // SetTelemetry sets the telemetry
-func (c *Client) SetTelemetry(options ...OptionFunc) {
+func (c *client) SetTelemetry(options ...OptionFunc) {
 	c.Telemetry = NewTelemetry(c.configuration.scrubHeaders, options...)
 }
 
@@ -82,7 +82,7 @@ func (c *Client) SetTelemetry(options ...OptionFunc) {
 // If this is true then this library works as normal.
 // If this is false then no calls will be made to the network.
 // One place where this is useful is for turning off reporting in tests.
-func (c *Client) SetEnabled(enabled bool) {
+func (c *client) SetEnabled(enabled bool) {
 	c.configuration.enabled = enabled
 }
 
@@ -90,52 +90,52 @@ func (c *Client) SetEnabled(enabled bool) {
 // The value is a Rollbar access token with scope "post_server_item".
 // It is required to set this value before any of the other functions herein will be able to work
 // properly. This also configures the underlying Transport.
-func (c *Client) SetToken(token string) {
+func (c *client) SetToken(token string) {
 	c.configuration.token = token
 	c.Transport.SetToken(token)
 }
 
 // SetEnvironment sets the environment under which all errors and messages will be submitted.
-func (c *Client) SetEnvironment(environment string) {
+func (c *client) SetEnvironment(environment string) {
 	c.configuration.environment = environment
 }
 
 // SetEndpoint sets the endpoint to post items to. This also configures the underlying Transport.
-func (c *Client) SetEndpoint(endpoint string) {
+func (c *client) SetEndpoint(endpoint string) {
 	c.configuration.endpoint = endpoint
 	c.Transport.SetEndpoint(endpoint)
 }
 
 // SetPlatform sets the platform to be reported for all items.
-func (c *Client) SetPlatform(platform string) {
+func (c *client) SetPlatform(platform string) {
 	c.configuration.platform = platform
 }
 
 // SetCodeVersion sets the string describing the running code version on the server.
-func (c *Client) SetCodeVersion(codeVersion string) {
+func (c *client) SetCodeVersion(codeVersion string) {
 	c.configuration.codeVersion = codeVersion
 }
 
 // SetServerHost sets the hostname sent with each item. This value will be indexed.
-func (c *Client) SetServerHost(serverHost string) {
+func (c *client) SetServerHost(serverHost string) {
 	c.configuration.serverHost = serverHost
 }
 
 // SetServerRoot sets the path to the application code root, not including the final slash.
 // This is used to collapse non-project code when displaying tracebacks.
-func (c *Client) SetServerRoot(serverRoot string) {
+func (c *client) SetServerRoot(serverRoot string) {
 	c.configuration.serverRoot = serverRoot
 }
 
 // SetCustom sets any arbitrary metadata you want to send with every item.
-func (c *Client) SetCustom(custom map[string]interface{}) {
+func (c *client) SetCustom(custom map[string]interface{}) {
 	c.configuration.custom = custom
 }
 
 // SetPerson information for identifying a user associated with
 // any subsequent errors or messages. Only id is required to be
 // non-empty.
-func (c *Client) SetPerson(id, username, email string) {
+func (c *client) SetPerson(id, username, email string) {
 	person := Person{
 		Id:       id,
 		Username: username,
@@ -147,7 +147,7 @@ func (c *Client) SetPerson(id, username, email string) {
 
 // ClearPerson clears any previously set person information. See `SetPerson` for more
 // information.
-func (c *Client) ClearPerson() {
+func (c *client) ClearPerson() {
 	person := Person{}
 
 	c.configuration.person = person
@@ -155,25 +155,25 @@ func (c *Client) ClearPerson() {
 
 // SetFingerprint sets whether or not to use a custom client-side fingerprint. The default value is
 // false.
-func (c *Client) SetFingerprint(fingerprint bool) {
+func (c *client) SetFingerprint(fingerprint bool) {
 	c.configuration.fingerprint = fingerprint
 }
 
 // SetLogger sets the logger on the underlying transport. By default log.Printf is used.
-func (c *Client) SetLogger(logger ClientLogger) {
+func (c *client) SetLogger(logger ClientLogger) {
 	c.Transport.SetLogger(logger)
 }
 
 // SetScrubHeaders sets the regular expression used to match headers for scrubbing.
 // The default value is regexp.MustCompile("Authorization")
-func (c *Client) SetScrubHeaders(headers *regexp.Regexp) {
+func (c *client) SetScrubHeaders(headers *regexp.Regexp) {
 	c.configuration.scrubHeaders = headers
 	c.Telemetry.Network.ScrubHeaders = headers
 }
 
 // SetScrubFields sets the regular expression to match keys in the item payload for scrubbing.
 // The default vlaue is regexp.MustCompile("password|secret|token"),
-func (c *Client) SetScrubFields(fields *regexp.Regexp) {
+func (c *client) SetScrubFields(fields *regexp.Regexp) {
 	c.configuration.scrubFields = fields
 }
 
@@ -188,7 +188,7 @@ func (c *Client) SetScrubFields(fields *regexp.Regexp) {
 // described above. You can modify this object in-place to make any arbitrary changes you wish to
 // make before it is finally sent. Be careful with the modifications you make as they could lead to
 // the payload being malformed from the perspective of the API.
-func (c *Client) SetTransform(transform func(map[string]interface{})) {
+func (c *client) SetTransform(transform func(map[string]interface{})) {
 	c.configuration.transform = transform
 }
 
@@ -199,7 +199,7 @@ func (c *Client) SetTransform(transform func(map[string]interface{})) {
 //
 // In order to preserve the default unwrapping behavior, callers of SetUnwrapper may wish to include
 // a call to DefaultUnwrapper in their custom unwrapper function. See the example on the SetUnwrapper function.
-func (c *Client) SetUnwrapper(unwrapper UnwrapperFunc) {
+func (c *client) SetUnwrapper(unwrapper UnwrapperFunc) {
 	c.configuration.unwrapper = unwrapper
 }
 
@@ -211,7 +211,7 @@ func (c *Client) SetUnwrapper(unwrapper UnwrapperFunc) {
 // In order to preserve the default stack tracing behavior, callers of SetStackTracer may wish
 // to include a call to DefaultStackTracer in their custom tracing function. See the example
 // on the SetStackTracer function.
-func (c *Client) SetStackTracer(stackTracer StackTracerFunc) {
+func (c *client) SetStackTracer(stackTracer StackTracerFunc) {
 	c.configuration.stackTracer = stackTracer
 }
 
@@ -221,7 +221,7 @@ func (c *Client) SetStackTracer(stackTracer StackTracerFunc) {
 // report it to Rollbar. If an error is the argument to the panic, then
 // this function is called with the result of calling Error(), otherwise
 // the string representation of the value is passed to this function.
-func (c *Client) SetCheckIgnore(checkIgnore func(string) bool) {
+func (c *client) SetCheckIgnore(checkIgnore func(string) bool) {
 	c.configuration.checkIgnore = checkIgnore
 }
 
@@ -229,19 +229,19 @@ func (c *Client) SetCheckIgnore(checkIgnore func(string) bool) {
 // CaptureIpFull means capture the entire address without any modification.
 // CaptureIpAnonymize means apply a pseudo-anonymization.
 // CaptureIpNone means do not capture anything.
-func (c *Client) SetCaptureIp(captureIp captureIp) {
+func (c *client) SetCaptureIp(captureIp captureIp) {
 	c.configuration.captureIp = captureIp
 }
 
 // SetRetryAttempts sets how many times to attempt to retry sending an item if the http transport
 // experiences temporary error conditions. By default this is equal to DefaultRetryAttempts.
 // Temporary errors include timeouts and rate limit responses.
-func (c *Client) SetRetryAttempts(retryAttempts int) {
+func (c *client) SetRetryAttempts(retryAttempts int) {
 	c.Transport.SetRetryAttempts(retryAttempts)
 }
 
 // SetItemsPerMinute sets the max number of items to send in a given minute
-func (c *Client) SetItemsPerMinute(itemsPerMinute int) {
+func (c *client) SetItemsPerMinute(itemsPerMinute int) {
 	c.configuration.itemsPerMinute = itemsPerMinute
 	c.Transport.SetItemsPerMinute(itemsPerMinute)
 }
@@ -250,81 +250,81 @@ func (c *Client) SetItemsPerMinute(itemsPerMinute int) {
 // stderr if an error occurs during transport to the Rollbar API. For example, if you hit
 // your rate limit and we run out of retry attempts, then if this is true we will output the
 // item to stderr rather than the item disappearing completely.
-func (c *Client) SetPrintPayloadOnError(printPayloadOnError bool) {
+func (c *client) SetPrintPayloadOnError(printPayloadOnError bool) {
 	c.Transport.SetPrintPayloadOnError(printPayloadOnError)
 }
 
 // SetHTTPClient sets custom http client. http.DefaultClient is used by default
-func (c *Client) SetHTTPClient(httpClient *http.Client) {
+func (c *client) SetHTTPClient(httpClient *http.Client) {
 	c.Transport.SetHTTPClient(httpClient)
 }
 
 // Token is the currently set Rollbar access token.
-func (c *Client) Token() string {
+func (c *client) Token() string {
 	return c.configuration.token
 }
 
 // ItemsPerMinute is the currently set Rollbar items per minute
-func (c *Client) ItemsPerMinute() int {
+func (c *client) ItemsPerMinute() int {
 	return c.configuration.itemsPerMinute
 }
 
 // Environment is the currently set environment underwhich all errors and
 // messages will be submitted.
-func (c *Client) Environment() string {
+func (c *client) Environment() string {
 	return c.configuration.environment
 }
 
 // Endpoint is the currently set endpoint used for posting items.
-func (c *Client) Endpoint() string {
+func (c *client) Endpoint() string {
 	return c.configuration.endpoint
 }
 
 // Platform is the currently set platform reported for all Rollbar items. The default is
 // the running operating system (darwin, freebsd, linux, etc.) but it can
 // also be application specific (client, heroku, etc.).
-func (c *Client) Platform() string {
+func (c *client) Platform() string {
 	return c.configuration.platform
 }
 
 // CodeVersion is the currently set string describing the running code version on the server.
-func (c *Client) CodeVersion() string {
+func (c *client) CodeVersion() string {
 	return c.configuration.codeVersion
 }
 
 // ServerHost is the currently set server hostname. This value will be indexed.
-func (c *Client) ServerHost() string {
+func (c *client) ServerHost() string {
 	return c.configuration.serverHost
 }
 
 // ServerRoot is the currently set path to the application code root, not including the final slash.
 // This is used to collapse non-project code when displaying tracebacks.
-func (c *Client) ServerRoot() string {
+func (c *client) ServerRoot() string {
 	return c.configuration.serverRoot
 }
 
 // Custom is the currently set arbitrary metadata you want to send with every subsequently sent item.
-func (c *Client) Custom() map[string]interface{} {
+func (c *client) Custom() map[string]interface{} {
 	return c.configuration.custom
 }
 
 // Fingerprint specifies whether or not to use a custom client-side fingerprint.
-func (c *Client) Fingerprint() bool {
+func (c *client) Fingerprint() bool {
 	return c.configuration.fingerprint
 }
 
 // ScrubHeaders is the currently set regular expression used to match headers for scrubbing.
-func (c *Client) ScrubHeaders() *regexp.Regexp {
+func (c *client) ScrubHeaders() *regexp.Regexp {
 	return c.configuration.scrubHeaders
 }
 
 // ScrubFields is the currently set regular expression to match keys in the item payload for scrubbing.
-func (c *Client) ScrubFields() *regexp.Regexp {
+func (c *client) ScrubFields() *regexp.Regexp {
 	return c.configuration.scrubFields
 }
 
 // CaptureIp is the currently set level of IP address information to capture from requests.
-func (c *Client) CaptureIp() captureIp {
+func (c *client) CaptureIp() captureIp {
 	return c.configuration.captureIp
 }
 
@@ -333,63 +333,63 @@ func (c *Client) CaptureIp() captureIp {
 var noExtras map[string]interface{}
 
 // ErrorWithLevel sends an error to Rollbar with the given severity level.
-func (c *Client) ErrorWithLevel(level string, err error) {
+func (c *client) ErrorWithLevel(level string, err error) {
 	c.ErrorWithExtras(level, err, noExtras)
 }
 
 // Errorf sends an error to Rollbar with the given format string and arguments.
-func (c *Client) Errorf(level string, format string, args ...interface{}) {
+func (c *client) Errorf(level string, format string, args ...interface{}) {
 	c.ErrorWithStackSkipWithExtras(level, fmt.Errorf(format, args...), 1, noExtras)
 }
 
 // ErrorWithExtras sends an error to Rollbar with the given severity
 // level with extra custom data.
-func (c *Client) ErrorWithExtras(level string, err error, extras map[string]interface{}) {
+func (c *client) ErrorWithExtras(level string, err error, extras map[string]interface{}) {
 	c.ErrorWithStackSkipWithExtras(level, err, 1, extras)
 }
 
 // ErrorWithExtrasAndContext sends an error to Rollbar with the given severity
 // level with extra custom data, within the given context.
-func (c *Client) ErrorWithExtrasAndContext(ctx context.Context, level string, err error, extras map[string]interface{}) {
+func (c *client) ErrorWithExtrasAndContext(ctx context.Context, level string, err error, extras map[string]interface{}) {
 	c.ErrorWithStackSkipWithExtrasAndContext(ctx, level, err, 1, extras)
 }
 
 // RequestError sends an error to Rollbar with the given severity level
 // and request-specific information.
-func (c *Client) RequestError(level string, r *http.Request, err error) {
+func (c *client) RequestError(level string, r *http.Request, err error) {
 	c.RequestErrorWithExtras(level, r, err, noExtras)
 }
 
 // RequestErrorWithExtras sends an error to Rollbar with the given
 // severity level and request-specific information with extra custom data.
-func (c *Client) RequestErrorWithExtras(level string, r *http.Request, err error, extras map[string]interface{}) {
+func (c *client) RequestErrorWithExtras(level string, r *http.Request, err error, extras map[string]interface{}) {
 	c.RequestErrorWithStackSkipWithExtras(level, r, err, 1, extras)
 }
 
 // RequestErrorWithExtrasAndContext sends an error to Rollbar with the given
 // severity level and request-specific information with extra custom data, within the given
 // context.
-func (c *Client) RequestErrorWithExtrasAndContext(ctx context.Context, level string, r *http.Request, err error, extras map[string]interface{}) {
+func (c *client) RequestErrorWithExtrasAndContext(ctx context.Context, level string, r *http.Request, err error, extras map[string]interface{}) {
 	c.RequestErrorWithStackSkipWithExtrasAndContext(ctx, level, r, err, 1, extras)
 }
 
 // ErrorWithStackSkip sends an error to Rollbar with the given severity
 // level and a given number of stack trace frames skipped.
-func (c *Client) ErrorWithStackSkip(level string, err error, skip int) {
+func (c *client) ErrorWithStackSkip(level string, err error, skip int) {
 	c.ErrorWithStackSkipWithExtras(level, err, skip, noExtras)
 }
 
 // ErrorWithStackSkipWithExtras sends an error to Rollbar with the given
 // severity level and a given number of stack trace frames skipped with
 // extra custom data.
-func (c *Client) ErrorWithStackSkipWithExtras(level string, err error, skip int, extras map[string]interface{}) {
+func (c *client) ErrorWithStackSkipWithExtras(level string, err error, skip int, extras map[string]interface{}) {
 	c.ErrorWithStackSkipWithExtrasAndContext(context.TODO(), level, err, skip, extras)
 }
 
 // ErrorWithStackSkipWithExtrasAndContext sends an error to Rollbar with the given
 // severity level and a given number of stack trace frames skipped with
 // extra custom data, within the given context.
-func (c *Client) ErrorWithStackSkipWithExtrasAndContext(ctx context.Context, level string, err error, skip int, extras map[string]interface{}) {
+func (c *client) ErrorWithStackSkipWithExtrasAndContext(ctx context.Context, level string, err error, skip int, extras map[string]interface{}) {
 	if !c.configuration.enabled {
 		return
 	}
@@ -402,7 +402,7 @@ func (c *Client) ErrorWithStackSkipWithExtrasAndContext(ctx context.Context, lev
 // RequestErrorWithStackSkip sends an error to Rollbar with the given
 // severity level and a given number of stack trace frames skipped, in
 // addition to extra request-specific information.
-func (c *Client) RequestErrorWithStackSkip(level string, r *http.Request, err error, skip int) {
+func (c *client) RequestErrorWithStackSkip(level string, r *http.Request, err error, skip int) {
 	c.RequestErrorWithStackSkipWithExtras(level, r, err, skip, noExtras)
 }
 
@@ -410,7 +410,7 @@ func (c *Client) RequestErrorWithStackSkip(level string, r *http.Request, err er
 // the given severity level and a given number of stack trace frames
 // skipped, in addition to extra request-specific information and extra
 // custom data.
-func (c *Client) RequestErrorWithStackSkipWithExtras(level string, r *http.Request, err error, skip int, extras map[string]interface{}) {
+func (c *client) RequestErrorWithStackSkipWithExtras(level string, r *http.Request, err error, skip int, extras map[string]interface{}) {
 	c.RequestErrorWithStackSkipWithExtrasAndContext(context.TODO(), level, r, err, skip, extras)
 }
 
@@ -418,7 +418,7 @@ func (c *Client) RequestErrorWithStackSkipWithExtras(level string, r *http.Reque
 // the given severity level and a given number of stack trace frames
 // skipped, in addition to extra request-specific information and extra
 // custom data, within the given context.
-func (c *Client) RequestErrorWithStackSkipWithExtrasAndContext(ctx context.Context, level string, r *http.Request, err error, skip int, extras map[string]interface{}) {
+func (c *client) RequestErrorWithStackSkipWithExtrasAndContext(ctx context.Context, level string, r *http.Request, err error, skip int, extras map[string]interface{}) {
 	if !c.configuration.enabled {
 		return
 	}
@@ -432,19 +432,19 @@ func (c *Client) RequestErrorWithStackSkipWithExtrasAndContext(ctx context.Conte
 // -- Message reporting
 
 // Message sends a message to Rollbar with the given severity level.
-func (c *Client) Message(level string, msg string) {
+func (c *client) Message(level string, msg string) {
 	c.MessageWithExtras(level, msg, noExtras)
 }
 
 // MessageWithExtras sends a message to Rollbar with the given severity
 // level with extra custom data.
-func (c *Client) MessageWithExtras(level string, msg string, extras map[string]interface{}) {
+func (c *client) MessageWithExtras(level string, msg string, extras map[string]interface{}) {
 	c.MessageWithExtrasAndContext(context.TODO(), level, msg, extras)
 }
 
 // MessageWithExtrasAndContext sends a message to Rollbar with the given severity
 // level with extra custom data, within the given context.
-func (c *Client) MessageWithExtrasAndContext(ctx context.Context, level string, msg string, extras map[string]interface{}) {
+func (c *client) MessageWithExtrasAndContext(ctx context.Context, level string, msg string, extras map[string]interface{}) {
 	if !c.configuration.enabled {
 		return
 	}
@@ -459,20 +459,20 @@ func (c *Client) MessageWithExtrasAndContext(ctx context.Context, level string, 
 
 // RequestMessage sends a message to Rollbar with the given severity level
 // and request-specific information.
-func (c *Client) RequestMessage(level string, r *http.Request, msg string) {
+func (c *client) RequestMessage(level string, r *http.Request, msg string) {
 	c.RequestMessageWithExtras(level, r, msg, noExtras)
 }
 
 // RequestMessageWithExtras sends a message to Rollbar with the given
 // severity level and request-specific information with extra custom data.
-func (c *Client) RequestMessageWithExtras(level string, r *http.Request, msg string, extras map[string]interface{}) {
+func (c *client) RequestMessageWithExtras(level string, r *http.Request, msg string, extras map[string]interface{}) {
 	c.RequestMessageWithExtrasAndContext(context.TODO(), level, r, msg, extras)
 }
 
 // RequestMessageWithExtrasAndContext sends a message to Rollbar with the given
 // severity level and request-specific information with extra custom data, within the given
 // context.
-func (c *Client) RequestMessageWithExtrasAndContext(ctx context.Context, level string, r *http.Request, msg string, extras map[string]interface{}) {
+func (c *client) RequestMessageWithExtrasAndContext(ctx context.Context, level string, r *http.Request, msg string, extras map[string]interface{}) {
 	if !c.configuration.enabled {
 		return
 	}
@@ -490,7 +490,7 @@ func (c *Client) RequestMessageWithExtrasAndContext(ctx context.Context, level s
 
 // LogPanic accepts an error value returned by recover() and
 // handles logging to Rollbar with stack info.
-func (c *Client) LogPanic(err interface{}, wait bool) {
+func (c *client) LogPanic(err interface{}, wait bool) {
 	switch val := err.(type) {
 	case nil:
 		return
@@ -516,7 +516,7 @@ func (c *Client) LogPanic(err interface{}, wait bool) {
 // If wait is true, this also waits before returning to ensure the message was reported.
 // If an error is captured it is subsequently returned.
 // WrapWithArgs is compatible with any return type for f, but does not return its return value(s).
-func (c *Client) WrapWithArgs(f interface{}, wait bool, inArgs ...interface{}) (err interface{}) {
+func (c *client) WrapWithArgs(f interface{}, wait bool, inArgs ...interface{}) (err interface{}) {
 	if f == nil {
 		err = fmt.Errorf("function is nil")
 		return
@@ -550,21 +550,21 @@ func (c *Client) WrapWithArgs(f interface{}, wait bool, inArgs ...interface{}) (
 
 // Wrap calls f and then recovers and reports a panic to Rollbar if it occurs.
 // If an error is captured it is subsequently returned.
-func (c *Client) Wrap(f interface{}, args ...interface{}) (err interface{}) {
+func (c *client) Wrap(f interface{}, args ...interface{}) (err interface{}) {
 	return c.WrapWithArgs(f, false, args...)
 }
 
 // WrapAndWait calls f, and recovers and reports a panic to Rollbar if it occurs.
 // This also waits before returning to ensure the message was reported
 // If an error is captured it is subsequently returned.
-func (c *Client) WrapAndWait(f interface{}, args ...interface{}) (err interface{}) {
+func (c *client) WrapAndWait(f interface{}, args ...interface{}) (err interface{}) {
 	return c.WrapWithArgs(f, true, args...)
 }
 
 // LambdaWrapper calls handlerFunc with arguments, and recovers and reports a
 // panic to Rollbar if it occurs. This functions as a passthrough wrapper for
 // lambda.Start(). This also waits before returning to ensure all messages completed.
-func (c *Client) LambdaWrapper(handlerFunc interface{}) interface{} {
+func (c *client) LambdaWrapper(handlerFunc interface{}) interface{} {
 	if handlerFunc == nil {
 		return lambdaErrorHandler(fmt.Errorf("handler is nil"))
 	}
@@ -605,26 +605,26 @@ func lambdaErrorHandler(e error) lambdaHandler {
 // transport then this will block until the queue of
 // errors / messages is empty. If using a synchronous transport then there
 // is no queue so this will be a no-op.
-func (c *Client) Wait() {
+func (c *client) Wait() {
 	c.Transport.Wait()
 }
 
 // Close delegates to the Close method of the Transport. For the asynchronous
 // transport this is an alias for Wait, and is a no-op for the synchronous
 // transport.
-func (c *Client) Close() error {
+func (c *client) Close() error {
 	return c.Transport.Close()
 }
 
-func (c *Client) buildBody(ctx context.Context, level, title string, extras map[string]interface{}) map[string]interface{} {
+func (c *client) buildBody(ctx context.Context, level, title string, extras map[string]interface{}) map[string]interface{} {
 	return buildBody(ctx, c.configuration, c.diagnostic, level, title, extras)
 }
 
-func (c *Client) requestDetails(r *http.Request) map[string]interface{} {
+func (c *client) requestDetails(r *http.Request) map[string]interface{} {
 	return requestDetails(c.configuration, r)
 }
 
-func (c *Client) push(body map[string]interface{}) error {
+func (c *client) push(body map[string]interface{}) error {
 	data := body["data"].(map[string]interface{})
 	c.configuration.transform(data)
 	return c.Transport.Send(body)

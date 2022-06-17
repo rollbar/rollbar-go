@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/rollbar/rollbar-go"
 	"log"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/rollbar/rollbar-go"
 )
 
 func helloJson(w http.ResponseWriter, r *http.Request) {
