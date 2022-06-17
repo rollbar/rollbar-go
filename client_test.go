@@ -538,7 +538,9 @@ func TestSetPerson(t *testing.T) {
 	client := testClient()
 	id, username, email := "42", "bork", "bork@foobar.com"
 
-	client.SetPerson(id, username, email)
+	client.SetPerson(id, username, email, WithPersonExtra(map[string]string{
+		"person_extra1": "value1", "person_extra2": "value2", "id": "43"}))
+
 	client.ErrorWithLevel(ERR, errors.New("Person Bork"))
 
 	if transport, ok := client.Transport.(*TestTransport); ok {
@@ -554,6 +556,8 @@ func TestSetPerson(t *testing.T) {
 		errorIfNotEqual(id, person["id"], t)
 		errorIfNotEqual(username, person["username"], t)
 		errorIfNotEqual(email, person["email"], t)
+		errorIfNotEqual("value1", person["person_extra1"], t)
+		errorIfNotEqual("value2", person["person_extra2"], t)
 
 		configuredOptions := configuredOptionsFromData(data)
 		configuredPerson := configuredOptions["person"].(map[string]string)
