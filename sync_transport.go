@@ -1,6 +1,7 @@
 package rollbar
 
 import (
+	"context"
 	"time"
 )
 
@@ -63,4 +64,6 @@ func (t *SyncTransport) Wait() {}
 // Close is a no-op for the synchronous transport.
 func (t *SyncTransport) Close() error {
 	return nil
+}
+func (t *SyncTransport) setContext(ctx context.Context) {
 }
