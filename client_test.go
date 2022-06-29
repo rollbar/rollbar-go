@@ -36,7 +36,7 @@ func (t *TestTransport) Send(body map[string]interface{}) error {
 	return nil
 }
 
-func testClient() *client {
+func testClient() *Client {
 	c := New("", "test", "", "", "")
 	c.Transport = &TestTransport{}
 	return c
@@ -412,7 +412,7 @@ func TestGettersAndSetters_Sync(t *testing.T) {
 	testGettersAndSetters(c, t)
 }
 
-func testGettersAndSetters(client *client, t *testing.T) {
+func testGettersAndSetters(client *Client, t *testing.T) {
 	token := "abc123"
 	environment := "TestEnvironment"
 	endpoint := "SomeEndpoint"
