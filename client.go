@@ -647,9 +647,6 @@ func (c *Client) Wait() {
 func (c *Client) Close() error {
 	return c.Transport.Close()
 }
-func (c *Client) CloseWith() error {
-	return c.Transport.Close()
-}
 
 func (c *Client) buildBody(ctx context.Context, level, title string, extras map[string]interface{}) map[string]interface{} {
 	return buildBody(ctx, c.configuration, c.diagnostic, level, title, extras)
