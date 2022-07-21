@@ -21,3 +21,12 @@ type ErrBufferFull struct{}
 func (e ErrBufferFull) Error() string {
 	return "buffer full, dropping error on the floor"
 }
+
+// ErrChannelClosed is an error which is returned when the asynchronous transport is used and the
+// channel used for buffering items for sending to Rollbar is already closed
+type ErrChannelClosed struct{}
+
+// Error implements the error interface.
+func (e ErrChannelClosed) Error() string {
+	return "channel is closed"
+}

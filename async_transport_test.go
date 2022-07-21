@@ -35,6 +35,18 @@ func TestAsyncTransportSendFull(t *testing.T) {
 	}
 }
 
+func TestAsyncTransportSendRecover(t *testing.T) {
+	transport := NewAsyncTransport("", "", 1)
+	transport.SetLogger(&SilentClientLogger{})
+
+	transport.Close()
+	result := transport.Send(nil)
+	if result == nil {
+		t.Error("Expected to receive ErrChannelClosed")
+	}
+	transport.Wait()
+}
+
 func TestAsyncTransportClose(t *testing.T) {
 	transport := NewAsyncTransport("", "", 1)
 	transport.SetLogger(&SilentClientLogger{})
