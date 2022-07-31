@@ -18,21 +18,32 @@ func TestAsyncTransportSend(t *testing.T) {
 }
 
 func TestAsyncTransportSendFull(t *testing.T) {
-	transport := NewAsyncTransport("", "", 1)
+	transport := NewAsyncTransport("", "", 0)
 	transport.SetLogger(&SilentClientLogger{})
 	body := map[string]interface{}{
 		"hello": "world",
 	}
 
-	transport.Send(body)
 	result := transport.Send(body)
 	if result == nil {
 		t.Error("Expected to receive ErrBufferFull")
 	}
 	transport.Wait()
-	if transport.perMinCounter != 1 {
+	if transport.perMinCounter != 0 {
 		t.Error("shouldSend check failed")
 	}
+}
+
+func TestAsyncTransportSendRecover(t *testing.T) {
+	transport := NewAsyncTransport("", "", 1)
+	transport.SetLogger(&SilentClientLogger{})
+
+	transport.Close()
+	result := transport.Send(nil)
+	if result == nil {
+		t.Error("Expected to receive ErrChannelClosed")
+	}
+	transport.Wait()
 }
 
 func TestAsyncTransportClose(t *testing.T) {
