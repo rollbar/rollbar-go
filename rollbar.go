@@ -95,6 +95,15 @@ func SetTelemetry(options ...OptionFunc) {
 	std.SetTelemetry(options...)
 }
 
+func DisableDefaultClient(destroy bool) {
+	if destroy {
+		std = nil
+		return
+	}
+	std.SetEnabled(false)
+	std.Close()
+}
+
 // CaptureTelemetryEvent sets the user-specified telemetry event
 func CaptureTelemetryEvent(eventType, eventlevel string, eventData map[string]interface{}) {
 	std.CaptureTelemetryEvent(eventType, eventlevel, eventData)
