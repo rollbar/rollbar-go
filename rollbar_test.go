@@ -109,19 +109,19 @@ func TestSetContext(t *testing.T) {
 	SetToken(os.Getenv("TOKEN"))
 	SetEnvironment("test")
 	if std.ctx != context.Background() {
-		t.Error("Client ctx must be set")
+		t.Error("Client ctx must be properly set")
 	}
 	tr := std.Transport.(*AsyncTransport)
 	if tr.getContext() != context.Background() {
-		t.Error("Transport ctx must be set")
+		t.Error("Transport ctx must be properly set")
 	}
 	ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
 	SetContext(ctx)
 	if std.ctx != ctx {
-		t.Error("Client ctx must be set")
+		t.Error("Client ctx must be properly set")
 	}
 	if tr.getContext() != ctx {
-		t.Error("Transport ctx must be set")
+		t.Error("Transport ctx must be properly set")
 	}
 }
 
@@ -665,6 +665,17 @@ func (s roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) {
 	return s(r)
 }
 
+func TestNewAsyncWithContext(t *testing.T) {
+	ctx, _ := context.WithTimeout(context.Background(), 4*time.Second)
+	client := NewAsync("example", "test", "0.0.0", "", "", WithClientContext(ctx))
+	if client.ctx != ctx {
+		t.Error("Client ctx must be properly set")
+	}
+	tr := client.Transport.(*AsyncTransport)
+	if tr.getContext() != ctx {
+		t.Error("Transport ctx must be properly set")
+	}
+}
 func TestSetHttpClient(t *testing.T) {
 	used := false
 	c := &http.Client{
