@@ -108,12 +108,18 @@ type someNonstandardTypeForLogFailing struct{}
 func TestSetContext(t *testing.T) {
 	SetToken(os.Getenv("TOKEN"))
 	SetEnvironment("test")
+	if std.ctx != context.Background() {
+		t.Error("Client ctx must be set")
+	}
+	tr := std.Transport.(*AsyncTransport)
+	if tr.getContext() != context.Background() {
+		t.Error("Transport ctx must be set")
+	}
 	ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
 	SetContext(ctx)
 	if std.ctx != ctx {
 		t.Error("Client ctx must be set")
 	}
-	tr := std.Transport.(*AsyncTransport)
 	if tr.getContext() != ctx {
 		t.Error("Transport ctx must be set")
 	}
@@ -129,14 +135,6 @@ func TestEverythingGeneric(t *testing.T) {
 	}
 	if Environment() != "test" {
 		t.Error("Token should be as set")
-	}
-	time.Sleep(1)
-	if std.ctx != context.Background() {
-		t.Error("Client ctx must be set")
-	}
-	tr := std.Transport.(*AsyncTransport)
-	if tr.getContext() != context.Background() {
-		t.Error("Transport ctx must be set")
 	}
 	Critical(errors.New("Normal generic critical error"))
 	Error(&CustomError{"This is a generic custom error"})
