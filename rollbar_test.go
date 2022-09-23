@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 )
 
 type CustomError struct {
@@ -104,6 +105,20 @@ func TestEverything(t *testing.T) {
 
 type someNonstandardTypeForLogFailing struct{}
 
+func TestSetContext(t *testing.T) {
+	SetToken(os.Getenv("TOKEN"))
+	SetEnvironment("test")
+	ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
+	SetContext(ctx)
+	if std.ctx != ctx {
+		t.Error("Client ctx must be set")
+	}
+	tr := std.Transport.(*AsyncTransport)
+	if tr.getContext() != ctx {
+		t.Error("Transport ctx must be set")
+	}
+
+}
 func TestEverythingGeneric(t *testing.T) {
 	SetToken(os.Getenv("TOKEN"))
 	SetEnvironment("test")

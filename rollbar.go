@@ -90,6 +90,10 @@ var DefaultStackTracer StackTracerFunc = func(err error) ([]runtime.Frame, bool)
 	return nil, false
 }
 
+func SetContext(ctx context.Context) {
+	std.SetContext(ctx)
+}
+
 // SetTelemetry sets the telemetry
 func SetTelemetry(options ...OptionFunc) {
 	std.SetTelemetry(options...)

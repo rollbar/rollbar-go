@@ -96,6 +96,10 @@ func (c *Client) CaptureTelemetryEvent(eventType, eventlevel string, eventData m
 func (c *Client) SetTelemetry(options ...OptionFunc) {
 	c.Telemetry = NewTelemetry(c.configuration.scrubHeaders, options...)
 }
+func (c *Client) SetContext(ctx context.Context) {
+	c.ctx = ctx
+	c.Transport.setContext(ctx)
+}
 
 // SetEnabled sets whether or not Rollbar is enabled.
 // If this is true then this library works as normal.

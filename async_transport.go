@@ -171,3 +171,7 @@ func (t *AsyncTransport) Close() error {
 func (t *AsyncTransport) setContext(ctx context.Context) {
 	t.ctx = ctx
 }
+
+func (t *AsyncTransport) getContext() context.Context {
+	return t.ctx
+}
