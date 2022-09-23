@@ -133,6 +133,8 @@ func TestEverythingGeneric(t *testing.T) {
 		"hello": "rollbar",
 	})
 
+	SetItemsPerMinute(2000)
+	SetRetryAttempts(123)
 	SetLogger(&SilentClientLogger{})
 	Info(someNonstandardTypeForLogFailing{}, "I am a string and I did not fail")
 	SetLogger(nil)

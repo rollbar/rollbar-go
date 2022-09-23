@@ -2,6 +2,8 @@ package rollbar
 
 import (
 	"context"
+	"fmt"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -21,6 +23,16 @@ type AsyncTransport struct {
 type payload struct {
 	body        map[string]interface{}
 	retriesLeft int
+}
+
+func isClosed(ch chan payload) bool {
+	if len(ch) == 0 {
+		select {
+		case _, ok := <-ch:
+			return !ok
+		}
+	}
+	return false
 }
 
 // NewAsyncTransport builds an asynchronous transport which sends data to the Rollbar API at the
@@ -47,6 +59,18 @@ func NewAsyncTransport(token string, endpoint string, buffer int, opts ...transp
 		transport.ctx = context.Background()
 	}
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				pc, _, _, _ := runtime.Caller(4)
+				fnName := runtime.FuncForPC(pc).Name()
+				if isClosed(transport.bodyChannel) {
+					fmt.Println(fnName, "recover: channel is closed")
+				} else {
+					fmt.Println(fnName, "recovered:", r)
+				}
+			}
+		}()
+
 		for p := range transport.bodyChannel {
 			elapsedTime := time.Now().Sub(transport.startTime).Seconds()
 			if elapsedTime < 0 || elapsedTime >= 60 {
@@ -94,7 +118,20 @@ func NewAsyncTransport(token string, endpoint string, buffer int, opts ...transp
 
 // Send the body to Rollbar if the channel is not currently full.
 // Returns ErrBufferFull if the underlying channel is full.
-func (t *AsyncTransport) Send(body map[string]interface{}) error {
+func (t *AsyncTransport) Send(body map[string]interface{}) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			pc, _, _, _ := runtime.Caller(4)
+			fnName := runtime.FuncForPC(pc).Name()
+			if _, ok := err.(*ErrBufferFull); !ok && isClosed(t.bodyChannel) {
+				fmt.Println(fnName, "recover: channel is closed")
+				t.waitGroup.Done()
+				err = ErrChannelClosed{}
+			} else {
+				fmt.Println(fnName, "recovered:", r)
+			}
+		}
+	}()
 	if len(t.bodyChannel) < t.Buffer {
 		t.waitGroup.Add(1)
 		p := payload{
@@ -109,7 +146,7 @@ func (t *AsyncTransport) Send(body map[string]interface{}) error {
 		default:
 		}
 	} else {
-		err := ErrBufferFull{}
+		err = ErrBufferFull{}
 		rollbarError(t.Logger, err.Error())
 		if t.PrintPayloadOnError {
 			writePayloadToStderr(t.Logger, body)
