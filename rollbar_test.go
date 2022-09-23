@@ -130,7 +130,7 @@ func TestEverythingGeneric(t *testing.T) {
 	if Environment() != "test" {
 		t.Error("Token should be as set")
 	}
-
+	time.Sleep(1)
 	if std.ctx != context.Background() {
 		t.Error("Client ctx must be set")
 	}
