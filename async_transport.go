@@ -1,6 +1,7 @@
 package rollbar
 
 import (
+	"context"
 	"fmt"
 	"runtime"
 	"sync"
@@ -10,6 +11,7 @@ import (
 // AsyncTransport is a concrete implementation of the Transport type which communicates with the
 // Rollbar API asynchronously using a buffered channel.
 type AsyncTransport struct {
+	ctx context.Context
 	baseTransport
 	// Buffer is the size of the channel used for queueing asynchronous payloads for sending to
 	// Rollbar.
@@ -36,7 +38,7 @@ func isClosed(ch chan payload) bool {
 // NewAsyncTransport builds an asynchronous transport which sends data to the Rollbar API at the
 // specified endpoint using the given access token. The channel is limited to the size of the input
 // buffer argument.
-func NewAsyncTransport(token string, endpoint string, buffer int) *AsyncTransport {
+func NewAsyncTransport(token string, endpoint string, buffer int, opts ...transportOption) *AsyncTransport {
 	transport := &AsyncTransport{
 		baseTransport: baseTransport{
 			Token:               token,
@@ -48,7 +50,14 @@ func NewAsyncTransport(token string, endpoint string, buffer int) *AsyncTranspor
 		bodyChannel: make(chan payload, buffer),
 		Buffer:      buffer,
 	}
-
+	for _, opt := range opts {
+		// Call the option giving the instantiated
+		// Transport as the argument
+		opt(transport)
+	}
+	if transport.ctx == nil {
+		transport.ctx = context.Background()
+	}
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
@@ -74,6 +83,10 @@ func NewAsyncTransport(token string, endpoint string, buffer int) *AsyncTranspor
 					if canRetry && p.retriesLeft > 0 {
 						p.retriesLeft -= 1
 						select {
+						case <-transport.ctx.Done(): // check for early termination
+							writePayloadToStderr(transport.Logger, p.body)
+							transport.waitGroup.Done()
+							return
 						case transport.bodyChannel <- p:
 						default:
 							// This can happen if the bodyChannel had an item added to it from another
@@ -125,7 +138,13 @@ func (t *AsyncTransport) Send(body map[string]interface{}) (err error) {
 			body:        body,
 			retriesLeft: t.RetryAttempts,
 		}
-		t.bodyChannel <- p
+		select {
+		case <-t.ctx.Done(): // check for early termination
+			writePayloadToStderr(t.Logger, body)
+			return t.ctx.Err()
+		case t.bodyChannel <- p:
+		default:
+		}
 	} else {
 		err = ErrBufferFull{}
 		rollbarError(t.Logger, err.Error())
@@ -147,4 +166,12 @@ func (t *AsyncTransport) Close() error {
 	close(t.bodyChannel)
 	t.Wait()
 	return nil
+}
+
+func (t *AsyncTransport) setContext(ctx context.Context) {
+	t.ctx = ctx
+}
+
+func (t *AsyncTransport) getContext() context.Context {
+	return t.ctx
 }

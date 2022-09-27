@@ -23,6 +23,8 @@ func (t *TestTransport) Close() error {
 func (t *TestTransport) Wait() {
 	t.WaitCalled = true
 }
+func (t *TestTransport) setContext(ctx context.Context) {
+}
 
 func (t *TestTransport) SetToken(_t string)             {}
 func (t *TestTransport) SetEndpoint(_e string)          {}
