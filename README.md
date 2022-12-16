@@ -1,5 +1,16 @@
-# rollbar-go
+<p align="center">
+  <img alt="rollbar-logo" src="https://user-images.githubusercontent.com/3300063/207964480-54eda665-d6fe-4527-ba51-b0ab3f41f10b.png" />
+</p>
+
+<h1 align="center">Rollbar Go SDK</h1>
+
+<p align="center">
+  <strong>Proactively discover, predict, and resolve errors in real-time with <a href="https://rollbar.com">Rollbar’s</a> error monitoring platform. <a href="https://rollbar.com/signup/">Start tracking errors today</a>!</strong>
+</p>
+
 ![Build Status](https://github.com/rollbar/rollbar-go/workflows/Rollbar-go%20CI/badge.svg?branch=master)
+
+---
 
 [Rollbar](https://rollbar.com) is a real-time exception reporting service for Go
 and other languages. The Rollbar service will alert you of problems with your code
@@ -12,6 +23,12 @@ background goroutine.
 
 Because Go's `error` type doesn't include stack information from when it was set
 or allocated, we use the stack information from where the error was reported.
+
+## Key benefits of using Rollbar Go are:
+- **Automatic error grouping:** Rollbar aggregates Occurrences caused by the same error into Items that represent application issues. <a href="https://docs.rollbar.com/docs/grouping-occurrences">Learn more about reducing log noise</a>.
+- **Advanced search:** Filter items by many different properties. <a href="https://docs.rollbar.com/docs/search-items">Learn more about search</a>.
+- **Customizable notifications:** Rollbar supports several messaging and incident management tools where your team can get notified about errors and important events by real-time alerts. <a href="https://docs.rollbar.com/docs/notifications">Learn more about Rollbar notifications</a>.
+
 
 # Setup Instructions and Usage
 
