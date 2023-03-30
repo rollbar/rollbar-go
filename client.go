@@ -217,7 +217,6 @@ func (c *Client) SetScrubFields(fields *regexp.Regexp) {
 // is sent to the API.
 // The structure of the final payload sent to the API is:
 //   {
-//       "access_token": "YOUR_ACCESS_TOKEN",
 //       "data": { ... }
 //   }
 // This function takes a map[string]interface{} which is the value of the data key in the payload
