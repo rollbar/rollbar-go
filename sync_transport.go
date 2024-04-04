@@ -65,5 +65,5 @@ func (t *SyncTransport) Wait() {}
 func (t *SyncTransport) Close() error {
 	return nil
 }
-func (t *SyncTransport) setContext(ctx context.Context) {
+func (t *SyncTransport) SetContext(ctx context.Context) {
 }

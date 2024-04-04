@@ -63,7 +63,7 @@ func NewAsync(token, environment, codeVersion, serverHost, serverRoot string, op
 	if c.ctx == nil {
 		c.ctx = context.Background()
 	}
-	c.Transport.setContext(c.ctx)
+	c.Transport.SetContext(c.ctx)
 	return c
 }
 
@@ -98,10 +98,10 @@ func (c *Client) SetTelemetry(options ...OptionFunc) {
 }
 func (c *Client) SetContext(ctx context.Context) {
 	c.ctx = ctx
-	c.Transport.setContext(ctx)
+	c.Transport.SetContext(ctx)
 }
 
-// SetEnabled sets whether or not Rollbar is enabled.
+// SetEnabled sets whether Rollbar is enabled.
 // If this is true then this library works as normal.
 // If this is false then no calls will be made to the network.
 // One place where this is useful is for turning off reporting in tests.
