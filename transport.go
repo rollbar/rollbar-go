@@ -23,7 +23,7 @@ type transportOption func(Transport)
 
 func WithTransportContext(ctx context.Context) transportOption {
 	return func(t Transport) {
-		t.setContext(ctx)
+		t.SetContext(ctx)
 	}
 }
 
@@ -51,8 +51,8 @@ type Transport interface {
 	SetHTTPClient(httpClient *http.Client)
 	// SetItemsPerMinute sets the max number of items to send in a given minute
 	SetItemsPerMinute(itemsPerMinute int)
-
-	setContext(ctx context.Context)
+	// SetContext sets the context to use for API calls made over the Transport
+	SetContext(ctx context.Context)
 }
 
 // ClientLogger is the interface used by the rollbar Client/Transport to report problems.

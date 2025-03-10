@@ -63,7 +63,7 @@ func NewAsync(token, environment, codeVersion, serverHost, serverRoot string, op
 	if c.ctx == nil {
 		c.ctx = context.Background()
 	}
-	c.Transport.setContext(c.ctx)
+	c.Transport.SetContext(c.ctx)
 	return c
 }
 
@@ -98,7 +98,7 @@ func (c *Client) SetTelemetry(options ...OptionFunc) {
 }
 func (c *Client) SetContext(ctx context.Context) {
 	c.ctx = ctx
-	c.Transport.setContext(ctx)
+	c.Transport.SetContext(ctx)
 }
 
 // SetEnabled sets whether or not Rollbar is enabled.
@@ -216,10 +216,12 @@ func (c *Client) SetScrubFields(fields *regexp.Regexp) {
 // SetTransform sets the transform function called after the entire payload has been built before it
 // is sent to the API.
 // The structure of the final payload sent to the API is:
-//   {
-//       "access_token": "YOUR_ACCESS_TOKEN",
-//       "data": { ... }
-//   }
+//
+//	{
+//	    "access_token": "YOUR_ACCESS_TOKEN",
+//	    "data": { ... }
+//	}
+//
 // This function takes a map[string]interface{} which is the value of the data key in the payload
 // described above. You can modify this object in-place to make any arbitrary changes you wish to
 // make before it is finally sent. Be careful with the modifications you make as they could lead to
