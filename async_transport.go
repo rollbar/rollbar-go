@@ -168,7 +168,7 @@ func (t *AsyncTransport) Close() error {
 	return nil
 }
 
-func (t *AsyncTransport) setContext(ctx context.Context) {
+func (t *AsyncTransport) SetContext(ctx context.Context) {
 	t.ctx = ctx
 }
 
