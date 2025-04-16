@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"reflect"
 	"runtime"
 	"strings"
 	"testing"
@@ -676,6 +677,29 @@ func TestNewAsyncWithContext(t *testing.T) {
 		t.Error("Transport ctx must be properly set")
 	}
 }
+
+func TestLoggerLevel(t *testing.T) {
+	ctx, _ := context.WithTimeout(context.Background(), 4*time.Second)
+	client := NewAsync("example", "test", "0.0.0", "", "", WithClientContext(ctx))
+	if client.ctx != ctx {
+		t.Error("Client ctx must be properly set")
+	}
+	filters := map[reflect.Type]string{reflect.TypeOf(ErrBufferFull{}): DEBUG, reflect.TypeOf(errors.New("")): IGNORE}
+	client.SetLoggerLevel(INFO)
+	client.SetErrorLevelFilters(filters)
+	tr := client.Transport.(*AsyncTransport)
+	if tr.LoggerLevel != INFO {
+		t.Error("logger level must be INFO")
+	}
+
+	if !tr.IsMessageFiltered(errors.New(""), DEBUG) { // global filtering
+		t.Error("error must be filtered out")
+	}
+	if !tr.IsMessageFiltered(errors.New(""), WARN) { // specific error filtering
+		t.Error("error must be filtered out")
+	}
+}
+
 func TestSetHttpClient(t *testing.T) {
 	used := false
 	c := &http.Client{

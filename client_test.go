@@ -26,13 +26,19 @@ func (t *TestTransport) Wait() {
 func (t *TestTransport) SetContext(ctx context.Context) {
 }
 
-func (t *TestTransport) SetToken(_t string)             {}
-func (t *TestTransport) SetEndpoint(_e string)          {}
-func (t *TestTransport) SetLogger(_l ClientLogger)      {}
-func (t *TestTransport) SetRetryAttempts(_r int)        {}
-func (t *TestTransport) SetPrintPayloadOnError(_p bool) {}
-func (t *TestTransport) SetHTTPClient(_c *http.Client)  {}
-func (t *TestTransport) SetItemsPerMinute(_r int)       {}
+func (t *TestTransport) SetToken(_t string)                                 {}
+func (t *TestTransport) SetEndpoint(_e string)                              {}
+func (t *TestTransport) SetLogger(_l ClientLogger)                          {}
+func (t *TestTransport) SetRetryAttempts(_r int)                            {}
+func (t *TestTransport) SetPrintPayloadOnError(_p bool)                     {}
+func (t *TestTransport) SetHTTPClient(_c *http.Client)                      {}
+func (t *TestTransport) SetItemsPerMinute(_r int)                           {}
+func (t *TestTransport) SetErrorLevelFilters(_errs map[reflect.Type]string) {}
+func (t *TestTransport) SetLoggerLevel(_l string)                           {}
+func (t *TestTransport) IsMessageFiltered(_e interface{}, _l string) bool {
+	return false
+}
+
 func (t *TestTransport) Send(body map[string]interface{}) error {
 	t.Body = body
 	return nil
@@ -469,6 +475,8 @@ func testGettersAndSetters(client *Client, t *testing.T) {
 	client.SetScrubFields(scrubFields)
 	client.SetCaptureIp(captureIP)
 	client.SetTelemetry()
+	client.SetLoggerLevel(DEBUG)
+	client.SetErrorLevelFilters(map[reflect.Type]string{reflect.TypeOf(ErrBufferFull{}): DEBUG, reflect.TypeOf(errors.New("")): IGNORE})
 
 	client.SetEnabled(true)
 	client.SetItemsPerMinute(itemsPerMinute)

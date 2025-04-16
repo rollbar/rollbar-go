@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"reflect"
 )
 
 const (
@@ -53,6 +54,12 @@ type Transport interface {
 	SetItemsPerMinute(itemsPerMinute int)
 	// SetContext sets the context to use for API calls made over the Transport
 	SetContext(ctx context.Context)
+	// SetErrorLevelFilters sets errors and their corresponding levels
+	SetErrorLevelFilters(errLevels map[reflect.Type]string)
+	// IsMessageFiltered returns true if the message is filtered out
+	IsMessageFiltered(err interface{}, level string) bool
+	// SetLoggerLevel sets logger level globally
+	SetLoggerLevel(loggerLevel string)
 }
 
 // ClientLogger is the interface used by the rollbar Client/Transport to report problems.
