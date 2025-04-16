@@ -698,6 +698,11 @@ func TestLoggerLevel(t *testing.T) {
 	if !tr.IsMessageFiltered(errors.New(""), WARN) { // specific error filtering
 		t.Error("error must be filtered out")
 	}
+	filters = map[reflect.Type]string{reflect.TypeOf(ErrBufferFull{}): DEBUG}
+	client.SetErrorLevelFilters(filters)
+	if tr.IsMessageFiltered(errors.New(""), WARN) { // specific error filtering
+		t.Error("error must be ok to send")
+	}
 }
 
 func TestSetHttpClient(t *testing.T) {

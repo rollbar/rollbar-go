@@ -118,7 +118,7 @@ func (c *Client) SetToken(token string) {
 	c.Transport.SetToken(token)
 }
 
-// SetLoggerLevel sets the error level filters
+// SetLoggerLevel sets the logger level globally
 func (c *Client) SetLoggerLevel(loggerLevel string) {
 	c.Transport.SetLoggerLevel(loggerLevel)
 }

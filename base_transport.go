@@ -133,12 +133,13 @@ func (t *baseTransport) post(body map[string]interface{}) (bool, error) {
 	resp.Body.Close()
 
 	if resp.StatusCode != 200 {
+		err = ErrHTTPError(resp.StatusCode)
 		if !t.IsMessageFiltered(err, ERR) {
 			rollbarError(t.Logger, "received response: %s", resp.Status)
 		}
 		// http.StatusTooManyRequests is only defined in Go 1.6+ so we use 429 directly
 		isRateLimit := resp.StatusCode == 429
-		return isRateLimit, ErrHTTPError(resp.StatusCode)
+		return isRateLimit, err
 	}
 
 	return false, nil
@@ -155,6 +156,7 @@ func (t *baseTransport) shouldSend() bool {
 	return true
 }
 
+// SetLoggerLevel sets the logger level globally
 func (t *baseTransport) SetLoggerLevel(loggerLevel string) {
 	t.LoggerLevel = loggerLevel
 }
@@ -164,7 +166,7 @@ func (t *baseTransport) SetErrorLevelFilters(errLevels map[reflect.Type]string) 
 	t.FilteredOutErrors = errLevels
 }
 
-// IsErrorFiltered determines if the error should be filtered or not
+// IsMessageFiltered determines if the message should be filtered or not
 func (t *baseTransport) IsMessageFiltered(err interface{}, level string) bool {
 	if LogLevelMap[t.LoggerLevel] >= LogLevelMap[level] {
 		return true
