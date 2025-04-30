@@ -30,8 +30,8 @@ type baseTransport struct {
 	PrintPayloadOnError bool
 	// ItemsPerMinute has the max number of items to send in a given minute
 	ItemsPerMinute int
-	// FilteredOutErrors are the filtered error types and their corresponding levels
-	FilteredOutErrors map[reflect.Type]string
+	// ErrorLevelFilters are the filtered error types and their corresponding levels
+	ErrorLevelFilters map[reflect.Type]string
 	// LoggerLevel is the logger level set globally
 	LoggerLevel string
 	// custom http client (http.DefaultClient used by default)
@@ -162,8 +162,8 @@ func (t *baseTransport) SetLoggerLevel(loggerLevel string) {
 }
 
 // SetErrorLevelFilters sets error level filters
-func (t *baseTransport) SetErrorLevelFilters(errLevels map[reflect.Type]string) {
-	t.FilteredOutErrors = errLevels
+func (t *baseTransport) SetErrorLevelFilters(errLevelFilters map[reflect.Type]string) {
+	t.ErrorLevelFilters = errLevelFilters
 }
 
 // IsMessageFiltered determines if the message should be filtered or not
@@ -172,7 +172,7 @@ func (t *baseTransport) IsMessageFiltered(err interface{}, level string) bool {
 		return true
 	}
 
-	for eType, lvl := range t.FilteredOutErrors {
+	for eType, lvl := range t.ErrorLevelFilters {
 		if eType == reflect.TypeOf(err) && LogLevelMap[lvl] >= LogLevelMap[level] {
 			return true
 		}
