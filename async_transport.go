@@ -147,7 +147,9 @@ func (t *AsyncTransport) Send(body map[string]interface{}) (err error) {
 		}
 	} else {
 		err = ErrBufferFull{}
-		rollbarError(t.Logger, err.Error())
+		if !t.IsMessageFiltered(err, ERR) {
+			rollbarError(t.Logger, err.Error())
+		}
 		if t.PrintPayloadOnError {
 			writePayloadToStderr(t.Logger, body)
 		}

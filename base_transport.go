@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 	"sync"
 	"time"
 )
@@ -29,6 +30,10 @@ type baseTransport struct {
 	PrintPayloadOnError bool
 	// ItemsPerMinute has the max number of items to send in a given minute
 	ItemsPerMinute int
+	// ErrorLevelFilters are the filtered error types and their corresponding levels
+	ErrorLevelFilters map[reflect.Type]string
+	// LoggerLevel is the logger level set globally
+	LoggerLevel string
 	// custom http client (http.DefaultClient used by default)
 	httpClient *http.Client
 
@@ -128,10 +133,13 @@ func (t *baseTransport) post(body map[string]interface{}) (bool, error) {
 	resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		rollbarError(t.Logger, "received response: %s", resp.Status)
+		err = ErrHTTPError(resp.StatusCode)
+		if !t.IsMessageFiltered(err, ERR) {
+			rollbarError(t.Logger, "received response: %s", resp.Status)
+		}
 		// http.StatusTooManyRequests is only defined in Go 1.6+ so we use 429 directly
 		isRateLimit := resp.StatusCode == 429
-		return isRateLimit, ErrHTTPError(resp.StatusCode)
+		return isRateLimit, err
 	}
 
 	return false, nil
@@ -146,4 +154,29 @@ func (t *baseTransport) shouldSend() bool {
 		return false
 	}
 	return true
+}
+
+// SetLoggerLevel sets the logger level globally
+func (t *baseTransport) SetLoggerLevel(loggerLevel string) {
+	t.LoggerLevel = loggerLevel
+}
+
+// SetErrorLevelFilters sets error level filters
+func (t *baseTransport) SetErrorLevelFilters(errLevelFilters map[reflect.Type]string) {
+	t.ErrorLevelFilters = errLevelFilters
+}
+
+// IsMessageFiltered determines if the message should be filtered or not
+func (t *baseTransport) IsMessageFiltered(err interface{}, level string) bool {
+	if LogLevelMap[t.LoggerLevel] >= LogLevelMap[level] {
+		return true
+	}
+
+	for eType, lvl := range t.ErrorLevelFilters {
+		if eType == reflect.TypeOf(err) && LogLevelMap[lvl] >= LogLevelMap[level] {
+			return true
+		}
+	}
+
+	return false
 }

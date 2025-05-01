@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"reflect"
 	"regexp"
 	"runtime"
 )
@@ -13,7 +14,8 @@ const (
 	NAME = "rollbar/rollbar-go"
 	// VERSION is the version of this notifier sent with the payload to Rollbar.
 	VERSION = "1.2.0"
-
+	//IGNORE is to skip sending errors
+	IGNORE = "ignore"
 	// CRIT is the critial severity level.
 	CRIT = "critical"
 	// ERR is the error severity level.
@@ -29,6 +31,8 @@ const (
 	// and fields used for scrubbing.
 	FILTERED = "[FILTERED]"
 )
+
+var LogLevelMap = map[string]int{DEBUG: 1, INFO: 2, WARN: 3, ERR: 4, CRIT: 5, IGNORE: 6}
 
 var (
 	hostname, _ = os.Hostname()
@@ -196,10 +200,12 @@ func SetScrubFields(fields *regexp.Regexp) {
 // SetTransform sets the transform function called after the entire payload has been built before it
 // is sent to the API.
 // The structure of the final payload sent to the API is:
-//   {
-//       "access_token": "YOUR_ACCESS_TOKEN",
-//       "data": { ... }
-//   }
+//
+//	{
+//	    "access_token": "YOUR_ACCESS_TOKEN",
+//	    "data": { ... }
+//	}
+//
 // This function takes a map[string]interface{} which is the value of the data key in the payload
 // described above. You can modify this object in-place to make any arbitrary changes you wish to
 // make before it is finally sent. Be careful with the modifications you make as they could lead to
@@ -357,11 +363,13 @@ func CaptureIp() captureIp {
 // -- Reporting
 
 // Critical reports an item with level `critical`. This function recognizes arguments with the following types:
-//    *http.Request
-//    error
-//    string
-//    map[string]interface{}
-//    int
+//
+//	*http.Request
+//	error
+//	string
+//	map[string]interface{}
+//	int
+//
 // The string and error types are mutually exclusive.
 // If an error is present then a stack trace is captured. If an int is also present then we skip
 // that number of stack frames. If the map is present it is used as extra custom data in the
@@ -372,11 +380,13 @@ func Critical(interfaces ...interface{}) {
 }
 
 // Error reports an item with level `error`. This function recognizes arguments with the following types:
-//    *http.Request
-//    error
-//    string
-//    map[string]interface{}
-//    int
+//
+//	*http.Request
+//	error
+//	string
+//	map[string]interface{}
+//	int
+//
 // The string and error types are mutually exclusive.
 // If an error is present then a stack trace is captured. If an int is also present then we skip
 // that number of stack frames. If the map is present it is used as extra custom data in the
@@ -387,11 +397,13 @@ func Error(interfaces ...interface{}) {
 }
 
 // Warning reports an item with level `warning`. This function recognizes arguments with the following types:
-//    *http.Request
-//    error
-//    string
-//    map[string]interface{}
-//    int
+//
+//	*http.Request
+//	error
+//	string
+//	map[string]interface{}
+//	int
+//
 // The string and error types are mutually exclusive.
 // If an error is present then a stack trace is captured. If an int is also present then we skip
 // that number of stack frames. If the map is present it is used as extra custom data in the
@@ -402,11 +414,13 @@ func Warning(interfaces ...interface{}) {
 }
 
 // Info reports an item with level `info`. This function recognizes arguments with the following types:
-//    *http.Request
-//    error
-//    string
-//    map[string]interface{}
-//    int
+//
+//	*http.Request
+//	error
+//	string
+//	map[string]interface{}
+//	int
+//
 // The string and error types are mutually exclusive.
 // If an error is present then a stack trace is captured. If an int is also present then we skip
 // that number of stack frames. If the map is present it is used as extra custom data in the
@@ -417,11 +431,13 @@ func Info(interfaces ...interface{}) {
 }
 
 // Debug reports an item with level `debug`. This function recognizes arguments with the following types:
-//    *http.Request
-//    error
-//    string
-//    map[string]interface{}
-//    int
+//
+//	*http.Request
+//	error
+//	string
+//	map[string]interface{}
+//	int
+//
 // The string and error types are mutually exclusive.
 // If an error is present then a stack trace is captured. If an int is also present then we skip
 // that number of stack frames. If the map is present it is used as extra custom data in the
@@ -432,12 +448,14 @@ func Debug(interfaces ...interface{}) {
 }
 
 // Log reports an item with the given level. This function recognizes arguments with the following types:
-//    *http.Request
-//    error
-//    string
-//    map[string]interface{}
-//    int
-//    context.Context
+//
+//	*http.Request
+//	error
+//	string
+//	map[string]interface{}
+//	int
+//	context.Context
+//
 // The string and error types are mutually exclusive.
 // If an error is present then a stack trace is captured. If an int is also present then we skip
 // that number of stack frames. If the map is present it is used as extra custom data in the
@@ -654,6 +672,16 @@ func WrapAndWait(f interface{}, args ...interface{}) interface{} {
 // lambda.Start(). This also waits before returning to ensure all messages completed.
 func LambdaWrapper(handlerFunc interface{}) interface{} {
 	return std.LambdaWrapper(handlerFunc)
+}
+
+// SetErrorLevelFilters sets filtered error types and their corresponding levels
+func SetErrorLevelFilters(errLevels map[reflect.Type]string) {
+	std.SetErrorLevelFilters(errLevels)
+}
+
+// SetLoggerLevel sets logger level globally
+func SetLoggerLevel(loggerLevel string) {
+	std.SetLoggerLevel(loggerLevel)
 }
 
 // Stacker is an interface that errors can implement to allow the extraction of stack traces.

@@ -118,6 +118,16 @@ func (c *Client) SetToken(token string) {
 	c.Transport.SetToken(token)
 }
 
+// SetLoggerLevel sets the logger level globally
+func (c *Client) SetLoggerLevel(loggerLevel string) {
+	c.Transport.SetLoggerLevel(loggerLevel)
+}
+
+// SetErrorLevelFilters sets the error level filters
+func (c *Client) SetErrorLevelFilters(errLevels map[reflect.Type]string) {
+	c.Transport.SetErrorLevelFilters(errLevels)
+}
+
 // SetEnvironment sets the environment under which all errors and messages will be submitted.
 func (c *Client) SetEnvironment(environment string) {
 	c.configuration.environment = environment
@@ -431,6 +441,9 @@ func (c *Client) ErrorWithStackSkipWithExtrasAndContext(ctx context.Context, lev
 	if !c.configuration.enabled {
 		return
 	}
+	if c.Transport.IsMessageFiltered(err, level) {
+		return
+	}
 	body := c.buildBody(ctx, level, err.Error(), extras)
 	telemetry := c.Telemetry.GetQueueItems()
 	addErrorToBody(c.configuration, body, err, skip, telemetry)
@@ -460,6 +473,9 @@ func (c *Client) RequestErrorWithStackSkipWithExtrasAndContext(ctx context.Conte
 	if !c.configuration.enabled {
 		return
 	}
+	if c.Transport.IsMessageFiltered(err, level) {
+		return
+	}
 	body := c.buildBody(ctx, level, err.Error(), extras)
 	telemetry := c.Telemetry.GetQueueItems()
 	data := addErrorToBody(c.configuration, body, err, skip, telemetry)
@@ -484,6 +500,9 @@ func (c *Client) MessageWithExtras(level string, msg string, extras map[string]i
 // level with extra custom data, within the given context.
 func (c *Client) MessageWithExtrasAndContext(ctx context.Context, level string, msg string, extras map[string]interface{}) {
 	if !c.configuration.enabled {
+		return
+	}
+	if c.Transport.IsMessageFiltered(nil, level) {
 		return
 	}
 	body := c.buildBody(ctx, level, msg, extras)
@@ -512,6 +531,9 @@ func (c *Client) RequestMessageWithExtras(level string, r *http.Request, msg str
 // context.
 func (c *Client) RequestMessageWithExtrasAndContext(ctx context.Context, level string, r *http.Request, msg string, extras map[string]interface{}) {
 	if !c.configuration.enabled {
+		return
+	}
+	if c.Transport.IsMessageFiltered(nil, level) {
 		return
 	}
 	body := c.buildBody(ctx, level, msg, extras)
