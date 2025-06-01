@@ -140,6 +140,93 @@ func (c *Client) Log(level string, interfaces ...interface{}) {
 	}
 }
 
+// -- Reporting
+
+// Critical reports an item with level `critical`. This function recognizes arguments with the following types:
+//
+//	*http.Request
+//	error
+//	string
+//	map[string]interface{}
+//	int
+//
+// The string and error types are mutually exclusive.
+// If an error is present then a stack trace is captured. If an int is also present then we skip
+// that number of stack frames. If the map is present it is used as extra custom data in the
+// item. If a string is present without an error, then we log a message without a stack
+// trace. If a request is present we extract as much relevant information from it as we can.
+func (c *Client) Critical(interfaces ...interface{}) {
+	c.Log(CRIT, interfaces...)
+}
+
+// Error reports an item with level `error`. This function recognizes arguments with the following types:
+//
+//	*http.Request
+//	error
+//	string
+//	map[string]interface{}
+//	int
+//
+// The string and error types are mutually exclusive.
+// If an error is present then a stack trace is captured. If an int is also present then we skip
+// that number of stack frames. If the map is present it is used as extra custom data in the
+// item. If a string is present without an error, then we log a message without a stack
+// trace. If a request is present we extract as much relevant information from it as we can.
+func (c *Client) Error(interfaces ...interface{}) {
+	c.Log(ERR, interfaces...)
+}
+
+// Warning reports an item with level `warning`. This function recognizes arguments with the following types:
+//
+//	*http.Request
+//	error
+//	string
+//	map[string]interface{}
+//	int
+//
+// The string and error types are mutually exclusive.
+// If an error is present then a stack trace is captured. If an int is also present then we skip
+// that number of stack frames. If the map is present it is used as extra custom data in the
+// item. If a string is present without an error, then we log a message without a stack
+// trace. If a request is present we extract as much relevant information from it as we can.
+func (c *Client) Warning(interfaces ...interface{}) {
+	c.Log(WARN, interfaces...)
+}
+
+// Info reports an item with level `info`. This function recognizes arguments with the following types:
+//
+//	*http.Request
+//	error
+//	string
+//	map[string]interface{}
+//	int
+//
+// The string and error types are mutually exclusive.
+// If an error is present then a stack trace is captured. If an int is also present then we skip
+// that number of stack frames. If the map is present it is used as extra custom data in the
+// item. If a string is present without an error, then we log a message without a stack
+// trace. If a request is present we extract as much relevant information from it as we can.
+func (c *Client) Info(interfaces ...interface{}) {
+	c.Log(INFO, interfaces...)
+}
+
+// Debug reports an item with level `debug`. This function recognizes arguments with the following types:
+//
+//	*http.Request
+//	error
+//	string
+//	map[string]interface{}
+//	int
+//
+// The string and error types are mutually exclusive.
+// If an error is present then a stack trace is captured. If an int is also present then we skip
+// that number of stack frames. If the map is present it is used as extra custom data in the
+// item. If a string is present without an error, then we log a message without a stack
+// trace. If a request is present we extract as much relevant information from it as we can.
+func (c *Client) Debug(interfaces ...interface{}) {
+	c.Log(DEBUG, interfaces...)
+}
+
 // CaptureTelemetryEvent sets the user-specified telemetry event
 func (c *Client) CaptureTelemetryEvent(eventType, eventlevel string, eventData map[string]interface{}) {
 	data := map[string]interface{}{}
