@@ -72,6 +72,27 @@ func TestLogPanic(t *testing.T) {
 	client.Close()
 }
 
+func TestLogError(t *testing.T) {
+	client := testClient()
+	client.Error(errors.New("logged error"))
+	if transport, ok := client.Transport.(*TestTransport); ok {
+		if transport.WaitCalled {
+			t.Error("Wait called unexpectedly")
+		}
+		body := transport.Body
+		if body["data"] == nil {
+			t.Error("body should have data")
+		}
+		data := body["data"].(map[string]interface{})
+		dataError := errorFromData(data)
+		if dataError["message"] != "logged error" {
+			t.Error("data should have correct error message")
+		}
+	} else {
+		t.Fail()
+	}
+	client.Close()
+}
 func TestWrap(t *testing.T) {
 	client := testClient()
 	err := errors.New("bork")
