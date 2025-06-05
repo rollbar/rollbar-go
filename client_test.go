@@ -184,7 +184,7 @@ func TestLogInfoLevel(t *testing.T) {
 
 func TestLogDebugLevel(t *testing.T) {
 	client := testClient()
-	client.Info("some message")
+	client.Debug("some message")
 	if transport, ok := client.Transport.(*TestTransport); ok {
 		if transport.WaitCalled {
 			t.Error("Wait called unexpectedly")
