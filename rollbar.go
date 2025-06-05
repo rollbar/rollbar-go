@@ -463,48 +463,7 @@ func Debug(interfaces ...interface{}) {
 // trace. If a request is present we extract as much relevant information from it as we can. If
 // a context is present, it is applied to downstream operations.
 func Log(level string, interfaces ...interface{}) {
-	var r *http.Request
-	var err error
-	var skip int
-	skipSet := false
-	var extras map[string]interface{}
-	var msg string
-	ctx := context.TODO()
-	for _, ival := range interfaces {
-		switch val := ival.(type) {
-		case *http.Request:
-			r = val
-		case error:
-			err = val
-		case int:
-			skip = val
-			skipSet = true
-		case string:
-			msg = val
-		case map[string]interface{}:
-			extras = val
-		case context.Context:
-			ctx = val
-		default:
-			rollbarError(std.Transport.(*AsyncTransport).Logger, "Unknown input type: %T", val)
-		}
-	}
-	if !skipSet {
-		skip = 2
-	}
-	if err != nil {
-		if r == nil {
-			std.ErrorWithStackSkipWithExtrasAndContext(ctx, level, err, skip, extras)
-		} else {
-			std.RequestErrorWithStackSkipWithExtrasAndContext(ctx, level, r, err, skip, extras)
-		}
-	} else {
-		if r == nil {
-			std.MessageWithExtrasAndContext(ctx, level, msg, extras)
-		} else {
-			std.RequestMessageWithExtrasAndContext(ctx, level, r, msg, extras)
-		}
-	}
+	std.Log(level, interfaces...)
 }
 
 // -- Error reporting

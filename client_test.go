@@ -72,6 +72,138 @@ func TestLogPanic(t *testing.T) {
 	client.Close()
 }
 
+func TestLogError(t *testing.T) {
+	client := testClient()
+	client.Error(errors.New("logged error"))
+	if transport, ok := client.Transport.(*TestTransport); ok {
+		if transport.WaitCalled {
+			t.Error("Wait called unexpectedly")
+		}
+		body := transport.Body
+		if body["data"] == nil {
+			t.Error("body should have data")
+		}
+		data := body["data"].(map[string]interface{})
+		dataError := errorFromData(data)
+		if dataError["message"] != "logged error" {
+			t.Error("data should have correct error message")
+		}
+	} else {
+		t.Fail()
+	}
+	client.Close()
+}
+
+func TestLogCriticalLevel(t *testing.T) {
+	client := testClient()
+	client.Critical(errors.New("logged error"))
+	if transport, ok := client.Transport.(*TestTransport); ok {
+		if transport.WaitCalled {
+			t.Error("Wait called unexpectedly")
+		}
+		body := transport.Body
+		if body["data"] == nil {
+			t.Error("body should have data")
+		}
+		data := body["data"].(map[string]interface{})
+
+		if data["level"] != CRIT {
+			t.Error("data should have correct level")
+		}
+	} else {
+		t.Fail()
+	}
+	client.Close()
+}
+
+func TestLogErrorLevel(t *testing.T) {
+	client := testClient()
+	client.Error(errors.New("logged error"))
+	if transport, ok := client.Transport.(*TestTransport); ok {
+		if transport.WaitCalled {
+			t.Error("Wait called unexpectedly")
+		}
+		body := transport.Body
+		if body["data"] == nil {
+			t.Error("body should have data")
+		}
+		data := body["data"].(map[string]interface{})
+
+		if data["level"] != ERR {
+			t.Error("data should have correct level")
+		}
+	} else {
+		t.Fail()
+	}
+	client.Close()
+}
+
+func TestLogWarningLevel(t *testing.T) {
+	client := testClient()
+	client.Warning(errors.New("logged error"))
+	if transport, ok := client.Transport.(*TestTransport); ok {
+		if transport.WaitCalled {
+			t.Error("Wait called unexpectedly")
+		}
+		body := transport.Body
+		if body["data"] == nil {
+			t.Error("body should have data")
+		}
+		data := body["data"].(map[string]interface{})
+
+		if data["level"] != WARN {
+			t.Error("data should have correct level")
+		}
+	} else {
+		t.Fail()
+	}
+	client.Close()
+}
+
+func TestLogInfoLevel(t *testing.T) {
+	client := testClient()
+	client.Info("some message")
+	if transport, ok := client.Transport.(*TestTransport); ok {
+		if transport.WaitCalled {
+			t.Error("Wait called unexpectedly")
+		}
+		body := transport.Body
+		if body["data"] == nil {
+			t.Error("body should have data")
+		}
+		data := body["data"].(map[string]interface{})
+
+		if data["level"] != INFO {
+			t.Error("data should have correct level")
+		}
+	} else {
+		t.Fail()
+	}
+	client.Close()
+}
+
+func TestLogDebugLevel(t *testing.T) {
+	client := testClient()
+	client.Debug("some message")
+	if transport, ok := client.Transport.(*TestTransport); ok {
+		if transport.WaitCalled {
+			t.Error("Wait called unexpectedly")
+		}
+		body := transport.Body
+		if body["data"] == nil {
+			t.Error("body should have data")
+		}
+		data := body["data"].(map[string]interface{})
+
+		if data["level"] != DEBUG {
+			t.Error("data should have correct level")
+		}
+	} else {
+		t.Fail()
+	}
+	client.Close()
+}
+
 func TestWrap(t *testing.T) {
 	client := testClient()
 	err := errors.New("bork")
